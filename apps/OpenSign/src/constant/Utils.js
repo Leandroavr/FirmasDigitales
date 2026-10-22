@@ -119,8 +119,8 @@ export function getEnv() {
 }
 const appName = "OpenSign™";
 
-export const defaultMailBody = `<p>Hi {{receiver_name}},</p><br><p>We hope this email finds you well. {{sender_name}}&nbsp;has requested you to review and sign&nbsp;{{document_title}}.</p><p>Your signature is crucial to proceed with the next steps as it signifies your agreement and authorization.</p><br><p><a href='{{signing_url}}' rel='noopener noreferrer' target='_blank'>Sign here</a></p><br><br><p>If you have any questions or need further clarification regarding the document or the signing process,  please contact the sender.</p><br><p>Thanks</p><p> Team ${appName}</p><br>`;
-export const defaultMailSubject = `{{sender_name}} has requested you to sign {{document_title}}`;
+export const defaultMailBody = `<p>Hola, {{receiver_name}}:</p><br><p>Esperamos que se encuentre bien. {{sender_name}} le ha solicitado revisar y firmar el documento <b>"{{document_title}}"</b>.</p><p>Su firma es necesaria para continuar con el trámite y confirmar su conformidad.</p><br><p><a href='{{signing_url}}' rel='noopener noreferrer' target='_blank'>Firmar documento aquí</a></p><br><br><p>Si tiene alguna duda o necesita más información, por favor póngase en contacto con el remitente.</p><br><p>Saludos cordiales,</p><p>Firma Digital Brascuba</p><br>`;
+export const defaultMailSubject = `{{sender_name}} le ha solicitado firmar {{document_title}}`;
 export const nonPresentMaskCss = (base) => ({
   ...base,
   width: "0px",

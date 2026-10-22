@@ -61,6 +61,8 @@ services:
     volumes:
       - ./apps/OpenSign/build:/usr/src/app/build
       - ./apps/OpenSign/dist:/usr/src/app/dist
+      - ./apps/OpenSign/src:/usr/src/app/src
+      - ./apps/OpenSign/public:/usr/src/app/public
     env_file: .env.prod
     environment:
       - REACT_APP_SERVERURL=${HOST_URL:-https://172.20.19.12:3001}/api/app
