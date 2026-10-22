@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Confetti from "react-confetti"; // Import the confetti library
+import { useNavigate } from "react-router";
+import Confetti from "react-confetti";
 import {
   getBase64FromUrl,
-  handleDownloadCertificate,
   handleDownloadPdf,
-  handleToPrint,
 } from "../constant/Utils";
 import ModalUi from "../primitives/ModalUi";
 import Loader from "../primitives/Loader";
@@ -14,19 +13,42 @@ import CheckCircle from "../primitives/CheckCircle";
 
 const DocSuccessPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const signed = window.location?.search?.includes("docid");
   const sent = window.location?.search?.includes("message");
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadModal, setIsDownloadModal] = useState(false);
   const [pdfDetails, setPdfDetails] = useState([]);
   const [pdfBase64Url, setPdfBase64Url] = useState("");
-  const [showConfetti, setShowConfetti] = useState(true); // State to control confetti
+  const [showConfetti, setShowConfetti] = useState(true);
+
+  const isCompleted =
+    pdfDetails?.[0]?.IsCompleted === true ||
+    pdfDetails?.[0]?.IsCompleted === "true";
+
+  const handleConfirm = () => {
+    if (localStorage.getItem("accesstoken")) {
+      navigate("/");
+    } else {
+      navigate("/login");
+    }
+  };
 
   useEffect(() => {
     initialsetup();
-    // Stop confetti after 5 seconds
     const timer = setTimeout(() => setShowConfetti(false), 5000);
-    return () => clearTimeout(timer);
+
+    const handleKeyDown = (e) => {
+      if (e.key === "Enter") {
+        handleConfirm();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const initialsetup = async () => {
@@ -36,7 +58,8 @@ const DocSuccessPage = () => {
       const docId = urlParams.get("docid");
       const docUrl = urlParams.get("docurl");
       const certificate = urlParams.get("certificate");
-      const completed = urlParams?.get("completed") || false;
+      const completedParam = urlParams?.get("completed");
+      const completed = completedParam === "true" || completedParam === true;
       const details = {
         objectId: docId,
         SignedUrl: docUrl,
@@ -52,9 +75,7 @@ const DocSuccessPage = () => {
   };
 
   const handleDownload = () => {
-    if (
-      pdfDetails?.[0]?.IsCompleted
-    ) {
+    if (pdfDetails?.[0]?.IsCompleted) {
       setIsDownloadModal(true);
     } else {
       handleDownloadPdf(pdfDetails, setIsDownloading, pdfBase64Url);
@@ -63,59 +84,75 @@ const DocSuccessPage = () => {
 
   return (
     <>
-      {/* Confetti Effect */}
       {showConfetti && (
         <Confetti width={window.innerWidth} height={window.innerHeight} />
       )}
       {sent ? (
-        <div className="min-h-screen flex flex-col items-center justify-center p-3 md:p-8 text-center">
-          <div className="max-w-lg md:max-w-2xl bg-white rounded-lg shadow-lg p-3 md:p-10">
-            {t("doc-sent")}
+        <div className="min-h-screen flex flex-col items-center justify-center p-3 md:p-8 text-center bg-base-200">
+          <div className="max-w-lg md:max-w-xl bg-white rounded-xl shadow-xl p-6 md:p-10 border border-gray-100">
+            <CheckCircle className="text-green-500 w-16 h-16 md:w-20 md:h-20 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">{t("doc-sent")}</h1>
+            <button
+              type="button"
+              autoFocus
+              className="mt-6 font-medium text-sm md:text-base px-8 py-2.5 op-btn op-btn-primary shadow-md"
+              onClick={handleConfirm}
+            >
+              <span>Aceptar</span>
+              <span className="text-xs opacity-75 ml-2 font-mono bg-blue-700 px-1.5 py-0.5 rounded">
+                ↵ Enter
+              </span>
+            </button>
           </div>
         </div>
       ) : signed ? (
         <>
-          <div className="min-h-screen flex flex-col items-center justify-center p-3 md:p-8 text-center">
-            <div className="max-w-lg md:max-w-2xl bg-white rounded-lg shadow-lg p-3 md:p-10">
-              <div className="flex flex-col items-center space-y-4 ">
-                <CheckCircle className="text-green-500 w-12 h-12 md:w-14 md:h-14" />
-                <h1 className="text-xl md:text-2xl font-semibold text-gray-800">
-                  {pdfDetails?.[0]?.IsCompleted
-                    ? t("document-has-been-signed")
-                    : t("document-has-been-signed-by-you")}
+          <div className="min-h-screen flex flex-col items-center justify-center p-3 md:p-8 text-center bg-base-200">
+            <div className="max-w-lg md:max-w-xl bg-white rounded-xl shadow-xl p-6 md:p-10 border border-gray-100">
+              <div className="flex flex-col items-center space-y-4">
+                <CheckCircle className="text-green-500 w-16 h-16 md:w-20 md:h-20" />
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                  {isCompleted
+                    ? "¡Documento completado exitosamente!"
+                    : "¡Documento firmado correctamente!"}
                 </h1>
-                {pdfDetails?.[0]?.IsCompleted && (
-                  <p className="text-sm md:text-base text-gray-600">
-                    {t("participant-completed-signing")}
-                  </p>
+                <p className="text-sm md:text-base text-gray-600 leading-relaxed max-w-md">
+                  {isCompleted
+                    ? "Todas las partes han completado el proceso de firma. El documento oficial sellado ha sido generado y enviado a su correo electrónico."
+                    : "Su firma ha sido registrada exitosamente. El documento continuará con los siguientes firmantes. Una vez finalizado por todas las partes, recibirá la copia oficial sellada por correo."}
+                </p>
+              </div>
+
+              {/* Botón de confirmación con Enter */}
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  type="button"
+                  autoFocus
+                  className="w-full sm:w-auto font-medium text-sm md:text-base px-8 py-2.5 op-btn op-btn-primary shadow-md hover:shadow-lg transition-all"
+                  onClick={handleConfirm}
+                >
+                  <span>Aceptar</span>
+                  <span className="text-xs opacity-75 ml-2 font-mono bg-blue-700 px-1.5 py-0.5 rounded">
+                    ↵ Enter
+                  </span>
+                </button>
+
+                {/* Descargar SOLO si está completado todo */}
+                {isCompleted && (
+                  <button
+                    type="button"
+                    className="w-full sm:w-auto font-medium text-sm md:text-base px-6 py-2.5 op-btn op-btn-outline"
+                    onClick={() => handleDownload()}
+                  >
+                    <i className="fa-light fa-download mr-1.5" aria-hidden="true"></i>
+                    <span>Descargar documento</span>
+                  </button>
                 )}
               </div>
-              {/* Action Buttons */}
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                <button
-                  type="button"
-                  className="font-medium text-sm md:text-[13px] md:px-4 py-2 op-btn op-btn-primary"
-                  onClick={() => handleDownload()}
-                >
-                  <i className="fa-light fa-download" aria-hidden="true"></i>
-                  <span>{t("download")}</span>
-                </button>
 
-
-                <button
-                  onClick={(e) =>
-                    handleToPrint(e, setIsDownloading, pdfDetails)
-                  }
-                  type="button"
-                  className="font-medium text-sm md:text-[13px] px-4 py-2 op-btn op-btn-neutral"
-                >
-                  <i className="fa-light fa-print" aria-hidden="true"></i>
-                  <span>{t("print")}</span>
-                </button>
-              </div>
-              {/* Footer Message */}
-              <p className="mt-4 md:mt-6 text-xs md:text-sm text-gray-500">
-                {t("you-will-receive-email-shortly")}
+              {/* Pie de mensaje */}
+              <p className="mt-6 text-xs text-gray-400">
+                Firma Digital Brascuba
               </p>
             </div>
           </div>

@@ -3,6 +3,21 @@ import { formatDateTime, getSignerEmail } from "../constant/Utils";
 import { useState } from "react";
 import ModalUi from "./ModalUi";
 
+// Helper to translate signer activities to Spanish
+const getActivityLabel = (activity) => {
+  const act = (activity || "").toUpperCase();
+  switch (act) {
+    case "SIGNED":
+      return "FIRMADO";
+    case "VIEWED":
+      return "VISTO";
+    case "SENT":
+      return "ENVIADO";
+    default:
+      return act || "-";
+  }
+};
+
 // Signer is used in report to show signer list conditionally
 const SignerCell = ({ reportName, item, handleRemovePrefill }) => {
   const { t } = useTranslation();
@@ -72,9 +87,9 @@ const SignerCell = ({ reportName, item, handleRemovePrefill }) => {
                     : x.Activity === "VIEWED"
                       ? "border-green-400 text-green-400"
                       : "border-base-content text-base-content"
-                } focus:outline-none border-2 w-[60px] h-[30px] text-[11px] rounded-full`}
+                } focus:outline-none border-2 min-w-[66px] px-2 h-[30px] text-[11px] font-semibold rounded-full`}
               >
-                {x?.Activity?.toUpperCase() || "-"}
+                {getActivityLabel(x?.Activity)}
               </button>
             )}
             <div className="text-[12px]">{x?.Email || "-"}</div>
