@@ -1,1 +1,0 @@
-Please visit the official documentation [here](https://docs.opensignlabs.com).
