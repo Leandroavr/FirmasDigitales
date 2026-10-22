@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+/node_modules
+/.pnp
+.pnp.js
+
+# Production builds & dist
+/build
+dist/
+apps/OpenSign/build/
+apps/OpenSign/dist/
+apps/OpenSign/public/mfbuild/*
+microfrontends/SignDocuments/build/*
+
+# Testing & Coverage
+/coverage
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+# Secrets and Environment files (CRITICAL: Never commit secrets)
+.env*
+!.env.example
+
+# Cryptographic Keys, Certificates & Keystores (CRITICAL)
+*.p12
+*.pfx
+*.pem
+*.crt
+*.cer
+*.key
+*.pub
+pem_prueba
+
+# CorporateSigner dynamic certificates and employee signatures
+apps/CorporateSigner/certificates/*
+!apps/CorporateSigner/certificates/.gitkeep
+apps/CorporateSigner/signatures/*
+!apps/CorporateSigner/signatures/README.md
+!apps/CorporateSigner/signatures/.gitkeep
+
+# Local test & debug scratch files
+test_*.py
+inspect_*.py
+scan_certs.py
+generate-signer.js
+test_signed.pdf
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Server uploaded and temp files
+apps/OpenSignServer/files/files/*
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local Dev Certs
+cert/
+

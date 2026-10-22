@@ -1,0 +1,5 @@
+fastapi==0.116.1
+pyHanko==0.37.0
+uvicorn[standard]==0.35.0
+pillow==12.3.0
+
