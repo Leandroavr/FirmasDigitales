@@ -852,11 +852,30 @@ function Placeholder(props) {
                   ? props.posWidth(props.pos)
                   : props.posHeight(props.pos)
           }}
+          minWidth={
+            props.pos.type === "signature"
+              ? [90, 270].includes(props.pos.options?.rotation)
+                ? (props.posHeight
+                    ? props.posHeight({ ...props.pos, Height: defaultWidthHeight("signature").height })
+                    : defaultWidthHeight("signature").height * (containerScale || 1))
+                : (props.posWidth
+                    ? props.posWidth({ ...props.pos, Width: defaultWidthHeight("signature").width })
+                    : defaultWidthHeight("signature").width * (containerScale || 1))
+              : 10
+          }
           minHeight={
-            props.pos.type === cellsWidget
-              ? calculateFont(props.pos.options?.fontSize, true)
-              : props.pos.type !== "checkbox" &&
-                calculateFont(props.pos.options?.fontSize, true)
+            props.pos.type === "signature"
+              ? [90, 270].includes(props.pos.options?.rotation)
+                ? (props.posWidth
+                    ? props.posWidth({ ...props.pos, Width: defaultWidthHeight("signature").width })
+                    : defaultWidthHeight("signature").width * (containerScale || 1))
+                : (props.posHeight
+                    ? props.posHeight({ ...props.pos, Height: defaultWidthHeight("signature").height })
+                    : defaultWidthHeight("signature").height * (containerScale || 1))
+              : props.pos.type === cellsWidget
+                ? calculateFont(props.pos.options?.fontSize, true)
+                : props.pos.type !== "checkbox" &&
+                  calculateFont(props.pos.options?.fontSize, true)
           }
           maxHeight="auto"
           onResizeStart={(e, dir, ref) => {

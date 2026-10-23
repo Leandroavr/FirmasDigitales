@@ -389,12 +389,20 @@ export const handleWidgetResize = (
           const isRotSwapped = [90, 270].includes(rotation);
           const storedWidth = isRotSwapped ? widgetHeight : widgetWidth;
           const storedHeight = isRotSwapped ? widgetWidth : widgetHeight;
-          const widgetDims = { Width: storedWidth, Height: storedHeight };
+          // Dimensiones estándar mínimas para firma digital: garantizan legibilidad de todos los campos
+          const stdWidth = defaultWidthHeight(url.type).width;
+          const stdHeight = defaultWidthHeight(url.type).height;
+          const finalWidth = url.type === "signature" ? Math.max(storedWidth, stdWidth) : storedWidth;
+          const finalHeight = url.type === "signature" ? Math.max(storedHeight, stdHeight) : storedHeight;
+          const widgetDims = { Width: finalWidth, Height: finalHeight };
+          // const widgetDims = { Width: storedWidth, Height: storedHeight };
           // Base fields for every resized signature
           const base = {
             ...url,
-            Width: storedWidth,
-            Height: storedHeight,
+            Width: finalWidth,
+            Height: finalHeight,
+            // Width: storedWidth,
+            // Height: storedHeight,
             IsResize: showResize ? true : false
           };
           // If it's a “type” signature, regenerate the image and options
@@ -744,9 +752,12 @@ export const addWidgetSelfsignOptions = (
 export const defaultWidthHeight = (type) => {
   switch (type) {
     case "signature":
-      return { width: 230, height: 65 };
+      // Tamaño estándar óptimo inicial y mínimo fijo para firma digital legible
+      return { width: 240, height: 75 };
+      // return { width: 230, height: 65 };
     case "stamp":
-      return { width: 230, height: 65 };
+      return { width: 240, height: 75 };
+      // return { width: 230, height: 65 };
     case "checkbox":
       return { width: 15, height: 19 };
     case textInputWidget:
@@ -873,13 +884,21 @@ export const handleSignYourselfWidgetResize = (
         const isRotSwapped = [90, 270].includes(rotation);
         const storedWidth = isRotSwapped ? widgetHeight : widgetWidth;
         const storedHeight = isRotSwapped ? widgetWidth : widgetHeight;
-        const widgetDims = { Width: storedWidth, Height: storedHeight };
+        // Dimensiones estándar mínimas para firma digital
+        const stdWidth = defaultWidthHeight(url.type).width;
+        const stdHeight = defaultWidthHeight(url.type).height;
+        const finalWidth = url.type === "signature" ? Math.max(storedWidth, stdWidth) : storedWidth;
+        const finalHeight = url.type === "signature" ? Math.max(storedHeight, stdHeight) : storedHeight;
+        const widgetDims = { Width: finalWidth, Height: finalHeight };
+        // const widgetDims = { Width: storedWidth, Height: storedHeight };
 
         // Base fields for every resized signature
         const base = {
           ...url,
-          Width: storedWidth,
-          Height: storedHeight,
+          Width: finalWidth,
+          Height: finalHeight,
+          // Width: storedWidth,
+          // Height: storedHeight,
           IsResize: true
         };
 

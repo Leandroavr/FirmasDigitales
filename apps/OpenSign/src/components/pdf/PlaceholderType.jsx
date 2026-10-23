@@ -142,6 +142,56 @@ function PlaceholderType(props) {
   }, [props.pos.SignUrl]);
 
   const formatWidgetName = () => {
+    // Si es widget de firma, mostrar en formato Firma 1: "nombre del firmante"
+    if (type === "signature" || props.pos?.type === "signature") {
+      const widgetName = props?.pos?.options?.name || "";
+      const parts = widgetName.split("-");
+      const lastPart = parts.length > 1 ? parts[parts.length - 1] : "";
+      const matchNum = lastPart.match(/\d+/) || widgetName.match(/\d+/);
+      const signNum = matchNum ? matchNum[0] : "1";
+
+      let signerName = "";
+      if (props.isSignYourself) {
+        try {
+          const userInfo = JSON.parse(localStorage.getItem("UserInformation") || "{}");
+          signerName = userInfo?.name || userInfo?.Name || "";
+        } catch (e) {}
+      } else {
+        if (props.data?.Name) {
+          signerName = props.data.Name;
+        } else if (props.data?.signerName) {
+          signerName = props.data.signerName;
+        } else if (props.pdfDetails?.Signers && Array.isArray(props.pdfDetails.Signers)) {
+          const targetId = props.data?.signerObjId || props.signerObjId || props.data?.Id;
+          const matched = props.pdfDetails.Signers.find(
+            (s) => s.objectId === targetId || s.Id === targetId || s.signerObjId === targetId
+          );
+          if (matched?.Name) signerName = matched.Name;
+          else if (matched?.Role && matched?.Role !== "signer") signerName = matched.Role;
+          else if (matched?.Email) signerName = matched.Email;
+        }
+        if (!signerName && props.data?.Role && props.data?.Role !== "signer") {
+          signerName = props.data.Role;
+        } else if (!signerName && props.data?.Email) {
+          signerName = props.data.Email;
+        }
+      }
+
+      if (signerName) {
+        return `Firma ${signNum}: "${signerName}"`;
+      }
+      return `Firma ${signNum}`;
+    }
+
+    // Codigo original comentado para mantener integridad
+    /*
+    const widgetName = props?.pos?.options?.name;
+    const name = widgetName ? widgetName?.split(`-`) : ["-", "-", "-"];
+    const lastWord = name.length > 1 ? `-${name[name.length - 1]}` : "";
+    const title =
+      props?.pos?.type === name[0] ? `${name[0]}${lastWord}` : widgetName;
+    return defaultData || props?.pos?.options?.hint || title;
+    */
     const widgetName = props?.pos?.options?.name;
     const name = widgetName ? widgetName?.split(`-`) : ["-", "-", "-"];
     const lastWord = name.length > 1 ? `-${name[name.length - 1]}` : "";

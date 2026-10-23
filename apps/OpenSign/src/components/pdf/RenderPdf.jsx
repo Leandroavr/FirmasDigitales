@@ -325,8 +325,10 @@ function RenderPdf(props) {
       props.containerWH
     );
     const defaultWidth = defaultWidthHeight(pos.type).width;
-    const posWidth = pos.Width ? pos.Width : defaultWidth;
-    return posWidth * containerScale;
+    // const posWidth = pos.Width ? pos.Width : defaultWidth;
+    // Garantizar que la firma digital nunca se dibuje por debajo del ancho estandar
+    const finalWidth = pos.Width ? (pos.type === "signature" ? Math.max(pos.Width, defaultWidth) : pos.Width) : defaultWidth;
+    return finalWidth * containerScale;
   };
   const posHeight = (pos, pageNum) => {
     const containerScale = getContainerScale(
@@ -334,8 +336,11 @@ function RenderPdf(props) {
       pageNum || props.pageNumber,
       props.containerWH
     );
-    const posHeight = pos.Height || defaultWidthHeight(pos.type).height;
-    return posHeight * containerScale;
+    const defaultHeight = defaultWidthHeight(pos.type).height;
+    // const posHeight = pos.Height || defaultWidthHeight(pos.type).height;
+    // Garantizar que la firma digital nunca se dibuje por debajo del alto estandar
+    const finalHeight = pos.Height ? (pos.type === "signature" ? Math.max(pos.Height, defaultHeight) : pos.Height) : defaultHeight;
+    return finalHeight * containerScale;
   };
 
   // `smoothScrollTo` is used to provide smooth scrolling while focus on widget
