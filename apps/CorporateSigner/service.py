@@ -247,22 +247,35 @@ class CorporateLogoTextStamp(TextStamp):
             return text_commands, (text_width, text_height)
 
 
-def build_stamp_style(image_path: str = LOGO_PATH, cuba_time_str: str | None = None) -> TextStampStyle:
+def build_stamp_style(
+    image_path: str = LOGO_PATH,
+    cuba_time_str: str | None = None,
+    reason: str | None = None,
+    location: str | None = None,
+) -> TextStampStyle:
+    lines = [
+        "Firmado digitalmente por:",
+        "%(signer)s",
+        "%(email)s",
+        "%(ts)s",
+    ]
+    if reason and reason.strip():
+        lines.append(f"Motivo: {reason.strip()}")
+    if location and location.strip():
+        lines.append(f"Ubicación: {location.strip()}")
+
+    stamp_text = "\n".join(lines)
+    has_extra = bool((reason and reason.strip()) or (location and location.strip()))
     return CorporateLogoTextStampStyle(
         logo_path=image_path,
         cuba_time_str=cuba_time_str,
-        stamp_text=(
-            "Firmado digitalmente por:\n"
-            "%(signer)s\n"
-            "%(email)s\n"
-            "%(ts)s"
-        ),
+        stamp_text=stamp_text,
         timestamp_format="%d/%m/%Y %H:%M:%S",
         border_width=1,
         border_color=(0.15, 0.35, 0.6),
         text_box_style=TextBoxStyle(
-            font_size=10,
-            leading=13,
+            font_size=9 if has_extra else 10,
+            leading=11 if has_extra else 13,
         ),
         inner_content_layout=layout.SimpleBoxLayoutRule(
             x_align=layout.AxisAlignment.ALIGN_MID,
@@ -328,7 +341,8 @@ class PrepareRequest(BaseModel):
     email: str = Field(min_length=3, max_length=320)
     page: int = Field(ge=0)
     box: list[float] = Field(min_length=4, max_length=4)
-    reason: str = Field(default="Corporate digital signature", max_length=256)
+    reason: str | None = Field(default=None, max_length=256)
+    location: str | None = Field(default=None, max_length=256)
     lock_document: bool = Field(default=False)
 
 
@@ -348,7 +362,8 @@ class DirectSignRequest(BaseModel):
     email: str = Field(min_length=1, max_length=320)
     page: int = Field(ge=0)
     box: list[float] = Field(min_length=4, max_length=4)
-    reason: str = Field(default="Corporate digital signature", max_length=256)
+    reason: str | None = Field(default=None, max_length=256)
+    location: str | None = Field(default=None, max_length=256)
     lock_document: bool = Field(default=False)
 
 
@@ -505,10 +520,13 @@ async def prepare(
     has_prev_sigs = check_has_previous_signatures(pdf_bytes)
     appearance_params = {
         "signer": signer_name,
-        "reason": request.reason,
         "email": display_email,
         "ts": trusted_time_str,
     }
+    if request.reason and request.reason.strip():
+        appearance_params["reason"] = request.reason.strip()
+    if request.location and request.location.strip():
+        appearance_params["location"] = request.location.strip()
 
     is_certify = bool(request.lock_document and not has_prev_sigs)
     lock_all_fields = bool(request.lock_document)
@@ -516,14 +534,15 @@ async def prepare(
     signer = PdfSigner(
         PdfSignatureMetadata(
             field_name=signature_field_name,
-            reason=request.reason,
+            reason=request.reason.strip() if request.reason and request.reason.strip() else None,
+            location=request.location.strip() if request.location and request.location.strip() else None,
             name=signer_name,
             md_algorithm="sha256",
             certify=is_certify,
             docmdp_permissions=MDPPerm.NO_CHANGES if is_certify else MDPPerm.FILL_FORMS,
         ),
         signer=ExternalSigner(certificate, None),
-        stamp_style=build_stamp_style(user_image, cuba_time_str=trusted_time_str),
+        stamp_style=build_stamp_style(user_image, cuba_time_str=trusted_time_str, reason=request.reason, location=request.location),
         new_field_spec=SigFieldSpec(
             sig_field_name=signature_field_name,
             on_page=request.page,
@@ -724,10 +743,13 @@ async def sign_direct(
     has_prev_sigs = check_has_previous_signatures(pdf_bytes)
     appearance_params = {
         "signer": signer_name,
-        "reason": request.reason,
         "email": display_email,
         "ts": trusted_time_str,
     }
+    if request.reason and request.reason.strip():
+        appearance_params["reason"] = request.reason.strip()
+    if request.location and request.location.strip():
+        appearance_params["location"] = request.location.strip()
 
     is_certify = bool(request.lock_document and not has_prev_sigs)
     lock_all_fields = bool(request.lock_document)
@@ -736,7 +758,8 @@ async def sign_direct(
         pdf_signer = PdfSigner(
             PdfSignatureMetadata(
                 field_name=signature_field_name,
-                reason=request.reason,
+                reason=request.reason.strip() if request.reason and request.reason.strip() else None,
+                location=request.location.strip() if request.location and request.location.strip() else None,
                 name=signer_name,
                 md_algorithm="sha256",
                 certify=is_certify,
@@ -744,7 +767,7 @@ async def sign_direct(
             ),
             signer=signer,
             timestamper=timestamper,
-            stamp_style=build_stamp_style(user_image, cuba_time_str=trusted_time_str),
+            stamp_style=build_stamp_style(user_image, cuba_time_str=trusted_time_str, reason=request.reason, location=request.location),
             new_field_spec=SigFieldSpec(
                 sig_field_name=signature_field_name,
                 on_page=request.page,
@@ -782,39 +805,18 @@ async def sign_direct(
 
 
             pdf_signer = PdfSigner(
-
-
                 PdfSignatureMetadata(
-
-
                     field_name=signature_field_name,
-
-
-                    reason=request.reason,
-
-
+                    reason=request.reason.strip() if request.reason and request.reason.strip() else None,
+                    location=request.location.strip() if request.location and request.location.strip() else None,
                     name=signer_name,
-
-
                     md_algorithm="sha256",
-
-
                     certify=is_certify,
-
-
                     docmdp_permissions=MDPPerm.NO_CHANGES if is_certify else MDPPerm.FILL_FORMS,
-
-
                 ),
-
-
                 signer=signer,
-
-
                 timestamper=None,
-
-
-                stamp_style=build_stamp_style(user_image, cuba_time_str=trusted_time_str),
+                stamp_style=build_stamp_style(user_image, cuba_time_str=trusted_time_str, reason=request.reason, location=request.location),
 
 
                 new_field_spec=SigFieldSpec(

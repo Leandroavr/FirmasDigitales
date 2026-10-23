@@ -143,6 +143,8 @@ function SignYourSelf() {
     useState(null);
   const [corporateCertificatePassword, setCorporateCertificatePassword] =
     useState("");
+  const [corporateSigningReason, setCorporateSigningReason] = useState("");
+  const [corporateSigningLocation, setCorporateSigningLocation] = useState("");
   const [isCelebration, setIsCelebration] = useState(false);
   const [pdfArrayBuffer, setPdfArrayBuffer] = useState("");
   const [isEmailVerified, setIsEmailVerified] = useState(true);
@@ -793,6 +795,8 @@ function SignYourSelf() {
                   signatureCropBox.y + signatureCropBox.height - y
                 ];
                 const tenantDetails = await getTenantDetails(jsonSender.objectId);
+                const corporateReason = (signingOptions?.corporateSigningReason || "").trim();
+                const corporateLocation = (signingOptions?.corporateSigningLocation || "").trim();
                 const response = await Parse.Cloud.run(
                   "signCorporatePdfDirect",
                   {
@@ -804,7 +808,8 @@ function SignYourSelf() {
                     isSelfSign: true,
                     page: signaturePosition.pageNumber - 1,
                     box,
-                    reason: "Firma digital corporativa",
+                    reason: corporateReason || undefined,
+                    location: corporateLocation || undefined,
                     mailProvider: pdfDetails?.[0]?.MailProvider || "",
                     isCustomCompletionMail: Boolean(
                       tenantDetails?.CompletionBody &&
@@ -818,6 +823,8 @@ function SignYourSelf() {
                 setPdfUrl(response.data);
                 setCorporateCertificateFile(null);
                 setCorporateCertificatePassword("");
+                setCorporateSigningReason("");
+                setCorporateSigningLocation("");
                 dispatch(setIsShowModal({}));
                 dispatch(setTypedSignFont("Fasthand"));
                 await getDocumentDetails(false);
@@ -848,6 +855,7 @@ function SignYourSelf() {
                   alertMessage: t("encrypted-pdf-alert-1")
                 });
               } else if (isCorporateSigning && err instanceof Error) {
+                setCorporateCertificatePassword("");
                 setIsAlert({
                   header: t("error"),
                   isShow: true,
@@ -878,7 +886,9 @@ function SignYourSelf() {
     await embedWidgetsData({
       isCorporateSigning: true,
       corporateCertificateFile,
-      corporateCertificatePassword
+      corporateCertificatePassword,
+      corporateSigningReason,
+      corporateSigningLocation
     });
   };
   //function for get digital signature
@@ -1659,6 +1669,20 @@ function SignYourSelf() {
                           {t("corporate-self-sign-field-ready")}
                         </p>
                         <input
+                          type="text"
+                          className="op-input op-input-bordered op-input-sm mt-2 w-full"
+                          placeholder="Motivo (Opcional)"
+                          value={corporateSigningReason}
+                          onChange={(e) => setCorporateSigningReason(e.target.value)}
+                        />
+                        <input
+                          type="text"
+                          className="op-input op-input-bordered op-input-sm mt-2 w-full"
+                          placeholder="Ubicación (Opcional)"
+                          value={corporateSigningLocation}
+                          onChange={(e) => setCorporateSigningLocation(e.target.value)}
+                        />
+                        <input
                           type="password"
                           autoComplete="new-password"
                           className="op-input op-input-bordered op-input-sm mt-2 w-full"
@@ -1729,8 +1753,22 @@ function SignYourSelf() {
           >
             <div className="flex flex-col gap-3 p-4">
               <p className="text-sm text-base-content">
-                Ingresa la contraseña de tu certificado corporativo para firmar:
+                Ingresa los datos para firmar con tu certificado corporativo:
               </p>
+              <input
+                type="text"
+                className="op-input op-input-bordered op-input-sm w-full"
+                placeholder="Motivo (Opcional)"
+                value={corporateSigningReason}
+                onChange={(e) => setCorporateSigningReason(e.target.value)}
+              />
+              <input
+                type="text"
+                className="op-input op-input-bordered op-input-sm w-full"
+                placeholder="Ubicación (Opcional)"
+                value={corporateSigningLocation}
+                onChange={(e) => setCorporateSigningLocation(e.target.value)}
+              />
               <input
                 type="password"
                 autoComplete="new-password"

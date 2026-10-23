@@ -773,7 +773,7 @@ export async function prepareCorporateSignature(req) {
       'La firma corporativa debe seleccionarse antes de que el primer firmante firme este documento.'
     );
   }
-  const { pdfFile, certificate, page, box, reason } = req.params;
+  const { pdfFile, certificate, page, box, reason, location } = req.params;
   if (!pdfFile || !certificate || !Array.isArray(box) || box.length !== 4) {
     throw new Parse.Error(
       Parse.Error.INVALID_JSON,
@@ -809,7 +809,8 @@ export async function prepareCorporateSignature(req) {
         email: signer.Email,
         page,
         box,
-        reason: reason || 'Corporate digital signature',
+        reason: (reason && typeof reason === 'string' && reason.trim()) ? reason.trim() : undefined,
+        location: (location && typeof location === 'string' && location.trim()) ? location.trim() : undefined,
         lock_document: isFinalSignature,
       },
       {
@@ -940,6 +941,7 @@ export async function signCorporatePdfDirect(req) {
     page,
     box,
     reason,
+    location,
     mailProvider,
     isCustomCompletionMail,
   } = req.params;
@@ -981,7 +983,8 @@ export async function signCorporatePdfDirect(req) {
         email: signer.Email,
         page,
         box,
-        reason: reason || 'Corporate digital signature',
+        reason: (reason && typeof reason === 'string' && reason.trim()) ? reason.trim() : undefined,
+        location: (location && typeof location === 'string' && location.trim()) ? location.trim() : undefined,
         lock_document: isFinalSignature,
       },
       {

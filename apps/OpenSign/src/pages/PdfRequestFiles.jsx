@@ -129,6 +129,8 @@ function PdfRequestFiles(
   const [corporateCertificateFile, setCorporateCertificateFile] = useState(null);
   const [corporateCertificatePassword, setCorporateCertificatePassword] =
     useState("");
+  const [corporateSigningReason, setCorporateSigningReason] = useState("");
+  const [corporateSigningLocation, setCorporateSigningLocation] = useState("");
   const [isDecline, setIsDecline] = useState({ isDeclined: false });
   const [currentSigner, setCurrentSigner] = useState(false);
   const [isAlert, setIsAlert] = useState({ isShow: false, alertMessage: "" });
@@ -975,6 +977,8 @@ function PdfRequestFiles(
                     cropBox.x + x + width,
                     cropBox.y + cropBox.height - y
                   ];
+                  const corporateReason = (signingOptions?.corporateSigningReason || "").trim();
+                  const corporateLocation = (signingOptions?.corporateSigningLocation || "").trim();
                   resSign = await Parse.Cloud.run(
                     "signCorporatePdfDirect",
                     {
@@ -985,7 +989,8 @@ function PdfRequestFiles(
                       userId: contactId,
                       page: signaturePosition.pageNumber - 1,
                       box,
-                      reason: "Firma digital corporativa",
+                      reason: corporateReason || undefined,
+                      location: corporateLocation || undefined,
                       mailProvider: pdfDetails?.[0]?.MailProvider || "",
                       isCustomCompletionMail: Boolean(
                         tenantMailTemplate?.body && tenantMailTemplate?.subject
@@ -1008,6 +1013,8 @@ function PdfRequestFiles(
                   if (isCorporateSigning) {
                     setCorporateCertificateFile(null);
                     setCorporateCertificatePassword("");
+                    setCorporateSigningReason("");
+                    setCorporateSigningLocation("");
                     dispatch(setIsShowModal({}));
                     dispatch(setLastIndex(""));
                   }
@@ -1213,6 +1220,7 @@ function PdfRequestFiles(
                   alertMessage: t("encrypted-pdf-not-support")
                 });
               } else if (isCorporateSigning && err instanceof Error) {
+                setCorporateCertificatePassword("");
                 setIsAlert({
                   isShow: true,
                   alertMessage: err.message
@@ -1255,7 +1263,9 @@ function PdfRequestFiles(
     await handleSignPdf({
       isCorporateSigning: true,
       corporateCertificateFile,
-      corporateCertificatePassword
+      corporateCertificatePassword,
+      corporateSigningReason,
+      corporateSigningLocation
     });
   };
 
@@ -2441,6 +2451,20 @@ function PdfRequestFiles(
                           {t("corporate-signature-field-ready")}
                         </p>
                         <input
+                          type="text"
+                          className="op-input op-input-bordered op-input-sm mt-2 w-full"
+                          placeholder="Motivo (Opcional)"
+                          value={corporateSigningReason}
+                          onChange={(e) => setCorporateSigningReason(e.target.value)}
+                        />
+                        <input
+                          type="text"
+                          className="op-input op-input-bordered op-input-sm mt-2 w-full"
+                          placeholder="Ubicación (Opcional)"
+                          value={corporateSigningLocation}
+                          onChange={(e) => setCorporateSigningLocation(e.target.value)}
+                        />
+                        <input
                           type="password"
                           autoComplete="new-password"
                           className="op-input op-input-bordered op-input-sm mt-2 w-full"
@@ -2561,8 +2585,22 @@ function PdfRequestFiles(
               >
                 <div className="flex flex-col gap-3 p-4">
                   <p className="text-sm text-base-content">
-                    Ingresa la contraseña de tu certificado corporativo para firmar:
+                    Ingresa los datos para firmar con tu certificado corporativo:
                   </p>
+                  <input
+                    type="text"
+                    className="op-input op-input-bordered op-input-sm w-full"
+                    placeholder="Motivo (Opcional)"
+                    value={corporateSigningReason}
+                    onChange={(e) => setCorporateSigningReason(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    className="op-input op-input-bordered op-input-sm w-full"
+                    placeholder="Ubicación (Opcional)"
+                    value={corporateSigningLocation}
+                    onChange={(e) => setCorporateSigningLocation(e.target.value)}
+                  />
                   <input
                     type="password"
                     autoComplete="new-password"
