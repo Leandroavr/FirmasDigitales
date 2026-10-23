@@ -146,6 +146,16 @@ const Forms = (props) => {
     setpercentage(0);
     try {
       const files = Array.from(e.target.files);
+      const nonPdfFiles = files.filter(
+        (f) => f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")
+      );
+      if (nonPdfFiles.length > 0) {
+        alert(t("only-pdf-allowed") || "Solo se permiten archivos en formato PDF.");
+        setFileUpload("");
+        setSelectedFiles([]);
+        removeFile(e);
+        return;
+      }
       const filesNameArr = files.map((f) => f.name);
       setSelectedFiles(filesNameArr);
       if (!files.length) {
@@ -817,7 +827,7 @@ const Forms = (props) => {
             )}
             <div className="text-xs">
               <label className="block">
-                {`${`${t("report-heading.File")} (${t("file-type")}`}${", docx)"}`}
+                {`${t("report-heading.File")} (pdf)`}
                 <span className="text-red-500 text-[13px]">*</span>
               </label>
               {fileupload.length > 0 ? (
@@ -845,7 +855,7 @@ const Forms = (props) => {
                     className="op-file-input op-file-input-bordered op-file-input-sm focus:outline-none hover:border-base-content w-full text-xs"
                     onChange={(e) => handleFileInput(e)}
                     ref={inputFileRef}
-                    accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg"
+                    accept="application/pdf"
                     onInvalid={(e) =>
                       e.target.setCustomValidity(t("input-required"))
                     }
