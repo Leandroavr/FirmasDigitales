@@ -20,6 +20,9 @@ async function sendMailProvider(req) {
         tls: {
           rejectUnauthorized: false,
         },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
       };
 
       // ✅ Add auth if password and username/email exist
@@ -56,14 +59,26 @@ async function sendMailProvider(req) {
     };
 
     if (transporterSMTP) {
-      const res = await transporterSMTP.sendMail(messageParams);
-      console.log('smtp transporter res: ', res?.response);
-      if (!res.err) {
-        if (extUserId) {
-          await updateMailCount(extUserId);
+      let lastErr;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const res = await transporterSMTP.sendMail(messageParams);
+          console.log(`smtp transporter res (${req.params?.recipient}, intento ${attempt}): `, res?.response);
+          if (!res?.err) {
+            if (extUserId) {
+              await updateMailCount(extUserId);
+            }
+            return { status: 'success' };
+          }
+        } catch (sendErr) {
+          lastErr = sendErr;
+          console.warn(`[sendSystemMail] Intento ${attempt}/3 falló para ${req.params?.recipient}: ${sendErr.message}`);
+          if (attempt < 3) {
+            await new Promise(r => setTimeout(r, 1500 * attempt));
+          }
         }
-        return { status: 'success' };
       }
+      if (lastErr) throw lastErr;
     } else {
       if (mailgunApiKey) {
         const res = await mailgunClient.messages.create(mailgunDomain, messageParams);

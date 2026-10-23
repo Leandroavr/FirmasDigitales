@@ -155,33 +155,75 @@ async function updateDoc(
 async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
   try {
     const TenantAppName = 'Firma Digital Brascuba';
-    const auditTrailCount =
-      doc?.AuditTrail?.filter(x => COMPLETION_ACTIVITIES.includes(x.Activity))?.length || 0;
-    const completionRelevant =
-      doc?.Placeholders?.length > 0 ? doc.Placeholders.filter(isCompletionRelevant) : [];
-    const signersCount = completionRelevant?.length || doc?.Signers?.length || 1;
 
-    const sender = doc.ExtUserPtr;
-    const pdfName = doc.Name;
-    const creatorEmail = sender?.Email;
-    const signerEmail = (signUser.Email || signUser.email || '').toLowerCase().trim();
-    const signerName = signUser.Name || signerEmail;
+    // Contar firmantes completados únicos de forma precisa
+    const completedSignerIds = new Set(
+      (doc?.AuditTrail || [])
+        .filter(x => COMPLETION_ACTIVITIES.includes(x.Activity) && (x.UserPtr?.objectId || x.UserPtr))
+        .map(x => (x.UserPtr?.objectId || x.UserPtr).toString())
+    );
+    if (signUser?.objectId) {
+      completedSignerIds.add(signUser.objectId.toString());
+    }
+
+    const placeholderSigners = new Set(
+      (doc?.Placeholders || [])
+        .filter(isCompletionRelevant)
+        .map(p => p?.signerObjId || p?.signerPtr?.objectId || p?.email)
+        .filter(Boolean)
+    );
+    const directSigners = new Set(
+      (doc?.Signers || [])
+        .map(s => s?.objectId || s?.Email || s?.email)
+        .filter(Boolean)
+    );
+    const signersCount = Math.max(
+      placeholderSigners.size,
+      directSigners.size,
+      completedSignerIds.size,
+      1
+    );
+    const auditTrailCount = Math.min(completedSignerIds.size, signersCount);
+
+    const sender = doc?.ExtUserPtr;
+    const pdfName = doc?.Name || 'Documento';
+    const creatorEmail = (sender?.Email || sender?.email || '').toLowerCase().trim();
+    const signerEmail = (signUser?.Email || signUser?.email || '').toLowerCase().trim();
+    const signerName = signUser?.Name || signUser?.name || signerEmail;
 
     // Recopilar todos los involucrados a notificar: propietario + demás firmantes
     const recipientSet = new Set();
-    if (creatorEmail && creatorEmail.toLowerCase().trim() !== signerEmail) {
-      recipientSet.add(creatorEmail.toLowerCase().trim());
+    if (creatorEmail && creatorEmail !== signerEmail) {
+      recipientSet.add(creatorEmail);
     }
     if (Array.isArray(doc?.Signers)) {
-      doc.Signers.forEach(s => {
-        const sMail = (s?.Email || s?.email || '').toLowerCase().trim();
+      for (const s of doc.Signers) {
+        let sMail = (s?.Email || s?.email || '').toLowerCase().trim();
+        if (!sMail && s?.objectId) {
+          try {
+            const cbQuery = new Parse.Query('contracts_Contactbook');
+            const contact = await cbQuery.get(s.objectId, { useMasterKey: true });
+            sMail = (contact?.get('Email') || '').toLowerCase().trim();
+          } catch (e) {
+            // Ignorar si no es contactbook
+          }
+        }
         if (sMail && sMail !== signerEmail) {
           recipientSet.add(sMail);
+        }
+      }
+    }
+    if (Array.isArray(doc?.Placeholders)) {
+      doc.Placeholders.forEach(p => {
+        const pMail = (p?.email || p?.signerPtr?.Email || p?.signerPtr?.email || '').toLowerCase().trim();
+        if (pMail && pMail !== signerEmail) {
+          recipientSet.add(pMail);
         }
       });
     }
 
     const recipients = Array.from(recipientSet);
+    console.log(`[sendNotifyMail] Doc: "${pdfName}", Signer: ${signerName} (${signerEmail}), Avance: ${auditTrailCount} de ${signersCount}, Destinatarios: [${recipients.join(', ')}]`);
     if (recipients.length === 0) return;
 
     const basePublicUrl = process.env.PUBLIC_URL || publicUrl || 'https://localhost:3001';
@@ -215,7 +257,13 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
         html: body,
         mailProvider: mailProvider,
       };
-      await sendSystemMail({ params });
+      try {
+        await sendSystemMail({ params });
+      } catch (errRecip) {
+        console.error(`[sendNotifyMail] Falló envío a ${recipientEmail}:`, errRecip);
+      }
+      // Pausa breve para evitar ráfagas simultáneas contra el servidor SMTP
+      await new Promise(r => setTimeout(r, 400));
     }
   } catch (err) {
     console.log('Error in sendNotifyMail:', err);
@@ -546,7 +594,12 @@ async function PDF(req) {
           isCompleted ? documentHash : undefined,
           auditActivity
         );
-        sendNotifyMail(_resDoc, signUser, mailProvider, publicUrl);
+        const docForNotify = {
+          ..._resDoc,
+          AuditTrail: updatedDoc?.AuditTrail || _resDoc?.AuditTrail,
+          SignedUrl: data?.imageUrl || _resDoc?.SignedUrl,
+        };
+        sendNotifyMail(docForNotify, signUser, mailProvider, publicUrl);
         saveFileUsage(pdfSize, data.imageUrl, _resDoc?.CreatedBy?.objectId);
         if (updatedDoc && updatedDoc.isCompleted) {
           const hashForDoc = documentHash || updatedDoc?.DocumentHash;
@@ -805,7 +858,12 @@ export async function completeCorporateSignature(req) {
     if (!updated || updated === 'err' || updated.message !== 'success') {
       throw new Error('No se pudo actualizar el documento tras la firma.');
     }
-    sendNotifyMail(data, signer, mailProvider || '', req.headers.public_url);
+    const docForNotify = {
+      ...data,
+      AuditTrail: updated?.AuditTrail || data?.AuditTrail,
+      SignedUrl: uploaded?.imageUrl || data?.SignedUrl,
+    };
+    sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
     saveFileUsage(signedPdf.length, uploaded.imageUrl, data?.CreatedBy?.objectId);
     if (updated.isCompleted) {
       const tenantPfx = data?.ExtUserPtr?.TenantId?.PfxFile;
@@ -933,7 +991,12 @@ export async function signCorporatePdfDirect(req) {
     if (!updated || updated === 'err' || updated.message !== 'success') {
       throw new Error('No se pudo actualizar el documento tras la firma.');
     }
-    sendNotifyMail(data, signer, mailProvider || '', req.headers.public_url);
+    const docForNotify = {
+      ...data,
+      AuditTrail: updated?.AuditTrail || data?.AuditTrail,
+      SignedUrl: uploaded?.imageUrl || data?.SignedUrl,
+    };
+    sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
     saveFileUsage(signedPdf.length, uploaded.imageUrl, data?.CreatedBy?.objectId);
     if (updated.isCompleted) {
       const tenantPfx = data?.ExtUserPtr?.TenantId?.PfxFile;
