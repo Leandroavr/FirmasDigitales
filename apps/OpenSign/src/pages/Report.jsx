@@ -52,7 +52,10 @@ const Report = () => {
     setMobileSearchOpen(false);
     const saved = JSON.parse(localStorage.getItem("reportColumns") || "{}");
     if (saved[id]) {
-      setVisibleColumns(saved[id].visible || saved[id]);
+      const savedVisible = (saved[id].visible || saved[id]).filter(
+        (c) => !["Enable Tour", "Redirect url"].includes(c)
+      );
+      setVisibleColumns(savedVisible);
       setColumnLabels(saved[id].labels || {});
     } else {
       setVisibleColumns([]);
@@ -192,7 +195,9 @@ const Report = () => {
         const savedCols = JSON.parse(
           localStorage.getItem("reportColumns") || "{}"
         );
-        const visible = savedCols[id]?.visible || json.heading;
+        const visible = (savedCols[id]?.visible || json.heading).filter(
+          (c) => !["Enable Tour", "Redirect url"].includes(c)
+        );
         const labels = savedCols[id]?.labels || {};
         if (!savedCols[id] || id === "contacts") {
           savedCols[id] = { visible: json.heading, labels: {} };

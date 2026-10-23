@@ -1,9 +1,9 @@
 export const extraCols = [
   "Note",
   "Time to complete (Days)",
-  "Enable Tour",
+  // "Enable Tour",
   "Notify on signatures",
-  "Redirect url",
+  // "Redirect url",
   "Created Date",
   "Updated Date"
 ];

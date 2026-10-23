@@ -33,7 +33,9 @@ const ColumnSelector = ({
   return (
     <ModalUi isOpen={isOpen} title={t("select-columns")} handleClose={onClose}>
       <div className="p-[20px] flex flex-col gap-2">
-        {allColumns.map((col, i) => (
+        {allColumns
+          .filter((col) => !["Enable Tour", "Redirect url"].includes(col))
+          .map((col, i) => (
           <div key={col} className="flex justify-between items-center gap-2">
             <span className="flex justify-center items-center h-full">
               <input
