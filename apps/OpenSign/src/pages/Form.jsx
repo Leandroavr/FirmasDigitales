@@ -1164,18 +1164,6 @@ const Forms = (props) => {
                           </div>
                         )}
                       </div>
-                      {props.bcc && (
-                        <SignersInput
-                          label={t("Bcc")}
-                          initialData={bcc}
-                          onChange={handleBcc}
-                          isReset={isReset}
-                          zindex={50}
-                          helpText={t("bcc-help")}
-                          isCaptureAllData
-                          isAddYourSelfCheckbox
-                        />
-                      )}
                       {props.cc && (
                         <SignersInput
                           label={t("Cc")}
@@ -1184,6 +1172,18 @@ const Forms = (props) => {
                           isReset={isReset}
                           zindex={50}
                           helpText={t("cc-help")}
+                          isCaptureAllData
+                          isAddYourSelfCheckbox
+                        />
+                      )}
+                      {props.bcc && (
+                        <SignersInput
+                          label={t("Bcc")}
+                          initialData={bcc}
+                          onChange={handleBcc}
+                          isReset={isReset}
+                          zindex={50}
+                          helpText={t("bcc-help")}
                           isCaptureAllData
                           isAddYourSelfCheckbox
                         />

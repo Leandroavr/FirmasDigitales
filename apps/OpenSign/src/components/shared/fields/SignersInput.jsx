@@ -157,8 +157,9 @@ const SignersInput = (props) => {
           className={`z-[${props?.zindex ? props.zindex : 30}] absolute ml-1 text-xs`}
         >
           <Tooltip
-            id={`${props.label ? props.label : "signers"}-tooltip`}
+            id={props.tooltipId || `${props.label ? String(props.label).replace(/[^a-zA-Z0-9]/g, "_") : "signers"}-tooltip`}
             message={props.helpText ? props.helpText : t("signers-help")}
+            maxWidth="max-w-[360px]"
           />
         </span>
       </label>
@@ -172,6 +173,7 @@ const SignersInput = (props) => {
             isMulti
             cacheOptions
             defaultOptions
+            placeholder={props.placeholder || t("select-contact-placeholder") || "Buscar o seleccionar contacto..."}
             options={state || []}
             value={selected}
             onChange={onChange}

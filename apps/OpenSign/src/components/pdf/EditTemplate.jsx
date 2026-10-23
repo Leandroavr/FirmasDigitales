@@ -500,22 +500,22 @@ const EditTemplate = ({
 
             <div className="text-xs mt-3">
               <SignersInput
-                label={t("Bcc")}
-                initialData={template?.Bcc}
-                onChange={handleBcc}
+                label={t("Cc")}
+                initialData={template?.Cc}
+                onChange={handleCc}
                 zindex={50}
-                helpText={t("bcc-help")}
+                helpText={t("cc-help")}
                 isCaptureAllData
                 isAddYourSelfCheckbox={isAddYourSelfCheckbox}
               />
             </div>
             <div className="text-xs mt-3">
               <SignersInput
-                label={t("Cc")}
-                initialData={template?.Cc}
-                onChange={handleCc}
+                label={t("Bcc")}
+                initialData={template?.Bcc}
+                onChange={handleBcc}
                 zindex={50}
-                helpText={t("cc-help")}
+                helpText={t("bcc-help")}
                 isCaptureAllData
                 isAddYourSelfCheckbox={isAddYourSelfCheckbox}
               />

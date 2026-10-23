@@ -262,8 +262,8 @@
   "create": "Create",
   "signers": "Signers",
   "signers-help": "Begin typing a contact's name to see suggested signers from your saved contacts or add new ones. Arrange the signing order by adding signers in the desired sequence. Use the '+' button to include signers and the 'x' to remove them. Each signer will receive an email prompt to sign the document in the order listed.",
-  "bcc-help": "Start typing a contact's name to see suggestions from your saved contacts or add new ones. Use the '+' button to add a user and the 'x' to remove them. The selected user's email will be added as a Bcc (blind carbon copy). Each user will receive an email notification once the document is completed.",
-  "cc-help": "Start typing a contact's name to see suggestions from your saved contacts or add new ones. Use the '+' button to add a user and the 'x' to remove them. The selected user's email will be added as a cc (carbon copy). Each user will receive an email notification once the document is completed.",
+  "bcc-help": "Blind copy (Bcc): People added here do not sign. They will receive a copy of the final signed document confidentially (e.g. archiving or legal audit). No signer will see they were copied.",
+  "cc-help": "Visible copy (Cc): People added here do not sign. They will receive a copy of the final signed document for information. Their email is visible to all signers.",
   "add-signer": "Add Signer",
   "contact-not-found": "Contact not found",
   "add-yourself": "Add yourself",
@@ -1607,9 +1607,9 @@
   "logic-op-unchecked": "is not checked",
   "widget-hidden-due-to-logic": "This widget is hidden due to conditional logic.",
   "remove": "Remove",
-  "attachement-note":"Note: This widget allows signers to upload a file during the signing process. The uploaded file will be appended as additional pages at the end of the existing PDF",
-  "attachments-docx-not-supported":"We are currently experiencing an issue with DOCX file uploads. Please try uploading the document in a different supported format, or try again later.",
-   "access-code": "Access code",
+  "attachement-note": "Note: This widget allows signers to upload a file during the signing process. The uploaded file will be appended as additional pages at the end of the existing PDF",
+  "attachments-docx-not-supported": "We are currently experiencing an issue with DOCX file uploads. Please try uploading the document in a different supported format, or try again later.",
+  "access-code": "Access code",
   "access-code-set": "Access code set",
   "access-code-add": "Add access code",
   "access-code-help": "Optional secret only this signer knows. They will be required to enter it before viewing or signing the document. Share it with the recipient out-of-band (phone, in person).",
@@ -1627,5 +1627,8 @@
   "access-code-upgrade-msg": "Access codes are available on paid plans only. Upgrade your plan to add access codes for recipients.",
   "show-access-code": "Show access code",
   "hide-access-code": "Hide access code",
-  "already-copied-to-clipboard": "Already copied to clipboard"
+  "already-copied-to-clipboard": "Already copied to clipboard",
+  "Cc": "Visible copy (Cc)",
+  "Bcc": "Blind copy (Bcc)",
+  "select-contact-placeholder": "Search or select contact..."
 }
