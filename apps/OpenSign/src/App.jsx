@@ -100,7 +100,7 @@ function App() {
               <Route path="/dashboard/:id" element={<Dashboard />} />
               <Route path="/profile" element={<Lazy Page={UserProfile} />} />
               <Route path="/drive" element={<Lazy Page={Opensigndrive} />} />
-              <Route path="/managesign" element={<Lazy Page={ManageSign} />} />
+              <Route path="/managesign" element={<Navigate to="/dashboard/35KBoSgoAK" replace />} />
               <Route
                 path="/template/:templateId"
                 element={<DragProvider Page={TemplatePlaceholder} />}

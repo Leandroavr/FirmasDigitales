@@ -43,16 +43,30 @@ const Sidebar = () => {
         const Extand_Class = localStorage.getItem("Extand_Class");
         const extClass = Extand_Class && JSON.parse(Extand_Class);
         const userRole = extClass?.[0]?.UserRole || "contracts_User";
-        const isAdmin =
-          userRole === "contracts_Admin" || userRole === "contracts_OrgAdmin";
-        const newSidebarList = sidebarList.map((item) => {
-          if (item.title !== "Settings") return item;
-          const newItem = { ...item };
-          const baseChildren = isAdmin ? subSetting : [];
-            const mysignature = newItem.children.slice(0, 1);
-            newItem.children = [...mysignature, ...baseChildren];
-          return newItem;
-        });
+        // El apartado Ajustes sólo está permitido para el admin general (contracts_Admin) con la vista de Usuarios
+        const isGeneralAdmin = userRole === "contracts_Admin";
+        const newSidebarList = sidebarList
+          .map((item) => {
+            if (item.title !== "Settings") return item;
+            if (isGeneralAdmin) {
+              return {
+                ...item,
+                children: [
+                  {
+                    icon: "fa-light fa-users fa-fw",
+                    title: "Users",
+                    target: "_self",
+                    pageType: "",
+                    description: "",
+                    objectId: "users"
+                  }
+                ]
+              };
+            }
+            // Para todos los demás roles (usuarios u otros administradores), no se muestra Ajustes
+            return null;
+          })
+          .filter(Boolean);
         setmenuList(newSidebarList);
       }
     } catch (e) {

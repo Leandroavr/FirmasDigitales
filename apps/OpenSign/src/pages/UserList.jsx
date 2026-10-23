@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Parse from "parse";
 import Alert from "../primitives/Alert";
 import Loader from "../primitives/Loader";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import ModalUi from "../primitives/ModalUi";
 import pad from "../assets/images/pad.svg";
 import Tooltip from "../primitives/Tooltip";
@@ -30,6 +30,7 @@ const UserList = () => {
   const isDashboard =
     location?.pathname === "/dashboard/35KBoSgoAK" ? true : false;
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
   const [isAlert, setIsAlert] = useState({ type: "success", msg: "" });
   const [isActiveModal, setIsActiveModal] = useState({});
   const [isActLoader, setIsActLoader] = useState({});
@@ -110,13 +111,12 @@ const UserList = () => {
         JSON.parse(localStorage.getItem("Extand_Class"))?.[0];
 
       if (extUser) {
-        const admin =
-          extUser?.UserRole &&
-          (extUser?.UserRole === "contracts_Admin" ||
-            extUser?.UserRole === "contracts_OrgAdmin")
-            ? true
-            : false;
+        const admin = extUser?.UserRole === "contracts_Admin";
         setIsAdmin(admin);
+        if (!admin) {
+          navigate("/dashboard/35KBoSgoAK");
+          return;
+        }
       }
       const res = await Parse.Cloud.run("getuserlistbyorg", {
         organizationId: extUser.OrganizationId.objectId

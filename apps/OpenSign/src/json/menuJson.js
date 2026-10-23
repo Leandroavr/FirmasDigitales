@@ -146,12 +146,12 @@ const sidebarList = [
     objectId: null,
     children: [
       {
-        icon: "fa-light fa-pen-fancy",
-        title: "My Signature",
+        icon: "fa-light fa-users fa-fw",
+        title: "Users",
         target: "_self",
         pageType: "",
         description: "",
-        objectId: "managesign"
+        objectId: "users"
       }
     ]
   }
