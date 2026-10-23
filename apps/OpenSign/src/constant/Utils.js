@@ -4191,32 +4191,31 @@ function _removeWidgetAnnotations(pdfDoc) {
 }
 
 export const mailTemplate = (param) => {
-  const appName = "Gestor Pdfs";
-  const logo = `<div style='padding:10px'><img src='https://qikinnovation.ams3.digitaloceanspaces.com/logo.png' height='50' /></div>`;
-
-  const subject = `${param.senderName} le ha solicitado firmar "${param.title}"`;
+  const TenantAppName = "Firma Digital Brascuba";
+  const subject = `[Firma Digital] ${param.senderName} le ha solicitado firmar "${param.title}"`;
   const body =
-    "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body><div style='background-color:#f5f5f5;padding:20px'><div style='background:white;padding-bottom:20px'>" +
-    logo +
-    `<div style='padding:2px;font-family:system-ui;background-color:${themeColor}'><p style='font-size:20px;font-weight:400;color:white;padding-left:20px'>Solicitud de Firma Digital</p></div><div><p style='padding:20px;font-size:14px;margin-bottom:10px'>` +
-    param.senderName +
-    " le ha solicitado revisar y firmar <strong>" +
-    param.title +
-    "</strong>.</p><div style='padding: 5px 0px 5px 25px;display:flex;flex-direction:row;justify-content:space-around'><table><tr><td style='font-weight:bold;font-family:sans-serif;font-size:15px'>Remitente</td><td></td><td style='color:#626363;font-weight:bold'>" +
-    param.senderMail +
-    "</td></tr><tr><td style='font-weight:bold;font-family:sans-serif;font-size:15px'>Organización</td><td></td><td style='color:#626363;font-weight:bold'> " +
-    param.organization +
-    "</td></tr><tr><td style='font-weight:bold;font-family:sans-serif;font-size:15px'>Vence el</td><td></td><td style='color:#626363;font-weight:bold'>" +
-    param.localExpireDate +
-    "</td></tr><tr><td style='font-weight:bold;font-family:sans-serif;font-size:15px'>Nota</td><td></td><td style='color:#626363;font-weight:bold'>" +
-    param.note +
-    "</td></tr><tr><td></td><td></td></tr></table></div> <div style='margin-left:70px'><a target=_blank href=" +
-    param.signingUrl +
-    "><button style='padding:12px 24px;background-color:#d46b0f;color:white;border:0px;border-radius:4px;font-weight:bold;margin-top:25px;cursor:pointer'>Firmar aquí</button></a></div><div style='display:flex;justify-content:center;margin-top:10px'></div></div></div><div><p style='padding:15px;color:#777;font-size:13px'>Este es un correo automático de " +
-    appName +
-    ". Si tiene alguna duda respecto a este correo, por favor contacte al remitente " +
-    param.senderMail +
-    " directamente.</p></div></div></body></html> ";
+    "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body>" +
+    "<div style='background-color:#f5f5f5;padding:20px'>" +
+    "<div style='background-color:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" +
+    "<div style='padding:16px 20px;font-family:system-ui,sans-serif;background-color:#0b3c6d'>" +
+    "<h2 style='font-size:18px;margin:0;color:white;'>Solicitud de Firma Digital</h2>" +
+    "</div>" +
+    "<div style='padding:24px 20px;font-family:system-ui,sans-serif;font-size:14px;color:#333;line-height:1.6'>" +
+    "<p>Estimado(a) usuario(a),</p>" +
+    `<p><strong>${param.senderName}</strong> (${param.senderMail}) le ha solicitado revisar y firmar digitalmente el documento <strong>"${param.title}"</strong>.</p>` +
+    "<div style='background-color:#f0f4f8;border-left:4px solid #0b3c6d;padding:14px 16px;margin:18px 0'>" +
+    "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#333'>" +
+    `<tr><td style='padding:4px 0;width:120px;font-weight:bold'>Remitente:</td><td>${param.senderName} (${param.senderMail})</td></tr>` +
+    (param.organization ? `<tr><td style='padding:4px 0;font-weight:bold'>Organización:</td><td>${param.organization}</td></tr>` : "") +
+    (param.localExpireDate ? `<tr><td style='padding:4px 0;font-weight:bold'>Vence el:</td><td>${param.localExpireDate}</td></tr>` : "") +
+    (param.note ? `<tr><td style='padding:4px 0;font-weight:bold'>Nota:</td><td>${param.note}</td></tr>` : "") +
+    "</table>" +
+    "</div>" +
+    `<div style='margin:25px 0'><a target='_blank' href='${param.signingUrl}' style='display:inline-block;padding:12px 24px;background-color:#0b3c6d;color:white;text-decoration:none;border-radius:4px;font-weight:bold'>Ingresar a Firmar Documento</a></div>` +
+    "<p style='font-size:12px;color:#777;margin-top:20px'><strong>Aviso de seguridad:</strong> Cada usuario debe iniciar sesión obligatoriamente con sus credenciales institucionales para revisar o firmar en la plataforma.</p>" +
+    "</div></div>" +
+    `<div><p style='padding:15px;color:#888;font-size:12px;text-align:center'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
+    "</div></body></html>";
   return { subject, body };
 };
 
@@ -4574,7 +4573,7 @@ export const sendEmailToSigners = async (
     ? getDocumentExpDate
     : getTemplateExpDate;
   const newDate = new Date(expireDate);
-  const localExpireDate = newDate.toLocaleDateString("en-US", {
+  const localExpireDate = newDate.toLocaleDateString("es-ES", {
     day: "numeric",
     month: "long",
     year: "numeric"

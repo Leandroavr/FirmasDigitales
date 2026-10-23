@@ -1060,7 +1060,7 @@ function PdfRequestFiles(
                       const expireDate = expiry;
                       const newDate = new Date(expireDate);
                       const localExpireDate = newDate.toLocaleDateString(
-                        "en-US",
+                        "es-ES",
                         { day: "numeric", month: "long", year: "numeric" }
                       );
                       let senderEmail =
