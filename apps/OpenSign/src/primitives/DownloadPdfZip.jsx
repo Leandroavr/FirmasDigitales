@@ -20,6 +20,14 @@ function DownloadPdfZip(props) {
     { id: 1, label: t("download-pdf") }
   ];
 
+  // Descarga directa automática si alguna vez se abre este modal
+  React.useEffect(() => {
+    if (props.isDownloadModal) {
+      props.setIsDownloadModal(false);
+      handleDownloadPdf(props.pdfDetails, setIsDownloading, props?.pdfBase64);
+    }
+  }, [props.isDownloadModal]);
+
   const handleDownload = async () => {
     if (selectType === 1) {
       await handleDownloadPdf(

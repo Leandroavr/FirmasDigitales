@@ -142,14 +142,9 @@ function PlaceholderType(props) {
   }, [props.pos.SignUrl]);
 
   const formatWidgetName = () => {
-    // Si es widget de firma, mostrar en formato Firma 1: "nombre del firmante"
+    // Si es widget de firma, mostrar en formato Firma X: "nombre del firmante"
+    // donde X corresponde al orden del rol (1, 2, 3...) según la lista de roles
     if (type === "signature" || props.pos?.type === "signature") {
-      const widgetName = props?.pos?.options?.name || "";
-      const parts = widgetName.split("-");
-      const lastPart = parts.length > 1 ? parts[parts.length - 1] : "";
-      const matchNum = lastPart.match(/\d+/) || widgetName.match(/\d+/);
-      const signNum = matchNum ? matchNum[0] : "1";
-
       let signerName = "";
       if (props.isSignYourself) {
         try {
@@ -177,10 +172,51 @@ function PlaceholderType(props) {
         }
       }
 
-      if (signerName) {
-        return `Firma ${signNum}: "${signerName}"`;
+      // Determinar el número de orden del rol:
+      let roleOrder = null;
+      if (props.isSignYourself) {
+        roleOrder = 1;
+      } else {
+        // 1. Buscar en props.xyPosition (lista de roles/firmantes ordenada)
+        const signersList = (Array.isArray(props.xyPosition) ? props.xyPosition : []).filter(
+          (x) => x?.Role !== "prefill"
+        );
+        const targetId = props.data?.Id || props.data?.signerObjId || props.signerObjId;
+        const targetRole = props.data?.Role;
+
+        let foundIdx = signersList.findIndex((x) => {
+          if (targetId && (x.Id === targetId || (x.signerObjId && x.signerObjId === targetId))) return true;
+          if (targetRole && x.Role && x.Role.toLowerCase() === targetRole.toLowerCase()) return true;
+          return false;
+        });
+
+        // 2. Si no se encontró en xyPosition, buscar en props.pdfDetails?.Signers
+        if (foundIdx === -1 && props.pdfDetails?.Signers && Array.isArray(props.pdfDetails.Signers)) {
+          foundIdx = props.pdfDetails.Signers.findIndex((s) => {
+            if (targetId && (s.objectId === targetId || s.Id === targetId || s.signerObjId === targetId)) return true;
+            if (targetRole && s.Role && s.Role.toLowerCase() === targetRole.toLowerCase()) return true;
+            return false;
+          });
+        }
+
+        if (foundIdx !== -1) {
+          roleOrder = foundIdx + 1;
+        }
       }
-      return `Firma ${signNum}`;
+
+      // Fallback a extraer número del nombre interno del widget si no se pudo determinar por rol
+      if (!roleOrder) {
+        const widgetName = props?.pos?.options?.name || "";
+        const parts = widgetName.split("-");
+        const lastPart = parts.length > 1 ? parts[parts.length - 1] : "";
+        const matchNum = lastPart.match(/\d+/) || widgetName.match(/\d+/);
+        roleOrder = matchNum ? matchNum[0] : "1";
+      }
+
+      if (signerName) {
+        return `Firma ${roleOrder}: "${signerName}"`;
+      }
+      return `Firma ${roleOrder}`;
     }
 
     // Codigo original comentado para mantener integridad

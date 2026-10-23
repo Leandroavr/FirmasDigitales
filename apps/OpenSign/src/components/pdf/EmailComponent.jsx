@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   handleToPrint,
+  handleDownloadPdf,
 } from "../../constant/Utils";
 import {
   emailRegex,
@@ -128,9 +129,11 @@ function EmailComponent({
               )}
               <button
                 className="op-btn op-btn-primary op-btn-sm text-xs md:text-[15px] ml-2"
-                onClick={() => {
+                onClick={async () => {
                   handleClose();
-                  setIsDownloadModal(true);
+                  // Descarga directa sin modal secundario
+                  await handleDownloadPdf(pdfDetails, setIsDownloading);
+                  // setIsDownloadModal(true);
                 }}
               >
                 <i className="fa-light fa-download" aria-hidden="true"></i>

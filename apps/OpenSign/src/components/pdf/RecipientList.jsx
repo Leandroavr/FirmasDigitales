@@ -124,16 +124,16 @@ const RecipientList = (props) => {
             <div
               ref={animationParent}
               key={ind}
-              draggable={props.sendInOrder && !isMobile ? true : false}
+              draggable={!isMobile && (props.sendInOrder || props.isTemplateFlow || props.handleAddSigner || props.title === t("roles") || props.title === "Roles") ? true : false}
               onDragStart={(e) =>
-                props.sendInOrder && !isMobile && handleDragStart(e, ind)
+                !isMobile && (props.sendInOrder || props.isTemplateFlow || props.handleAddSigner || props.title === t("roles") || props.title === "Roles") && handleDragStart(e, ind)
               }
               onDragOver={(e) =>
-                props.sendInOrder && !isMobile && handleDragOver(e)
+                !isMobile && (props.sendInOrder || props.isTemplateFlow || props.handleAddSigner || props.title === t("roles") || props.title === "Roles") && handleDragOver(e)
               }
               onDrop={(e) =>
-                props.sendInOrder &&
                 !isMobile &&
+                (props.sendInOrder || props.isTemplateFlow || props.handleAddSigner || props.title === t("roles") || props.title === "Roles") &&
                 handleChangeSequence(e, ind, null, null, obj)
               }
               data-tut="recipientArea"
@@ -221,7 +221,7 @@ const RecipientList = (props) => {
                   )}
                 </div>
               </div>
-              {isMobile && props.sendInOrder && (
+              {isMobile && (props.sendInOrder || props.isTemplateFlow || props.handleAddSigner || props.title === t("roles") || props.title === "Roles") && (
                 <div className="flex flex-row items-center gap-[5px] mr-2">
                   <div
                     onClick={(e) => {
