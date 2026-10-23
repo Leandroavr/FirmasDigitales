@@ -1138,7 +1138,6 @@ function PdfRequestFiles(
                           signingUrl: signPdf
                         };
                         let params = {
-                          replyto: senderEmail || "",
                           extUserId: extUserId,
                           recipient: user.Email,
                           subject: replaceVar?.subject

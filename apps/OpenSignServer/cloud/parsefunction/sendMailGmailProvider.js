@@ -68,7 +68,7 @@ const makeEmail = async (
   const boundary = 'boundary_' + Date.now().toString(16);
   const bccHeader = bcc && bcc.length > 0 ? `BCC: ${bcc.join(',')}\n` : ''; // Construct BCC header if provided
   const ccHeader = cc && cc.length > 0 ? `CC: ${cc.join(',')}\n` : ''; // Construct CC header if provided
-  const replyToHeader = replyto ? `Reply-To: ${replyto}\n` : ''; // Construct Reply-To header if provided
+  const replyToHeader = '';
 
   let str;
   if (url) {

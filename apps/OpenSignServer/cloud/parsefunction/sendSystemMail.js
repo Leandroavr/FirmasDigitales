@@ -46,7 +46,6 @@ async function sendMailProvider(req) {
 
     const platformName = process.env.PLATFORM_EMAIL_NAME || process.env.APP_NAME || 'Firma Digital Brascuba';
     const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : (process.env.MAILGUN_SENDER || 'firmadigital@empresa.cu');
-    const replyto = req.params?.replyto || req.params?.senderMail || '';
     const fromHeader = `"${platformName}" <${mailsender}>`;
     const messageParams = {
       from: fromHeader,
@@ -55,7 +54,6 @@ async function sendMailProvider(req) {
       text: req.params.text || 'mail',
       html: req.params?.html ? req.params.html + reportMsg : '',
       bcc: req.params.bcc ? req.params.bcc : undefined,
-      replyTo: replyto ? replyto : undefined,
     };
 
     if (transporterSMTP) {

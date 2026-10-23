@@ -127,7 +127,6 @@ async function sendMailProvider(params) {
         const attachment = (file.content || file.data) ? [file] : [];
         const platformName = process.env.PLATFORM_EMAIL_NAME || process.env.APP_NAME || 'Firma Digital Brascuba';
         const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : (process.env.MAILGUN_SENDER || 'firmadigital@empresa.cu');
-        const replyto = params?.replyto || params?.senderMail || '';
         const fromHeader = `"${platformName}" <${mailsender}>`;
         const messageParams = {
           from: fromHeader,
@@ -139,7 +138,6 @@ async function sendMailProvider(params) {
           attachment: smtpenable ? undefined : attachment,
           bcc: params.bcc ? params.bcc : undefined,
           cc: params.cc ? params.cc : undefined,
-          replyTo: replyto ? replyto : undefined,
         };
         const certificatePath = params.certificatePath || `./exports/certificate.pdf`;
 
@@ -188,7 +186,6 @@ async function sendMailProvider(params) {
     } else {
       const from = params.from || '';
       const mailsender = smtpenable ? process.env.SMTP_USER_EMAIL : process.env.MAILGUN_SENDER;
-      const replyto = params?.replyto || '';
       const messageParams = {
         from: from + ' <' + mailsender + '>',
         to: params.recipient,
@@ -197,7 +194,6 @@ async function sendMailProvider(params) {
         html: params?.html ? params.html + reportMsg : '',
         bcc: params.bcc ? params.bcc : undefined,
         cc: params.cc ? params.cc : undefined,
-        replyTo: replyto ? replyto : undefined,
       };
 
       if (transporterSMTP) {

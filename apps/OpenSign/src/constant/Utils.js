@@ -4685,7 +4685,6 @@ export const sendEmailToSigners = async (
         subject: replaceVar?.subject
           ? replaceVar?.subject
           : defaultTemplate.subject,
-        replyto: senderEmail,
         from: from,
         html: replaceVar?.body ? replaceVar?.body : defaultTemplate.body
       };

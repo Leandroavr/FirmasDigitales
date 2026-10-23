@@ -60,7 +60,6 @@ export default async function forwardDoc(request) {
             url: _docRes?.SignedUrl || '',
             recipient: recipientEmail,
             subject: subject,
-            replyto: replyTo || '',
             from: from,
             html: body,
           };
