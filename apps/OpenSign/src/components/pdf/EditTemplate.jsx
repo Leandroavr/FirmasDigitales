@@ -50,7 +50,7 @@ const EditTemplate = ({
     NotifyOnSignatures:
       template?.NotifyOnSignatures !== undefined
         ? template?.NotifyOnSignatures
-        : false,
+        : true,
     Bcc: template?.Bcc,
     Cc: template?.Cc,
     RedirectUrl: template?.RedirectUrl || "",
@@ -452,7 +452,7 @@ const EditTemplate = ({
                 </div>
               )}
             </div>
-            <div className="text-xs mt-3">
+            {/* <div className="text-xs mt-3">
               <label>
                 {t("notify-on-signatures")}
                 <a data-tooltip-id="nos-tooltip" className="ml-1">
@@ -496,9 +496,9 @@ const EditTemplate = ({
                   <div className="text-center">{t("no")}</div>
                 </div>
               </div>
-            </div>
+            </div> */}
 
-            <div className="text-xs mt-3">
+            {/* <div className="text-xs mt-3">
               <SignersInput
                 label={t("Cc")}
                 initialData={template?.Cc}
@@ -519,7 +519,7 @@ const EditTemplate = ({
                 isCaptureAllData
                 isAddYourSelfCheckbox={isAddYourSelfCheckbox}
               />
-            </div>
+            </div> */}
             
             <div className="text-xs mt-2">
               <label className="block">

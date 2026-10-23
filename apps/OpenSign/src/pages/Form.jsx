@@ -71,7 +71,7 @@ const Forms = (props) => {
     autoreminder: false,
     IsEnableOTP: "false",
     IsTourEnabled: "false",
-    NotifyOnSignatures: "",
+    NotifyOnSignatures: true,
     Bcc: [],
     Cc: [],
     RedirectUrl: "",
@@ -452,6 +452,8 @@ const Forms = (props) => {
           object.set("IsEnableOTP", false);
           if (formData.NotifyOnSignatures !== undefined) {
             object.set("NotifyOnSignatures", formData.NotifyOnSignatures);
+          } else {
+            object.set("NotifyOnSignatures", true);
           }
           if (formData?.RedirectUrl) {
             object.set("RedirectUrl", formData.RedirectUrl);
@@ -1025,191 +1027,209 @@ const Forms = (props) => {
                       </div>
                     </>
                   )}
-                  {isAdvanceOpt && (
-                    <>
-                      {props.title === "New Template" &&
-                        formData?.autoreminder === true && (
-                          <div className="text-xs mt-2">
-                            <label className="block">
-                              {t("remind-once")}
-                              <span className="text-red-500 text-[13px]">
-                                *
-                              </span>
-                            </label>
-                            <input
-                              type="number"
-                              value={formData.remindOnceInEvery}
-                              name="remindOnceInEvery"
-                              className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
-                              onChange={handleStrInput}
-                              onInvalid={(e) => reminderCustomWarning(e)}
-                              onInput={(e) => e.target.setCustomValidity("")}
-                              min={1}
-                              max={formData?.TimeToCompleteDays}
-                              required
-                            />
-                          </div>
-                        )}
-                      {props.title !== "New Template" && (
-                        <>
-                          <span className=" mt-2 font-[400]">
-                            {t("form-title-1")}
+                  {/* Advance options rendered directly without toggle */}
+                  {props.title === "New Template" &&
+                    formData?.autoreminder === true && (
+                      <div className="text-xs mt-2">
+                        <label className="block">
+                          {t("remind-once")}
+                          <span className="text-red-500 text-[13px]">
+                            *
                           </span>
-                          <div className="text-xs mt-3">
-                            <label className="block">
-                              {t("send-in-order")}
-                              <a
-                                data-tooltip-id="sendInOrder-tooltip"
-                                className="ml-1"
-                              >
-                                <sup>
-                                  <i className="fa-light fa-question rounded-full border-[#33bbff] text-[#33bbff] text-[13px] border-[1px] py-[1.5px] px-[4px]"></i>
-                                </sup>
-                              </a>
-                              <Tooltip
-                                id="sendInOrder-tooltip"
-                                className="z-[999]"
-                              >
-                                <div className="max-w-[200px] md:max-w-[450px]">
-                                  <p className="font-bold">
-                                    {t("send-in-order")}
-                                  </p>
-                                  <p>{t("send-in-order-help.p1")}</p>
-                                  <div className="p-[5px]">
-                                    <ol className="list-disc">
-                                      <li>
-                                        <span className="font-bold">
-                                          {t("yes")}:{" "}
-                                        </span>
-                                        <span>
-                                          {t("send-in-order-help.p2")}
-                                        </span>
-                                      </li>
-                                      <li>
-                                        <span className="font-bold">
-                                          {t("no")}:{" "}
-                                        </span>
-                                        <span>
-                                          {t("send-in-order-help.p3")}
-                                        </span>
-                                      </li>
-                                    </ol>
-                                  </div>
-                                  <p>{t("send-in-order-help.p4")}</p>
-                                </div>
-                              </Tooltip>
-                            </label>
-                            <div className="flex flex-col md:flex-row md:gap-4">
-                              <div className="flex items-center gap-2 ml-2 mb-1">
-                                <input
-                                  type="radio"
-                                  value={"true"}
-                                  className="op-radio op-radio-xs"
-                                  name="SendinOrder"
-                                  checked={formData.SendinOrder === "true"}
-                                  onChange={handleStrInput}
-                                />
-                                <div className="text-center">{t("yes")}</div>
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.remindOnceInEvery}
+                          name="remindOnceInEvery"
+                          className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                          onChange={handleStrInput}
+                          onInvalid={(e) => reminderCustomWarning(e)}
+                          onInput={(e) => e.target.setCustomValidity("")}
+                          min={1}
+                          max={formData?.TimeToCompleteDays}
+                          required
+                        />
+                      </div>
+                    )}
+                  {props.title !== "New Template" && (
+                    <>
+                      <span className=" mt-2 font-[400]">
+                        {t("form-title-1")}
+                      </span>
+                      <div className="text-xs mt-3">
+                        <label className="block">
+                          {t("send-in-order")}
+                          <a
+                            data-tooltip-id="sendInOrder-tooltip"
+                            className="ml-1"
+                          >
+                            <sup>
+                              <i className="fa-light fa-question rounded-full border-[#33bbff] text-[#33bbff] text-[13px] border-[1px] py-[1.5px] px-[4px]"></i>
+                            </sup>
+                          </a>
+                          <Tooltip
+                            id="sendInOrder-tooltip"
+                            className="z-[999]"
+                          >
+                            <div className="max-w-[200px] md:max-w-[450px]">
+                              <p className="font-bold">
+                                {t("send-in-order")}
+                              </p>
+                              <p>{t("send-in-order-help.p1")}</p>
+                              <div className="p-[5px]">
+                                <ol className="list-disc">
+                                  <li>
+                                    <span className="font-bold">
+                                      {t("yes")}:{" "}
+                                    </span>
+                                    <span>
+                                      {t("send-in-order-help.p2")}
+                                    </span>
+                                  </li>
+                                  <li>
+                                    <span className="font-bold">
+                                      {t("no")}:{" "}
+                                    </span>
+                                    <span>
+                                      {t("send-in-order-help.p3")}
+                                    </span>
+                                  </li>
+                                </ol>
                               </div>
-                              <div className="flex items-center gap-2 ml-2 mb-1">
-                                <input
-                                  type="radio"
-                                  value={"false"}
-                                  name="SendinOrder"
-                                  className="op-radio op-radio-xs"
-                                  checked={formData.SendinOrder === "false"}
-                                  onChange={handleStrInput}
-                                />
-                                <div className="text-center">{t("no")}</div>
-                              </div>
+                              <p>{t("send-in-order-help.p4")}</p>
                             </div>
-                            {formData.SendinOrder === "true" && (
-                              <div className="flex items-center gap-2 ml-2 mt-1 mb-1">
-                                <input
-                                  type="checkbox"
-                                  className="op-checkbox op-checkbox-xs"
-                                  name="SendInOrderStrict"
-                                  checked={
-                                    formData.SendInOrderStrict === "true"
-                                  }
-                                  onChange={(e) =>
-                                    setFormData({
-                                      ...formData,
-                                      SendInOrderStrict: e.target.checked
-                                        ? "true"
-                                        : "false"
-                                    })
-                                  }
-                                />
-                                <span title={t("strict-order-help")}>
-                                  {t("strict-order")}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      )}
-                      <div className="overflow-y-auto z-[40] transition-all">
-                        {props.title !== "Sign yourself" && (
-                          <div className="text-xs mt-2">
-                            <label className="block">
-                              {t("time-to-complete")}
-                              <span className="text-red-500 text-[13px]">
-                                *
-                              </span>
-                            </label>
+                          </Tooltip>
+                        </label>
+                        <div className="flex flex-col md:flex-row md:gap-4">
+                          <div className="flex items-center gap-2 ml-2 mb-1">
                             <input
-                              type="number"
-                              name="TimeToCompleteDays"
-                              className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
-                              value={formData.TimeToCompleteDays}
-                              onChange={(e) => handleStrInput(e)}
-                              onInvalid={(e) =>
-                                e.target.setCustomValidity(t("input-required"))
-                              }
-                              onInput={(e) => e.target.setCustomValidity("")}
-                              min={1}
-                              required
+                              type="radio"
+                              value={"true"}
+                              className="op-radio op-radio-xs"
+                              name="SendinOrder"
+                              checked={formData.SendinOrder === "true"}
+                              onChange={handleStrInput}
                             />
+                            <div className="text-center">{t("yes")}</div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-2 mb-1">
+                            <input
+                              type="radio"
+                              value={"false"}
+                              name="SendinOrder"
+                              className="op-radio op-radio-xs"
+                              checked={formData.SendinOrder === "false"}
+                              onChange={handleStrInput}
+                            />
+                            <div className="text-center">{t("no")}</div>
+                          </div>
+                        </div>
+                        {formData.SendinOrder === "true" && (
+                          <div className="flex items-center gap-2 ml-2 mt-1 mb-1">
+                            <input
+                              type="checkbox"
+                              className="op-checkbox op-checkbox-xs"
+                              name="SendInOrderStrict"
+                              checked={
+                                formData.SendInOrderStrict === "true"
+                              }
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  SendInOrderStrict: e.target.checked
+                                    ? "true"
+                                    : "false"
+                                })
+                              }
+                            />
+                            <span title={t("strict-order-help")}>
+                              {t("strict-order")}
+                            </span>
                           </div>
                         )}
                       </div>
-                      {props.cc && (
-                        <SignersInput
-                          label={t("Cc")}
-                          initialData={cc}
-                          onChange={handleCc}
-                          isReset={isReset}
-                          zindex={50}
-                          helpText={t("cc-help")}
-                          isCaptureAllData
-                          isAddYourSelfCheckbox
-                        />
-                      )}
-                      {props.bcc && (
-                        <SignersInput
-                          label={t("Bcc")}
-                          initialData={bcc}
-                          onChange={handleBcc}
-                          isReset={isReset}
-                          zindex={50}
-                          helpText={t("bcc-help")}
-                          isCaptureAllData
-                          isAddYourSelfCheckbox
-                        />
-                      )}
                     </>
                   )}
+                  <div className="overflow-y-auto z-[40] transition-all">
+                    {props.title !== "Sign yourself" && (
+                      <div className="text-xs mt-2">
+                        <label className="block">
+                          {t("time-to-complete")}
+                          <span className="text-red-500 text-[13px]">
+                            *
+                          </span>
+                        </label>
+                        <input
+                          type="number"
+                          name="TimeToCompleteDays"
+                          className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                          value={formData.TimeToCompleteDays}
+                          onChange={(e) => handleStrInput(e)}
+                          onInvalid={(e) =>
+                            e.target.setCustomValidity(t("input-required"))
+                          }
+                          onInput={(e) => e.target.setCustomValidity("")}
+                          min={1}
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {formData?.autoreminder === true &&
+                    props.title !== "New Template" && (
+                      <div className="text-xs mt-2">
+                        <label className="block">
+                          {t("remind-once")}
+                          <span className="text-red-500 text-[13px]">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.remindOnceInEvery}
+                          name="remindOnceInEvery"
+                          className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                          onChange={handleStrInput}
+                          onInvalid={(e) => reminderCustomWarning(e)}
+                          onInput={(e) => e.target.setCustomValidity("")}
+                          min={1}
+                          max={formData?.TimeToCompleteDays}
+                          required
+                        />
+                      </div>
+                    )}
+                  {/* {props.cc && (
+                    <SignersInput
+                      label={t("Cc")}
+                      initialData={cc}
+                      onChange={handleCc}
+                      isReset={isReset}
+                      zindex={50}
+                      helpText={t("cc-help")}
+                      isCaptureAllData
+                      isAddYourSelfCheckbox
+                    />
+                  )}
+                  {props.bcc && (
+                    <SignersInput
+                      label={t("Bcc")}
+                      initialData={bcc}
+                      onChange={handleBcc}
+                      isReset={isReset}
+                      zindex={50}
+                      helpText={t("bcc-help")}
+                      isCaptureAllData
+                      isAddYourSelfCheckbox
+                    />
+                  )} */}
                 </div>
-                {isAdvanceOpt && (
+                {/* {isAdvanceOpt && (
                   <div
                     style={{
                       height: props.title === "New Template" ? "100px" : "280px"
                     }}
                     className="w-[1px] bg-gray-300 m-auto hidden md:inline-block"
                   ></div>
-                )}
-                {isAdvanceOpt && (
+                )} */}
+                {/* {isAdvanceOpt && (
                   <div className="card bg-base-100 rounded-box p-3 flex-grow-0 w-full">
                     {formData?.autoreminder === true &&
                       props.title !== "New Template" && (
@@ -1273,11 +1293,11 @@ const Forms = (props) => {
                       </div>
                     </div>
                   </div>
-                )}
+                )} */}
               </div>
             )}
 
-            {isAdvanceOpt && props.title !== "Sign Yourself" ? (
+            {/* {isAdvanceOpt && props.title !== "Sign Yourself" ? (
               <span
                 onClick={() => setIsAdvanceOpt(!isAdvanceOpt)}
                 className={`mt-2.5 op-link op-link-primary text-sm`}
@@ -1293,7 +1313,7 @@ const Forms = (props) => {
                   {t("advanced-options")}
                 </span>
               )
-            )}
+            )} */}
             <div className="flex items-center mt-3 gap-2">
               <button
                 className={`${
