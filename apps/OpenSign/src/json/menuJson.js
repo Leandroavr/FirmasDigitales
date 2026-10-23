@@ -9,14 +9,6 @@ const userssetting = [
   }
 ];
 export const subSetting = [
-  {
-    icon: "fa-light fa-sliders",
-    title: "Preferences",
-    target: "_self",
-    pageType: "",
-    description: "",
-    objectId: "preferences"
-  },
   ...userssetting
 ];
 

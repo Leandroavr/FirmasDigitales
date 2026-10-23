@@ -48,7 +48,7 @@ const Sidebar = () => {
         const newSidebarList = sidebarList.map((item) => {
           if (item.title !== "Settings") return item;
           const newItem = { ...item };
-          const baseChildren = isAdmin ? subSetting : subSetting?.slice(0, 1);
+          const baseChildren = isAdmin ? subSetting : [];
             const mysignature = newItem.children.slice(0, 1);
             newItem.children = [...mysignature, ...baseChildren];
           return newItem;

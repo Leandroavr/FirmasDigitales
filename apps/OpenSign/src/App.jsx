@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { lazyWithRetry, hideUpgradeProgress } from "./utils";
-import { Routes, Route, BrowserRouter } from "react-router";
+import { Routes, Route, BrowserRouter, Navigate } from "react-router";
 import { pdfjs } from "react-pdf";
 import Form from "./pages/Form";
 import Report from "./pages/Report";
@@ -135,7 +135,7 @@ function App() {
               />
               <Route
                 path="/preferences"
-                element={<Lazy Page={Preferences} />}
+                element={<Navigate to="/dashboard/35KBoSgoAK" replace />}
               />
             </Route>
             <Route path="/success" element={<DocSuccessPage />} />
