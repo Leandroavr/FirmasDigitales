@@ -462,7 +462,7 @@ function PdfRequestFiles(
             );
           }
           if (myPhIndex === -1) {
-            const cEmail = (signerUserEmail || (typeof getSignerEmail === "function" ? getSignerEmail() : "") || localStorage.getItem("userEmail") || "").toLowerCase().trim();
+            const cEmail = ((typeof getSignerEmail === "function" ? getSignerEmail() : "") || localStorage.getItem("userEmail") || localStorage.getItem("email") || "").toLowerCase().trim();
             if (cEmail) {
               myPhIndex = validPhs.findIndex(
                 (p) => (p?.email || p?.signerPtr?.Email || p?.signerPtr?.email || "").toLowerCase().trim() === cEmail
@@ -1081,7 +1081,7 @@ function PdfRequestFiles(
                   const placeholdersList = (updatedDoc.updatedPdfDetails?.[0]?.Placeholders || []).filter(
                     (x) => x.Role !== "prefill"
                   );
-                  const currentEmail = (signerUserEmail || (typeof getSignerEmail === "function" ? getSignerEmail() : "") || "").toLowerCase().trim();
+                  const currentEmail = ((typeof currentSignerEmail !== "undefined" ? currentSignerEmail : "") || (typeof getSignerEmail === "function" ? getSignerEmail() : "") || localStorage.getItem("userEmail") || "").toLowerCase().trim();
                   let index = signersList.findIndex(
                     (x) =>
                       (contactId && x.objectId === contactId) ||
