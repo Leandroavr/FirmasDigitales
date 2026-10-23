@@ -113,6 +113,9 @@ function WidgetComponent(props) {
   );
   //function to show widget on the base of conditionAdd commentMore actions
   const handleWidgetType = () => {
+    // Dejar unicamente la firma digital como solicitado (codigo previo comentado sin borrar)
+    return widgetList.filter((data) => data.type === "signature");
+    /*
     let availableWidgets;
     if (props.isSignYourself) {
       availableWidgets = selfSignWidgets;
@@ -142,6 +145,7 @@ function WidgetComponent(props) {
             )
         )
       : availableWidgets;
+    */
   };
   const handleSelectRecipient = () => {
     if (props?.roleName === "prefill") {

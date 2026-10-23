@@ -2432,15 +2432,13 @@ function PdfRequestFiles(
                 <div className="w-full md:w-[23%] bg-base-100 overflow-y-auto hide-scrollbar ">
                   <div className={`max-h-screen`}>
                     <div className="w-full md:inline-block">
-                    {currentSigner && !alreadySign && (
+                    {currentSigner && !alreadySign && hasCorporateSignaturePlaceholder && (
                       <div className="mx-2 my-3 rounded border border-primary p-3">
                         <div className="mb-2 text-sm font-semibold text-base-content">
                           {t("corporate-signing-option")}
                         </div>
                         <p className="mb-2 text-xs text-base-content">
-                          {hasCorporateSignaturePlaceholder
-                            ? t("corporate-signature-field-ready")
-                            : t("corporate-signature-field-required")}
+                          {t("corporate-signature-field-ready")}
                         </p>
                         <input
                           type="password"

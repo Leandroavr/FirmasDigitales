@@ -1648,53 +1648,53 @@ function SignYourSelf() {
               <div className="max-h-screen">
                 {!isCompleted ? (
                   <>
-                    <div className="mx-2 my-3 rounded border border-primary p-3">
-                      <div className="mb-2 text-sm font-semibold text-base-content">
-                        {t("corporate-signing-option")}
-                      </div>
-                      <p className="mb-2 text-xs text-base-content">
-                        {xyPosition.some((page) =>
-                          page.pos?.some((position) => position.type === "signature")
-                        )
-                          ? t("corporate-self-sign-field-ready")
-                          : t("corporate-self-sign-field-required")}
-                      </p>
-                      <input
-                        type="password"
-                        autoComplete="new-password"
-                        className="op-input op-input-bordered op-input-sm mt-2 w-full"
-                        placeholder={t("corporate-certificate-password")}
-                        value={corporateCertificatePassword}
-                        onChange={(event) =>
-                          setCorporateCertificatePassword(event.target.value)
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && corporateCertificatePassword && !isUiLoading) {
-                            e.preventDefault();
-                            handleCorporateSign();
+                    {xyPosition.some((page) =>
+                      page.pos?.some((position) => position.type === "signature")
+                    ) && (
+                      <div className="mx-2 my-3 rounded border border-primary p-3">
+                        <div className="mb-2 text-sm font-semibold text-base-content">
+                          {t("corporate-signing-option")}
+                        </div>
+                        <p className="mb-2 text-xs text-base-content">
+                          {t("corporate-self-sign-field-ready")}
+                        </p>
+                        <input
+                          type="password"
+                          autoComplete="new-password"
+                          className="op-input op-input-bordered op-input-sm mt-2 w-full"
+                          placeholder={t("corporate-certificate-password")}
+                          value={corporateCertificatePassword}
+                          onChange={(event) =>
+                            setCorporateCertificatePassword(event.target.value)
                           }
-                        }}
-                      />
-                      <p className="mt-2 text-xs text-base-content">
-                        Certificado digital corporativo vinculado en el servidor
-                      </p>
-                      <button
-                        type="button"
-                        className="op-btn op-btn-primary op-btn-sm mt-2 w-full"
-                        onClick={handleCorporateSign}
-                        disabled={
-                          !corporateCertificatePassword ||
-                          !xyPosition.some((page) =>
-                            page.pos?.some(
-                              (position) => position.type === "signature"
-                            )
-                          ) ||
-                          isUiLoading
-                        }
-                      >
-                        {t("corporate-sign-now")}
-                      </button>
-                    </div>
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && corporateCertificatePassword && !isUiLoading) {
+                              e.preventDefault();
+                              handleCorporateSign();
+                            }
+                          }}
+                        />
+                        <p className="mt-2 text-xs text-base-content">
+                          Certificado digital corporativo vinculado en el servidor
+                        </p>
+                        <button
+                          type="button"
+                          className="op-btn op-btn-primary op-btn-sm mt-2 w-full"
+                          onClick={handleCorporateSign}
+                          disabled={
+                            !corporateCertificatePassword ||
+                            !xyPosition.some((page) =>
+                              page.pos?.some(
+                                (position) => position.type === "signature"
+                              )
+                            ) ||
+                            isUiLoading
+                          }
+                        >
+                          {t("corporate-sign-now")}
+                        </button>
+                      </div>
+                    )}
                     <WidgetComponent
                       pdfUrl={pdfUrl}
                       handleDivClick={handleDivClick}
