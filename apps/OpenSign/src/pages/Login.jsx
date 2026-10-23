@@ -68,6 +68,7 @@ function Login() {
 
   const setLocalVar = (user) => {
     localStorage.setItem("accesstoken", user.sessionToken);
+    localStorage.setItem("session_login_time", Date.now().toString());
     localStorage.setItem("UserInformation", JSON.stringify(user));
     localStorage.setItem("userEmail", user.email);
     if (user.ProfilePic) {
@@ -97,6 +98,14 @@ function Login() {
       setImage(appInfo?.applogo || undefined);
     }
     dispatch(fetchAppInfo());
+    const loginTime = localStorage.getItem("session_login_time");
+    const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000; // 12 horas
+    if (loginTime && Date.now() - parseInt(loginTime, 10) > SESSION_MAX_AGE_MS) {
+      localStorage.removeItem("accesstoken");
+      localStorage.removeItem("session_login_time");
+      try { Parse.User.logOut(); } catch (e) {}
+    }
+
     if (localStorage.getItem("accesstoken")) {
       setState({ ...state, loading: true });
       GetLoginData();
@@ -265,7 +274,23 @@ function Login() {
             localStorage.setItem("PageLanding", menu.pageId);
             localStorage.setItem("defaultmenuid", menu.menuId);
             localStorage.setItem("pageType", menu.pageType);
-              navigate(redirectUrl);
+
+            const pendingRedirect = sessionStorage.getItem("redirectAfterLogin");
+            if (pendingRedirect) {
+              try {
+                const { docId, contactId } = JSON.parse(pendingRedirect);
+                sessionStorage.removeItem("redirectAfterLogin");
+                if (docId) {
+                  const targetDoc = contactId ? `/load/recipientSignPdf/${docId}/${contactId}` : `/load/recipientSignPdf/${docId}`;
+                  navigate(targetDoc);
+                  return;
+                }
+              } catch (e) {
+                console.error("Error reading redirectAfterLogin in GetLoginData", e);
+              }
+            }
+
+            navigate(redirectUrl);
           } else {
             setState({ ...state, loading: false });
             logOutUser();

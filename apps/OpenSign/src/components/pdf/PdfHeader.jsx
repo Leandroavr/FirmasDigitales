@@ -505,7 +505,22 @@ function Header(props) {
               </div>
             </>
           ) : props?.isPdfRequestFiles || props?.isSelfSign ? (
-            props?.isCompleted ? (
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  const pageType = localStorage.getItem("pageType");
+                  const pageLanding = localStorage.getItem("PageLanding");
+                  const target = pageType && pageLanding ? `/${pageType}/${pageLanding}` : "/report/1MwEuxLEkF";
+                  window.location.href = target;
+                }}
+                className="op-btn op-btn-outline op-btn-sm text-base-content mr-2 shadow flex items-center gap-1.5"
+                title="Ir al inicio de la plataforma"
+              >
+                <i className="fa-light fa-house text-sm" aria-hidden="true"></i>
+                <span className="hidden lg:inline">Ir al inicio</span>
+              </button>
+            {props?.isCompleted ? (
               <div className="flex flex-row">
                 <button
                   onClick={(e) =>
@@ -580,7 +595,8 @@ function Header(props) {
                   </>
                 )}
               </div>
-            )
+            )}
+            </div>
           ) : props?.isCompleted ? (
             <div className="flex flex-row">
 

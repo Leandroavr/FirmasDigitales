@@ -100,42 +100,23 @@ function GuestLogin() {
         const targetEmail = checkSplit[1]?.toLowerCase()?.replace(/\s/g, "");
         const contactId = checkSplit?.[2];
 
-        // Seguridad corporativa: comprobar sesion activa
-        const token = localStorage.getItem("accesstoken");
-        const currentUser = Parse.User.current();
-
-        if (!token || !currentUser) {
-          sessionStorage.setItem("redirectAfterLogin", JSON.stringify({
-            docId,
-            contactId: contactId || "",
-            email: targetEmail || ""
-          }));
-          navigate(`/?email=${encodeURIComponent(targetEmail || "")}&requiresAuth=true`, { replace: true });
-          return;
-        }
-
-        setDocumentId(docId);
-        setContact((prev) => ({
-          ...prev,
-          email: targetEmail
+        // Seguridad corporativa: al abrir enlace desde correo, siempre exigir contraseña
+        sessionStorage.setItem("redirectAfterLogin", JSON.stringify({
+          docId,
+          contactId: contactId || "",
+          email: targetEmail || ""
         }));
-        setEmail(targetEmail);
-        setSendmail(checkSplit[3]);
-        if (!contactId) {
-          const params = {
-            email: targetEmail,
-            docId: docId
-          };
-          const linkContactRes = await Parse.Cloud.run(
-            "linkcontacttodoc",
-            params
-          );
-          setContactId(linkContactRes?.contactId);
-          await navigateToDoc(docId, linkContactRes?.contactId);
-        } else {
-          setContactId(contactId);
-          await navigateToDoc(docId, contactId);
+
+        // Limpiar sesión previa para obligar al usuario a autenticarse con su contraseña
+        localStorage.removeItem("accesstoken");
+        try {
+          await Parse.User.logOut();
+        } catch (e) {
+          /* best effort */
         }
+
+        navigate(`/?email=${encodeURIComponent(targetEmail || "")}&requiresAuth=true`, { replace: true });
+        return;
       } catch (err) {
         console.error("Error decoding base64 or checking session", err);
         navigate("/", { replace: true });

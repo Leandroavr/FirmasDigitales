@@ -156,6 +156,8 @@ function PdfRequestFiles(
   const [widgetsTour, setWidgetsTour] = useState(false);
   const [minRequiredCount, setminRequiredCount] = useState();
   const [sendInOrder, setSendInOrder] = useState(false);
+  const [isWaitingPriorSigner, setIsWaitingPriorSigner] = useState(false);
+  const [priorPendingSignerName, setPriorPendingSignerName] = useState("");
   const [currWidgetsDetails, setCurrWidgetsDetails] = useState({});
   const hasCorporateSignaturePlaceholder = signerPos
     .find((signer) => signer.signerObjId === signerObjectId)
@@ -445,6 +447,49 @@ function PdfRequestFiles(
         } else {
           const obj = documentData?.[0];
           setSendInOrder(obj?.SendinOrder || false);
+
+          const isOrderDoc = obj?.SendinOrder === true || obj?.SendinOrder === "true";
+          const validPhs = (obj?.Placeholders || []).filter((p) => p?.Role !== "prefill");
+          let myPhIndex = -1;
+          if (currUserId) {
+            myPhIndex = validPhs.findIndex(
+              (p) => p?.signerObjId === currUserId || p?.signerPtr?.objectId === currUserId
+            );
+          }
+          if (myPhIndex === -1 && signerObjectId) {
+            myPhIndex = validPhs.findIndex(
+              (p) => p?.signerObjId === signerObjectId || p?.signerPtr?.objectId === signerObjectId
+            );
+          }
+          if (myPhIndex === -1) {
+            const cEmail = (signerUserEmail || (typeof getSignerEmail === "function" ? getSignerEmail() : "") || localStorage.getItem("userEmail") || "").toLowerCase().trim();
+            if (cEmail) {
+              myPhIndex = validPhs.findIndex(
+                (p) => (p?.email || p?.signerPtr?.Email || p?.signerPtr?.email || "").toLowerCase().trim() === cEmail
+              );
+            }
+          }
+
+          let waitingPrior = false;
+          let pendingName = "";
+          if (isOrderDoc && myPhIndex > 0) {
+            const signedIds = new Set(
+              (obj?.AuditTrail || [])
+                .filter((a) => a?.Activity === "Signed" && a?.UserPtr?.objectId)
+                .map((a) => a.UserPtr.objectId)
+            );
+            for (let i = 0; i < myPhIndex; i++) {
+              const priorPh = validPhs[i];
+              const priorId = priorPh?.signerObjId || priorPh?.signerPtr?.objectId;
+              if (priorId && !signedIds.has(priorId)) {
+                waitingPrior = true;
+                pendingName = priorPh?.signerName || priorPh?.signerPtr?.Name || priorPh?.email || `Firmante ${i + 1}`;
+                break;
+              }
+            }
+          }
+          setIsWaitingPriorSigner(waitingPrior);
+          setPriorPendingSignerName(pendingName);
           if (
             obj?.Signers?.length &&
             obj?.Placeholders?.length &&
@@ -1296,6 +1341,10 @@ function PdfRequestFiles(
   };
 
   const handleCorporateSign = async () => {
+    if (isWaitingPriorSigner) {
+      alert("Este documento requiere orden de firma secuencial. Aún debe firmar " + (priorPendingSignerName || "el firmante anterior") + ".");
+      return;
+    }
     await handleSignPdf({
       isCorporateSigning: true,
       corporateCertificateFile,
@@ -2313,7 +2362,20 @@ function PdfRequestFiles(
                               </div>
                             </div>
                             <RedirectNotice />
-                            <div className="flex justify-end mt-4">
+                            <div className="flex justify-end gap-2 mt-4">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pageType = localStorage.getItem("pageType");
+                                  const pageLanding = localStorage.getItem("PageLanding");
+                                  const target = pageType && pageLanding ? `/${pageType}/${pageLanding}` : "/report/1MwEuxLEkF";
+                                  window.location.href = target;
+                                }}
+                                className="op-btn op-btn-outline op-btn-sm flex items-center gap-1.5"
+                              >
+                                <i className="fa-light fa-house"></i>
+                                <span>Ir al inicio</span>
+                              </button>
                               <button
                                 type="button"
                                 onClick={() =>
@@ -2361,6 +2423,19 @@ function PdfRequestFiles(
                                 <span className="hidden lg:block">
                                   {t("download")}
                                 </span>
+                              </button>
+                              <button
+                                type="button"
+                                className="font-[500] text-[13px] mr-[5px] op-btn op-btn-outline"
+                                onClick={() => {
+                                  const pageType = localStorage.getItem("pageType");
+                                  const pageLanding = localStorage.getItem("PageLanding");
+                                  const target = pageType && pageLanding ? `/${pageType}/${pageLanding}` : "/report/1MwEuxLEkF";
+                                  window.location.href = target;
+                                }}
+                              >
+                                <i className="fa-light fa-house mr-1"></i>
+                                <span>Ir al inicio</span>
                               </button>
                             </div>
                           </div>
@@ -2481,7 +2556,21 @@ function PdfRequestFiles(
                 <div className="w-full md:w-[23%] bg-base-100 overflow-y-auto hide-scrollbar ">
                   <div className={`max-h-screen`}>
                     <div className="w-full md:inline-block">
-                    {currentSigner && !alreadySign && hasCorporateSignaturePlaceholder && (
+                    {isWaitingPriorSigner ? (
+                      <div className="mx-2 my-3 rounded-lg border border-warning/60 bg-warning/10 p-4 text-base-content shadow-sm">
+                        <div className="flex items-center gap-2 mb-2 font-semibold text-warning text-sm">
+                          <i className="fa-light fa-clock text-base"></i>
+                          <span>Firma en espera de turno</span>
+                        </div>
+                        <p className="text-xs text-base-content/90 leading-relaxed">
+                          Este documento requiere un orden de firmado secuencial. Aún debe firmar <strong>{priorPendingSignerName}</strong> para que usted pueda realizar su firma digital.
+                        </p>
+                        <div className="mt-3 p-2 bg-base-100 rounded border border-base-300 text-[11px] text-base-content/75 flex items-center gap-1.5">
+                          <i className="fa-light fa-circle-info text-primary shrink-0"></i>
+                          <span>Podrá ingresar a firmar en cuanto el firmante anterior complete su firma.</span>
+                        </div>
+                      </div>
+                    ) : currentSigner && !alreadySign && hasCorporateSignaturePlaceholder && (
                       <div className="mx-2 my-3 rounded border border-primary p-3">
                         <div className="mb-2 text-sm font-semibold text-base-content">
                           {t("corporate-signing-option")}

@@ -4650,12 +4650,14 @@ export const sendEmailToSigners = async (
     pdfDetails?.[0]?.SenderMail || pdfDetails?.[0]?.ExtUserPtr?.Email;
   let senderPhone = pdfDetails?.[0]?.ExtUserPtr?.Phone;
   let signerMail = signersdata.slice();
-  const isSendInOrder =
-    pdfDetails?.[0]?.SendinOrder === true ||
-    pdfDetails?.[0]?.SendinOrder === "true";
-  if (isSendInOrder) {
-    signerMail = signerMail[0] ? [signerMail[0]] : [];
-  }
+  // El correo de solicitud de firma debe llegar a todos los firmantes desde el inicio,
+  // independientemente de que exista orden secuencial de firmado (la plataforma restringe el turno al ingresar).
+  // const isSendInOrder =
+  //   pdfDetails?.[0]?.SendinOrder === true ||
+  //   pdfDetails?.[0]?.SendinOrder === "true";
+  // if (isSendInOrder) {
+  //   signerMail = signerMail[0] ? [signerMail[0]] : [];
+  // }
   for (let i = 0; i < signerMail.length; i++) {
     try {
       let url = `${localStorage.getItem("baseUrl")}functions/sendmailv3`;

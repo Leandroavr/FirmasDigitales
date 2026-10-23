@@ -1073,10 +1073,10 @@ function PlaceHolderSign() {
   const saveDocumentDetails = utils.withSessionValidation(async () => {
     setIsUiLoading(true);
     let signerMail = signersdata.slice();
-    // For "Send in order", only consider the first signer
-    if (pdfDetails?.[0]?.SendinOrder && pdfDetails?.[0]?.SendinOrder === true) {
-      signerMail.splice(1);
-    }
+    // El correo de solicitud de firma debe enviarse a todos los firmantes desde el inicio
+    // if (pdfDetails?.[0]?.SendinOrder && pdfDetails?.[0]?.SendinOrder === true) {
+    //   signerMail.splice(1);
+    // }
     const pdfUrl = await embedPrefilllWidgets();
     if (pdfUrl) {
       const removePrefillSigner = signersdata.filter(

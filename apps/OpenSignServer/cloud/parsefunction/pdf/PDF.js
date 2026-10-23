@@ -197,26 +197,27 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
 
     const isSendInOrder = doc?.SendinOrder === true || doc?.SendinOrder === 'true';
 
-    // Recopilar todos los involucrados a notificar
+    // Recopilar todos los involucrados a notificar (incluyendo al propio firmante)
     const recipientSet = new Set();
-    if (creatorEmail && creatorEmail !== signerEmail) {
+    if (creatorEmail) {
       recipientSet.add(creatorEmail);
+    }
+    // Notificación confirmatoria para el propio firmante que acaba de firmar
+    if (signerEmail) {
+      recipientSet.add(signerEmail);
     }
 
     if (isSendInOrder) {
-      // En modo 'Enviar en orden', solo se notifica al propietario y a los firmantes que YA hayan firmado previamente.
-      // Los firmantes pendientes NO reciben notificación de avance; recibirán su respectiva "Solicitud de firma" cuando llegue su turno.
       if (Array.isArray(doc?.Signers)) {
         for (const s of doc.Signers) {
           const sId = (s?.objectId || '').toString();
           let sMail = (s?.Email || s?.email || '').toLowerCase().trim();
-          if (completedSignerIds.has(sId) && sMail && sMail !== signerEmail) {
+          if (completedSignerIds.has(sId) && sMail) {
             recipientSet.add(sMail);
           }
         }
       }
     } else {
-      // En modo paralelo (sin orden), se notifica a los demás firmantes
       if (Array.isArray(doc?.Signers)) {
         for (const s of doc.Signers) {
           let sMail = (s?.Email || s?.email || '').toLowerCase().trim();
@@ -229,7 +230,7 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
               // Ignorar si no es contactbook
             }
           }
-          if (sMail && sMail !== signerEmail) {
+          if (sMail) {
             recipientSet.add(sMail);
           }
         }
@@ -237,7 +238,7 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
       if (Array.isArray(doc?.Placeholders)) {
         doc.Placeholders.forEach(p => {
           const pMail = (p?.email || p?.signerPtr?.Email || p?.signerPtr?.email || '').toLowerCase().trim();
-          if (pMail && pMail !== signerEmail) {
+          if (pMail) {
             recipientSet.add(pMail);
           }
         });
@@ -253,20 +254,34 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
     for (const recipientEmail of recipients) {
       const encodeBase64 = Buffer.from(`${doc.objectId}/${recipientEmail}`).toString('base64');
       const viewDocUrl = `${basePublicUrl}/login/${encodeBase64}`;
-      const subject = `[Firma Digital] El documento "${pdfName}" ha sido firmado por ${signerName}`;
+      const isSignerSelf = recipientEmail === signerEmail;
+      const subject = isSignerSelf
+        ? `[Firma Digital] Ha firmado satisfactoriamente el documento "${pdfName}"`
+        : `[Firma Digital] El documento "${pdfName}" ha sido firmado por ${signerName}`;
+      const greetingHtml = isSignerSelf
+        ? `<p style='margin-top:0;margin-bottom:14px;font-size:15px;color:#1e293b;'>Estimado(a) <strong>${signerName}</strong>,</p><p style='margin-top:0;margin-bottom:18px;'>Le confirmamos que ha firmado digitalmente y de forma satisfactoria el siguiente documento:</p>`
+        : `<p style='margin-top:0;margin-bottom:14px;font-size:15px;color:#1e293b;'>Estimado(a) usuario(a),</p><p style='margin-top:0;margin-bottom:18px;'>Le informamos que el firmante <strong>${signerName}</strong> (${signerEmail}) ha firmado digitalmente el siguiente documento:</p>`;
+
       const body =
-        "<html><head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/></head><body><div style='background-color:#f5f5f5;padding:20px'><div style='background-color:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" +
-        `<div style='padding:16px 20px;font-family:system-ui,sans-serif;background-color:#0b3c6d'><h2 style='font-size:18px;margin:0;color:white;'>Notificación de Avance de Firmas</h2></div>` +
-        `<div style='padding:24px 20px;font-family:system-ui,sans-serif;font-size:14px;color:#333;line-height:1.6'>` +
-        `<p>Estimado(a) usuario(a),</p>` +
-        `<p>Le informamos que el firmante <strong>${signerName}</strong> (${signerEmail}) ha firmado satisfactoriamente el documento <strong>"${pdfName}"</strong>.</p>` +
-        `<div style='background-color:#f0f4f8;border-left:4px solid #0b3c6d;padding:12px 16px;margin:18px 0'>` +
-        `<p style='margin:0;font-size:13px;color:#333'><strong>Estado del trámite:</strong> ${auditTrailCount} de ${signersCount} firmas completadas.</p>` +
-        `</div>` +
-        `<div style='margin:25px 0'><a target='_blank' href='${viewDocUrl}' style='display:inline-block;padding:12px 24px;background-color:#0b3c6d;color:white;text-decoration:none;border-radius:4px;font-weight:bold'>Ingresar a la Plataforma</a></div>` +
-        `<p style='font-size:12px;color:#777;margin-top:20px'><strong>Aviso de seguridad:</strong> Cada usuario debe iniciar sesión obligatoriamente con sus credenciales institucionales para revisar o firmar en la plataforma.</p>` +
-        `</div></div>` +
-        `<div><p style='padding:15px;color:#888;font-size:12px;text-align:center'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
+        "<html><head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/></head><body style='margin:0;padding:0;background-color:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;'>" +
+        "<div style='background-color:#f4f6f9;padding:25px 15px;'>" +
+        "<div style='background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;margin:0 auto;border:1px solid #e5e7eb;'>" +
+        `<div style='padding:20px 24px;background-color:#0b3c6d;'><h2 style='font-size:18px;margin:0;color:#ffffff;font-weight:600;letter-spacing:0.3px;'>${isSignerSelf ? 'Confirmación de Firma' : 'Notificación de Avance de Firmas'}</h2></div>` +
+        `<div style='padding:24px;color:#334155;font-size:14px;line-height:1.6;'>` +
+        greetingHtml +
+        `<div style='background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0b3c6d;border-radius:6px;padding:16px 18px;margin:18px 0;'>` +
+        `<div style='font-size:11px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px;'>Información del Documento</div>` +
+        `<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>` +
+        `<tr><td style='padding:5px 0;width:110px;font-weight:600;color:#64748b;'>Título:</td><td style='padding:5px 0;font-weight:700;color:#0f172a;'>${pdfName}</td></tr>` +
+        (doc?.Description ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Descripción:</td><td style='padding:5px 0;color:#334155;'>${doc.Description}</td></tr>` : '') +
+        (doc?.Note ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Notas:</td><td style='padding:5px 0;color:#334155;'>${doc.Note}</td></tr>` : '') +
+        `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Estado:</td><td style='padding:5px 0;font-weight:700;color:#0b3c6d;'>${auditTrailCount} de ${signersCount} firmas completadas</td></tr>` +
+        `</table></div>` +
+        `<div style='margin:28px 0 20px 0;text-align:center;'><a target='_blank' href='${viewDocUrl}' style='display:inline-block;padding:12px 28px;background-color:#0b3c6d;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(11,60,109,0.25);'>Ingresar a la Plataforma</a></div>` +
+        `<div style='background-color:#fefce8;border:1px solid #fef08a;border-radius:4px;padding:10px 14px;margin-top:20px;'>` +
+        `<p style='font-size:12px;color:#854d0e;margin:0;line-height:1.5;'><strong>Aviso de seguridad:</strong> Cada usuario debe iniciar sesión obligatoriamente con sus credenciales institucionales para acceder a la plataforma.</p>` +
+        `</div></div></div>` +
+        `<div><p style='padding:16px;color:#94a3b8;font-size:12px;text-align:center;margin:0;'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
         `</div></body></html>`;
 
       const params = {
@@ -511,7 +526,7 @@ async function PDF(req) {
     // because owners never sign through this path.
     const isSendInOrderDoc = _resDoc?.SendinOrder === true || _resDoc?.SendinOrder === 'true';
     const isStrictOrderDoc = _resDoc?.SendInOrderStrict === true || _resDoc?.SendInOrderStrict === 'true';
-    if (reqUserId && isSendInOrderDoc && isStrictOrderDoc) {
+    if (reqUserId && (isSendInOrderDoc || isStrictOrderDoc)) {
       const placeholders = Array.isArray(_resDoc?.Placeholders)
         ? _resDoc.Placeholders.filter(p => p?.Role !== 'prefill')
         : [];
