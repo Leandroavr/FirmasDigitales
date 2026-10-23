@@ -16,37 +16,43 @@ const VerifyDocument = () => {
   const [verificationResult, setVerificationResult] = useState("");
   const [detailedResults, setDetailedResults] = useState([]);
   const [collapsedSections, setCollapsedSections] = useState({});
+
+  const Extand_Class = localStorage.getItem("Extand_Class");
+  const extClass = Extand_Class && JSON.parse(Extand_Class);
+  const userRole = extClass?.[0]?.UserRole || "contracts_User";
+  const isGeneralAdmin = userRole === "contracts_Admin";
   // const [jsrsasignStatus, setJsrsasignStatus] = useState('loading'); // Removed
 
-  // OID to human-readable label mapping
+  // OID to human-readable label mapping (en español)
   const oidMapping = {
-    "2.5.4.6": "Country",
-    "2.5.4.10": "Organization",
-    "2.5.4.11": "Organizational Unit",
-    "2.5.4.17": "Postal Code",
-    "2.5.4.8": "State",
-    "2.5.4.7": "Locality", // Alternative for City
-    "2.5.4.9": "City",
-    "2.5.4.51": "Address",
-    "2.5.4.3": "Common Name",
-    "2.5.4.4": "Surname",
-    "2.5.4.5": "Serial Number",
-    "2.5.4.12": "Title",
-    "2.5.4.13": "Description",
-    "2.5.4.16": "Postal Address",
-    "2.5.4.18": "Post Office Box",
-    "2.5.4.20": "Telephone Number",
-    "1.2.840.113549.1.9.1": "Email Address",
+    "2.5.4.6": "País",
+    "2.5.4.10": "Organización",
+    "2.5.4.11": "Unidad Organizativa",
+    "2.5.4.17": "Código Postal",
+    "2.5.4.8": "Provincia / Estado",
+    "2.5.4.7": "Localidad / Municipio",
+    "2.5.4.9": "Ciudad",
+    "2.5.4.51": "Dirección",
+    "2.5.4.3": "Nombre Completo",
+    "2.5.4.4": "Apellidos",
+    "2.5.4.5": "No. Identidad / Serie",
+    "2.5.4.12": "Cargo / Título",
+    "2.5.4.13": "Descripción",
+    "2.5.4.16": "Dirección Postal",
+    "2.5.4.18": "Apartado Postal",
+    "2.5.4.20": "Teléfono",
+    "1.2.840.113549.1.9.1": "Correo Electrónico",
     // Common alternative OIDs
-    C: "Country",
-    O: "Organization",
-    OU: "Organizational Unit",
-    CN: "Common Name",
-    ST: "State",
-    L: "Locality",
-    STREET: "Address",
-    emailAddress: "Email Address",
-    serialNumber: "Serial Number"
+    C: "País",
+    O: "Organización",
+    OU: "Unidad Organizativa",
+    CN: "Nombre Completo",
+    ST: "Provincia / Estado",
+    L: "Localidad / Municipio",
+    STREET: "Dirección",
+    emailAddress: "Correo Electrónico",
+    serialNumber: "No. Identidad / Serie",
+    title: "Cargo / Título"
   };
 
   // Function to parse certificate subject/issuer into structured data
@@ -85,32 +91,39 @@ const VerifyDocument = () => {
     return parsed;
   };
 
-  // Function to determine if status should show success icon
+  // Function to determine if status should show success icon (robusto con soporte de tildes y español)
   const isSuccessStatus = (status) => {
-    const successTerms = ["valid", "success", "parsed", "verified"];
-    const errorTerms = ["error", "invalid", "failed", "expired"];
+    if (!status) return false;
+    const clean = status
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
-    const statusLower = status.toLowerCase();
-
-    // Check for explicit error terms first
-    if (errorTerms.some((term) => statusLower.includes(term))) {
+    const errorTerms = ["error", "invalid", "invalida", "invalido", "failed", "fallid", "expired", "expirad", "no valida"];
+    if (errorTerms.some((term) => clean.includes(term))) {
       return false;
     }
 
-    // Check for success terms
-    return successTerms.some((term) => statusLower.includes(term));
+    const successTerms = ["valid", "valida", "valido", "correct", "exito", "verificad", "success", "parsed", "verified"];
+    return successTerms.some((term) => clean.includes(term));
   };
 
   // Function to determine if certificate validity should show success icon
   const isCertificateValid = (validityText) => {
-    const validityLower = validityText.toLowerCase();
+    if (!validityText) return false;
+    const clean = validityText
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
 
-    // If it contains "valid" and doesn't contain negative terms
     return (
-      validityLower.includes("valid") &&
-      !validityLower.includes("expired") &&
-      !validityLower.includes("not yet valid") &&
-      !validityLower.includes("invalid")
+      (clean.includes("valid") || clean.includes("valido") || clean.includes("vigente")) &&
+      !clean.includes("expired") &&
+      !clean.includes("expirado") &&
+      !clean.includes("vencido") &&
+      !clean.includes("not yet valid") &&
+      !clean.includes("invalid") &&
+      !clean.includes("invalido")
     );
   };
 
@@ -703,8 +716,9 @@ const VerifyDocument = () => {
             <h2 className="text-2xl font-bold mb-4 text-base-content text-center">
               {t("verification-status")}
             </h2>
-            {verificationResult ===
-              "Document Verified: All signatures have been successfully validated." && (
+            {(verificationResult === "Document Verified: All signatures have been successfully validated." ||
+              verificationResult === t("all-signatures-verified-convincing") ||
+              isSuccessStatus(verificationResult)) && (
               <div className="flex flex-col items-center my-4">
                 <svg
                   className="checkmark"
@@ -750,10 +764,10 @@ const VerifyDocument = () => {
                           <span className="text-2xl">🔏</span>
                           <div>
                             <h4 className="text-xl font-bold">
-                              Signature Details
+                              Detalles de la Firma
                             </h4>
                             <p className="text-blue-100 text-sm">
-                              Digital Certificate Information
+                              Información del Certificado Digital
                             </p>
                           </div>
                         </div>
@@ -764,25 +778,28 @@ const VerifyDocument = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
                             <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                              Field Name
+                              {isGeneralAdmin ? "Campo Técnico (Field Name)" : "Firma"}
                             </span>
                             <p className="mt-1 text-lg font-semibold text-gray-900 font-mono">
-                              {res.name}
+                              {isGeneralAdmin ? res.name : `Firma Digital #${index + 1}`}
                             </p>
                           </div>
                           <div>
                             <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-                              Overall Status
+                              Estado General
                             </span>
                             <div className="mt-1 flex items-center space-x-2">
-                              <span
-                                className={`text-lg ${isSuccessStatus(res.status) ? "text-green-600" : "text-red-600"}`}
-                              >
-                                {isSuccessStatus(res.status) ? "✅" : "❌"}
-                              </span>
-                              <span className="text-lg font-semibold text-gray-900">
-                                {res.status}
-                              </span>
+                              {isSuccessStatus(res.status) ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">
+                                  <i className="fa-solid fa-circle-check text-green-600 text-base"></i>
+                                  <span>{res.status}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 border border-red-200">
+                                  <i className="fa-solid fa-circle-xmark text-red-600 text-base"></i>
+                                  <span>{res.status}</span>
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -799,7 +816,7 @@ const VerifyDocument = () => {
                               <div className="flex items-center space-x-3">
                                 <span className="text-xl">📇</span>
                                 <h5 className="text-lg font-semibold text-gray-900">
-                                  Signer Information
+                                  Información del Firmante
                                 </h5>
                               </div>
                               <svg
@@ -856,7 +873,7 @@ const VerifyDocument = () => {
                               <div className="flex items-center space-x-3">
                                 <span className="text-xl">🏢</span>
                                 <h5 className="text-lg font-semibold text-gray-900">
-                                  Issuer Details
+                                  Detalles de la Entidad Emisora
                                 </h5>
                               </div>
                               <svg
@@ -908,18 +925,20 @@ const VerifyDocument = () => {
                           <div className="flex items-center space-x-3 mb-4">
                             <span className="text-xl">🕒</span>
                             <h5 className="text-lg font-semibold text-gray-900">
-                              Certificate Validity
+                              Validez del Certificado
                             </h5>
                           </div>
                           <div className="bg-white rounded-lg p-4 border">
                             <div className="flex items-center space-x-2">
-                              <span
-                                className={`text-lg ${isCertificateValid(res.certificateValidity) ? "text-green-600" : "text-red-600"}`}
-                              >
-                                {isCertificateValid(res.certificateValidity)
-                                  ? "✅"
-                                  : "❌"}
-                              </span>
+                              {isCertificateValid(res.certificateValidity) ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">
+                                  <i className="fa-solid fa-check text-green-600"></i> Válido
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800">
+                                  <i className="fa-solid fa-xmark text-red-600"></i> No válido
+                                </span>
+                              )}
                               <span className="text-sm font-mono text-gray-900">
                                 {res.certificateValidity}
                               </span>
@@ -928,8 +947,8 @@ const VerifyDocument = () => {
                         </div>
                       )}
 
-                      {/* Technical Details Section (if any) */}
-                      {(res.calculatedDocumentHash ||
+                      {/* Technical Details Section (solo para Administrador General) */}
+                      {isGeneralAdmin && (res.calculatedDocumentHash ||
                         res.messageDigestInSignature ||
                         res.hashComparisonResult ||
                         res.authenticatedAttributesSignatureResult ||
@@ -939,7 +958,7 @@ const VerifyDocument = () => {
                         <div className="p-6 bg-gray-50 border-t">
                           <details className="group">
                             <summary className="flex items-center justify-between cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
-                              <span>🔧 Technical Details</span>
+                              <span>🔧 Detalles Técnicos (Solo Administrador)</span>
                               <svg
                                 className="w-4 h-4 transition-transform group-open:rotate-180"
                                 fill="none"
@@ -959,7 +978,7 @@ const VerifyDocument = () => {
                               {res.certificateSubject && (
                                 <div className="bg-white rounded p-3 border">
                                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
-                                    Raw Certificate Subject
+                                    Sujeto del Certificado (Formato Original)
                                   </span>
                                   <code className="text-xs text-gray-800 break-all bg-gray-100 p-2 rounded block">
                                     {res.certificateSubject}
@@ -969,7 +988,7 @@ const VerifyDocument = () => {
                               {res.certificateIssuer && (
                                 <div className="bg-white rounded p-3 border">
                                   <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
-                                    Raw Certificate Issuer
+                                    Emisor del Certificado (Formato Original)
                                   </span>
                                   <code className="text-xs text-gray-800 break-all bg-gray-100 p-2 rounded block">
                                     {res.certificateIssuer}
@@ -983,7 +1002,7 @@ const VerifyDocument = () => {
                                   t("not-calculated") && (
                                   <div className="bg-white rounded p-3 border">
                                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
-                                      Calculated Document Hash
+                                      Hash Calculado del Documento
                                     </span>
                                     <code className="text-xs text-gray-800 break-all bg-gray-100 p-2 rounded block">
                                       {res.calculatedDocumentHash}
@@ -997,7 +1016,7 @@ const VerifyDocument = () => {
                                   t("not-found-in-signature") && (
                                   <div className="bg-white rounded p-3 border">
                                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
-                                      Message Digest in Signature
+                                      Resumen Criptográfico en la Firma (Message Digest)
                                     </span>
                                     <code className="text-xs text-gray-800 break-all bg-gray-100 p-2 rounded block">
                                       {res.messageDigestInSignature}
@@ -1009,7 +1028,7 @@ const VerifyDocument = () => {
                                   t("not-performed") && (
                                   <div className="bg-white rounded p-3 border">
                                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
-                                      Hash Comparison
+                                      Comparación de Hashes
                                     </span>
                                     <span className="text-sm text-gray-800">
                                       {res.hashComparisonResult}
@@ -1021,7 +1040,7 @@ const VerifyDocument = () => {
                                   t("not-performed") && (
                                   <div className="bg-white rounded p-3 border">
                                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">
-                                      Attributes Signature Verification
+                                      Verificación de Atributos Firmados
                                     </span>
                                     <span className="text-sm text-gray-800">
                                       {
@@ -1033,7 +1052,7 @@ const VerifyDocument = () => {
                               {res.errorDetails && (
                                 <div className="bg-red-50 border border-red-200 rounded p-3">
                                   <span className="text-xs font-medium text-red-600 uppercase tracking-wide block mb-1">
-                                    Error Details
+                                    Detalles del Error
                                   </span>
                                   <span className="text-sm text-red-800">
                                     {res.errorDetails}
