@@ -453,60 +453,6 @@ const EditTemplate = ({
               )}
             </div>
             <div className="text-xs mt-3">
-              <label className="block">
-                <span>
-                  {t("enable-tour")}
-                  <a data-tooltip-id="istourenabled-tooltip" className="ml-1">
-                    <sup>
-                      <i className="fa-light fa-question rounded-full border-[#33bbff] text-[#33bbff] text-[13px] border-[1px] py-[1.5px] px-[4px]"></i>
-                    </sup>
-                  </a>{" "}
-                </span>
-                <Tooltip id="istourenabled-tooltip" className="z-50">
-                  <div className="max-w-[200px] md:max-w-[450px]">
-                    <p className="font-bold">{t("enable-tour")}</p>
-                    <div className="p-[5px]">
-                      <ol className="list-disc">
-                        <li>
-                          <span className="font-bold">{t("yes")}: </span>
-                          <span>{t("istourenabled-help.p1")}</span>
-                        </li>
-                        <li>
-                          <span className="font-bold">{t("no")}: </span>
-                          <span>{t("istourenabled-help.p2")}</span>
-                        </li>
-                      </ol>
-                    </div>
-                    <p>{t("istourenabled-help.p3", { appName: appName })}</p>
-                  </div>
-                </Tooltip>
-              </label>
-              <div className="flex flex-col md:flex-row md:gap-4">
-                <div className="flex items-center gap-2 ml-2 mb-1">
-                  <input
-                    type="radio"
-                    value={"true"}
-                    className="op-radio op-radio-xs"
-                    name="IsTourEnabled"
-                    checked={formData.IsTourEnabled === "true"}
-                    onChange={handleStrInput}
-                  />
-                  <div className="text-center">{t("yes")}</div>
-                </div>
-                <div className="flex items-center gap-2 ml-2 mb-1">
-                  <input
-                    type="radio"
-                    value={"false"}
-                    name="IsTourEnabled"
-                    className="op-radio op-radio-xs"
-                    checked={formData.IsTourEnabled === "false"}
-                    onChange={handleStrInput}
-                  />
-                  <div className="text-center">{t("no")}</div>
-                </div>
-              </div>
-            </div>
-            <div className="text-xs mt-3">
               <label>
                 {t("notify-on-signatures")}
                 <a data-tooltip-id="nos-tooltip" className="ml-1">
@@ -551,41 +497,7 @@ const EditTemplate = ({
                 </div>
               </div>
             </div>
-            <div className="text-xs mt-3 mb-4">
-              <label htmlFor="penColors">
-                {t("pen-colors")}
-                <a data-tooltip-id="pen-colors-tooltip" className="ml-1">
-                  <sup>
-                    <i className="fa-light fa-question rounded-full border-[#33bbff] text-[#33bbff] text-[13px] border-[1px] py-[1.5px] px-[4px]"></i>
-                  </sup>
-                </a>
-                <Tooltip id="pen-colors-tooltip" className="z-[999]">
-                  <div className="max-w-[200px] md:max-w-[450px]">
-                    <p className="font-bold">{t("pen-colors")}</p>
-                    <div>{t("pen-colors-help")}</div>
-                  </div>
-                </Tooltip>
-              </label>
-              <div className="ml-[7px] flex flex-col md:flex-row gap-[10px] mb-[0.7rem]">
-                {pensList.map((color) => (
-                  <div
-                    key={color}
-                    className="flex flex-row gap-[5px] items-center"
-                  >
-                    <input
-                      className="mr-[2px] op-checkbox op-checkbox-xs"
-                      type="checkbox"
-                      name="penColors"
-                      checked={selectedColors.includes(color)}
-                      onChange={() => handleColorsChange(color)}
-                    />
-                    <div className="hover:underline underline-offset-2 cursor-default capitalize">
-                      {color}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+
             <div className="text-xs mt-3">
               <SignersInput
                 label={t("Bcc")}
@@ -608,19 +520,7 @@ const EditTemplate = ({
                 isAddYourSelfCheckbox={isAddYourSelfCheckbox}
               />
             </div>
-            <div className="text-xs mt-2">
-              <label className="block">{t("redirect-url")}</label>
-              <input
-                name="RedirectUrl"
-                className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
-                value={formData.RedirectUrl}
-                onChange={handleStrInput}
-                onInvalid={(e) =>
-                  e.target.setCustomValidity(t("input-required"))
-                }
-                onInput={(e) => e.target.setCustomValidity("")}
-              />
-            </div>
+            
             <div className="text-xs mt-2">
               <label className="block">
                 {t("time-to-complete")}

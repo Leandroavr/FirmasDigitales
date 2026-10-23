@@ -154,6 +154,10 @@ async function updateDoc(
 // `sendNotifyMail` is used to send notification mail of signer signed the document
 async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
   try {
+    if (doc?.NotifyOnSignatures === false) {
+      console.log(`[sendNotifyMail] Notificaciones desactivadas para "${doc?.Name}". Omitiendo envío.`);
+      return;
+    }
     const TenantAppName = 'Firma Digital Brascuba';
 
     // Contar firmantes completados únicos de forma precisa
@@ -191,35 +195,53 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
     const signerEmail = (signUser?.Email || signUser?.email || '').toLowerCase().trim();
     const signerName = signUser?.Name || signUser?.name || signerEmail;
 
-    // Recopilar todos los involucrados a notificar: propietario + demás firmantes
+    const isSendInOrder = doc?.SendinOrder === true || doc?.SendinOrder === 'true';
+
+    // Recopilar todos los involucrados a notificar
     const recipientSet = new Set();
     if (creatorEmail && creatorEmail !== signerEmail) {
       recipientSet.add(creatorEmail);
     }
-    if (Array.isArray(doc?.Signers)) {
-      for (const s of doc.Signers) {
-        let sMail = (s?.Email || s?.email || '').toLowerCase().trim();
-        if (!sMail && s?.objectId) {
-          try {
-            const cbQuery = new Parse.Query('contracts_Contactbook');
-            const contact = await cbQuery.get(s.objectId, { useMasterKey: true });
-            sMail = (contact?.get('Email') || '').toLowerCase().trim();
-          } catch (e) {
-            // Ignorar si no es contactbook
+
+    if (isSendInOrder) {
+      // En modo 'Enviar en orden', solo se notifica al propietario y a los firmantes que YA hayan firmado previamente.
+      // Los firmantes pendientes NO reciben notificación de avance; recibirán su respectiva "Solicitud de firma" cuando llegue su turno.
+      if (Array.isArray(doc?.Signers)) {
+        for (const s of doc.Signers) {
+          const sId = (s?.objectId || '').toString();
+          let sMail = (s?.Email || s?.email || '').toLowerCase().trim();
+          if (completedSignerIds.has(sId) && sMail && sMail !== signerEmail) {
+            recipientSet.add(sMail);
           }
         }
-        if (sMail && sMail !== signerEmail) {
-          recipientSet.add(sMail);
+      }
+    } else {
+      // En modo paralelo (sin orden), se notifica a los demás firmantes
+      if (Array.isArray(doc?.Signers)) {
+        for (const s of doc.Signers) {
+          let sMail = (s?.Email || s?.email || '').toLowerCase().trim();
+          if (!sMail && s?.objectId) {
+            try {
+              const cbQuery = new Parse.Query('contracts_Contactbook');
+              const contact = await cbQuery.get(s.objectId, { useMasterKey: true });
+              sMail = (contact?.get('Email') || '').toLowerCase().trim();
+            } catch (e) {
+              // Ignorar si no es contactbook
+            }
+          }
+          if (sMail && sMail !== signerEmail) {
+            recipientSet.add(sMail);
+          }
         }
       }
-    }
-    if (Array.isArray(doc?.Placeholders)) {
-      doc.Placeholders.forEach(p => {
-        const pMail = (p?.email || p?.signerPtr?.Email || p?.signerPtr?.email || '').toLowerCase().trim();
-        if (pMail && pMail !== signerEmail) {
-          recipientSet.add(pMail);
-        }
-      });
+      if (Array.isArray(doc?.Placeholders)) {
+        doc.Placeholders.forEach(p => {
+          const pMail = (p?.email || p?.signerPtr?.Email || p?.signerPtr?.email || '').toLowerCase().trim();
+          if (pMail && pMail !== signerEmail) {
+            recipientSet.add(pMail);
+          }
+        });
+      }
     }
 
     const recipients = Array.from(recipientSet);
@@ -487,7 +509,9 @@ async function PDF(req) {
     // signer/approver placeholder has a Signed/Approved audit entry. We
     // skip this check entirely for the document owner (className=Users)
     // because owners never sign through this path.
-    if (reqUserId && _resDoc?.SendinOrder === true && _resDoc?.SendInOrderStrict === true) {
+    const isSendInOrderDoc = _resDoc?.SendinOrder === true || _resDoc?.SendinOrder === 'true';
+    const isStrictOrderDoc = _resDoc?.SendInOrderStrict === true || _resDoc?.SendInOrderStrict === 'true';
+    if (reqUserId && isSendInOrderDoc && isStrictOrderDoc) {
       const placeholders = Array.isArray(_resDoc?.Placeholders)
         ? _resDoc.Placeholders.filter(p => p?.Role !== 'prefill')
         : [];
@@ -710,7 +734,8 @@ async function getCorporateSigningContext(req) {
     }
   }
   // El orden de firma solo se valida si el documento/plantilla fue creado con orden obligatorio (SendinOrder === true)
-  if (data.SendinOrder === true && placeholders.length > 0 && signerIndex > 0) {
+  const isSendInOrderData = data.SendinOrder === true || data.SendinOrder === 'true';
+  if (isSendInOrderData && placeholders.length > 0 && signerIndex > 0) {
     const pendingSignerId = findPendingPriorSigner(placeholders, signerIndex, data.AuditTrail);
     if (pendingSignerId) {
       throw new Parse.Error(

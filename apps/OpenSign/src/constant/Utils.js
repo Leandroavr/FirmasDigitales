@@ -4583,7 +4583,10 @@ export const sendEmailToSigners = async (
     pdfDetails?.[0]?.SenderMail || pdfDetails?.[0]?.ExtUserPtr?.Email;
   let senderPhone = pdfDetails?.[0]?.ExtUserPtr?.Phone;
   let signerMail = signersdata.slice();
-  if (pdfDetails?.[0]?.SendinOrder && pdfDetails?.[0]?.SendinOrder === true) {
+  const isSendInOrder =
+    pdfDetails?.[0]?.SendinOrder === true ||
+    pdfDetails?.[0]?.SendinOrder === "true";
+  if (isSendInOrder) {
     signerMail = signerMail[0] ? [signerMail[0]] : [];
   }
   for (let i = 0; i < signerMail.length; i++) {

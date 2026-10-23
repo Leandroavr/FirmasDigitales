@@ -1025,26 +1025,43 @@ function PdfRequestFiles(
                     isSuccessRoute,
                     contactId
                   );
-                  const index =
-                    updatedDoc.updatedPdfDetails?.[0]?.Signers.findIndex(
-                      (x) => x.objectId === contactId
+                  const signersList = updatedDoc.updatedPdfDetails?.[0]?.Signers || [];
+                  const placeholdersList = (updatedDoc.updatedPdfDetails?.[0]?.Placeholders || []).filter(
+                    (x) => x.Role !== "prefill"
+                  );
+                  const currentEmail = (signerUserEmail || (typeof getSignerEmail === "function" ? getSignerEmail() : "") || "").toLowerCase().trim();
+                  let index = signersList.findIndex(
+                    (x) =>
+                      (contactId && x.objectId === contactId) ||
+                      (signerObjectId && (x.objectId === signerObjectId || x.signerObjId === signerObjectId)) ||
+                      (currentEmail && (x.Email || x.email || "").toLowerCase().trim() === currentEmail)
+                  );
+                  if (index === -1) {
+                    index = placeholdersList.findIndex(
+                      (p) =>
+                        (contactId && (p.signerObjId === contactId || p.signerPtr?.objectId === contactId)) ||
+                        (signerObjectId && (p.signerObjId === signerObjectId || p.signerPtr?.objectId === signerObjectId)) ||
+                        (currentEmail && (p.email || p.signerPtr?.Email || "").toLowerCase().trim() === currentEmail)
                     );
-                  const removePrefill =
-                    updatedDoc.updatedPdfDetails?.[0]?.Placeholders?.filter(
-                      (x) => x.Role !== "prefill"
-                    );
-                  // Skip viewer placeholders when computing the next signer
-                  // to notify (viewers do not gate sequential signing).
-                  let newIndex = index + 1;
-                  const usermail = {
-                    Email: removePrefill[newIndex]?.email || ""
-                  };
-                  const user = usermail?.Email
-                    ? usermail
-                    : updatedDoc.updatedPdfDetails?.[0]?.Signers[newIndex];
+                  }
+                  let newIndex = index !== -1 ? index + 1 : -1;
+                  const nextPlaceholder = newIndex >= 0 && newIndex < placeholdersList.length ? placeholdersList[newIndex] : null;
+                  const nextSigner = newIndex >= 0 && newIndex < signersList.length ? signersList[newIndex] : null;
+                  const nextEmail = nextPlaceholder?.email || nextSigner?.Email || nextSigner?.email || "";
+                  const user = nextSigner || (nextEmail ? { Email: nextEmail, Name: nextPlaceholder?.signerName || "" } : null);
+
+                  const isSequentialOrder =
+                    sendInOrder === true ||
+                    sendInOrder === "true" ||
+                    updatedDoc.updatedPdfDetails?.[0]?.SendinOrder === true ||
+                    updatedDoc.updatedPdfDetails?.[0]?.SendinOrder === "true";
+
                   if (
                     sendmail !== "false" &&
-                    sendInOrder
+                    isSequentialOrder &&
+                    user &&
+                    user.Email &&
+                    !updatedDoc.updatedPdfDetails?.[0]?.isCompleted
                   ) {
                     const mailBody =
                           tenantMailTemplate?.body;
