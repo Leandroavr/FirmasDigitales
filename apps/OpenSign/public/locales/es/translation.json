@@ -857,7 +857,7 @@
   "notify-on-signatures": "Notificar sobre firmas",
   "notify-on-signatures-help": {
     "p1": "El creador del documento recibirá una notificación por correo electrónico cada vez que un firmante firme el documento.",
-    "note": "Nota: Independientemente de esta configuración, siempre se envía un correo electrónico de finalización con el documento firmado y el certificado de finalización adjunto a todos los firmantes y al propietario del documento."
+    "note": "Nota: Independientemente de esta configuración, siempre se envía un correo electrónico de finalización con el documento firmado adjunto a todos los firmantes y al propietario del documento."
   },
   "expiry-date": "Date d'expiration",
   "expiry-date-updated": "La fecha de vencimiento se ha extendido con éxito hasta el {{newexpirydate}}",

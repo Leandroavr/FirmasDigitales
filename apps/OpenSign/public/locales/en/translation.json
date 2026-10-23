@@ -857,7 +857,7 @@
   "notify-on-signatures": "Notify on signatures",
   "notify-on-signatures-help": {
     "p1": "The document creator will receive an email notification whenever a signer signs the document.",
-    "note": "Note: Regardless of this setting, a completion email with the signed document and completion certificate attached is always sent to all signers and the document owner."
+    "note": "Note: Regardless of this setting, a completion email with the signed document attached is always sent to all signers and the document owner."
   },
   "expiry-date": "Expiry date",
   "expiry-date-updated": "The expiry date has been successfully extended to {{newexpirydate}}",
