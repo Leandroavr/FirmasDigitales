@@ -273,6 +273,7 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
         `<div style='font-size:11px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px;'>Información del Documento</div>` +
         `<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>` +
         `<tr><td style='padding:5px 0;width:110px;font-weight:600;color:#64748b;'>Título:</td><td style='padding:5px 0;font-weight:700;color:#0f172a;'>${pdfName}</td></tr>` +
+        (doc?.DocumentType ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Tipo de documento:</td><td style='padding:5px 0;font-weight:600;color:#0f172a;'>${doc.DocumentType}</td></tr>` : '') +
         (doc?.Description ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Descripción:</td><td style='padding:5px 0;color:#334155;'>${doc.Description}</td></tr>` : '') +
         (doc?.Note ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Notas:</td><td style='padding:5px 0;color:#334155;'>${doc.Note}</td></tr>` : '') +
         `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Estado:</td><td style='padding:5px 0;font-weight:700;color:#0b3c6d;'>${auditTrailCount} de ${signersCount} firmas completadas</td></tr>` +

@@ -172,12 +172,14 @@ async function sendMail(document, publicUrl) {
       }
       const docDescription = document?.Description || document?.TemplateId?.Description || '';
       const docNote = document?.Note || document?.TemplateId?.Note || '';
+      const docType = document?.DocumentType || document?.TemplateId?.DocumentType || '';
       // const mailparam = {
       //   note: document?.Note || '',
       //   senderName: senderName,
       //   senderMail: senderEmail,
       //   title: document.Name,
-      //   organization: orgName,
+      //   documentType: docType,
+        // organization: orgName,
       //   localExpireDate: localExpireDate,
       //   signingUrl: signPdf,
       // };

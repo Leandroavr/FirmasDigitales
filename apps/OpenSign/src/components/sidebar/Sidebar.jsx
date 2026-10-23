@@ -111,14 +111,14 @@ const Sidebar = () => {
           >
             {username}
           </p>
-          <p
+          {/* <p
             onClick={handleProfile}
             className={`cursor-pointer text-[12px] text-base-content ${
               tenantname ? "mt-2" : ""
             }`}
           >
             {tenantname}
-          </p>
+          </p> */}
         </div>
       </div>
       <nav

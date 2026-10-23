@@ -289,7 +289,7 @@ function UserProfile() {
                 </span>
                 <span>{UserProfile && UserProfile.email}</span>
               </li>
-              <li
+              {/* <li
                 className={`flex justify-between items-center border-b-[1px] border-gray-300 break-all ${
                   editmode ? "py-1.5" : "py-2"
                 }`}
@@ -305,7 +305,7 @@ function UserProfile() {
                 ) : (
                   <span>{extendUser?.[0].Company}</span>
                 )}
-              </li>
+              </li> */}
               <li
                 className={`flex justify-between items-center border-b-[1px] border-gray-300 break-all ${
                   editmode ? "py-1.5" : "py-2"

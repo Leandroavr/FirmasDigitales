@@ -1097,6 +1097,7 @@ export const createDocument = async (
       : {};
     const data = {
       Name: Doc.Name,
+      DocumentType: Doc?.DocumentType || "Contrato internacional",
       URL: SignedUrl ? SignedUrl : Doc?.URL,
       SignedUrl: isSendDoc ? SignedUrl : Doc.SignedUrl,
       SentToOthers: Doc.SentToOthers,
@@ -4269,10 +4270,11 @@ export const mailTemplate = (param) => {
     "<div style='font-size:11px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;'>Información del Documento</div>" +
     "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>" +
     `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Título:</td><td style='padding:6px 0;font-weight:700;color:#0f172a;'>${param.title || "Documento sin título"}</td></tr>` +
+    (param.documentType ? `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Tipo de documento:</td><td style='padding:6px 0;font-weight:600;color:#0f172a;'>${param.documentType}</td></tr>` : "") +
     (param.description ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Descripción:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.description}</td></tr>` : "") +
     (param.note ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Notas:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.note}</td></tr>` : "") +
     `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Remitente:</td><td style='padding:6px 0;color:#334155;'>${param.senderName}${param.senderMail ? ` (${param.senderMail})` : ""}</td></tr>` +
-    (param.organization ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Organización:</td><td style='padding:6px 0;color:#334155;'>${param.organization}</td></tr>` : "") +
+    // (param.organization ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Organización:</td><td style='padding:6px 0;color:#334155;'>${param.organization}</td></tr>` : "") +
     (param.localExpireDate ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Fecha límite:</td><td style='padding:6px 0;color:#334155;'>${param.localExpireDate}</td></tr>` : "") +
     "</table>" +
     "</div>" +
@@ -4697,6 +4699,10 @@ export const sendEmailToSigners = async (
         pdfDetails?.[0]?.Note ||
         pdfDetails?.[0]?.TemplateId?.Note ||
         "";
+      const docType =
+        pdfDetails?.[0]?.DocumentType ||
+        pdfDetails?.[0]?.TemplateId?.DocumentType ||
+        "";
       let replaceVar;
 
       if (customizeMail && isCustomize) {
@@ -4790,9 +4796,10 @@ export const sendEmailToSigners = async (
         senderName: senderName,
         note: docNote,
         description: docDescription,
+        documentType: docType,
         senderMail: senderEmail,
         title: documentName,
-        organization: orgName,
+        // organization: orgName,
         localExpireDate: localExpireDate,
         signingUrl: signPdf
       };

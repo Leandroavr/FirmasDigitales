@@ -1188,6 +1188,11 @@ function PdfRequestFiles(
                             updatedDoc?.updatedPdfDetails?.[0]?.Note ||
                             updatedDoc?.updatedPdfDetails?.[0]?.TemplateId?.Note ||
                             "";
+                          const docType =
+                            pdfDetails?.[0]?.DocumentType ||
+                            updatedDoc?.updatedPdfDetails?.[0]?.DocumentType ||
+                            updatedDoc?.updatedPdfDetails?.[0]?.TemplateId?.DocumentType ||
+                            "";
 
                           // const variables = {
                           //   document_title: documentName,
@@ -1235,10 +1240,11 @@ function PdfRequestFiles(
                         const mailparam = {
                           note: docNote,
                           description: docDescription,
+                          documentType: docType,
                           senderName: senderName,
                           senderMail: senderEmail,
                           title: documentName,
-                          organization: orgName,
+                          // organization: orgName,
                           localExpireDate: localExpireDate,
                           signingUrl: signPdf
                         };

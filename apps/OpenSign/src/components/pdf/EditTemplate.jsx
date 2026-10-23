@@ -36,6 +36,7 @@ const EditTemplate = ({
   const inputFileRef = useRef(null);
   const [formData, setFormData] = useState({
     Name: template?.Name || "",
+    DocumentType: template?.DocumentType || "Contrato internacional",
     Note: template?.Note || "",
     Description: template?.Description || "",
     SendinOrder: template?.SendinOrder ? `${template?.SendinOrder}` : "false",
@@ -376,6 +377,28 @@ const EditTemplate = ({
                 required
                 className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
               />
+            </div>
+            <div className="mb-[0.35rem]">
+              <label htmlFor="DocumentType" className="text-[13px]">
+                Tipo de documento
+                <span className="text-[13px] text-[red]"> *</span>
+              </label>
+              <select
+                name="DocumentType"
+                id="DocumentType"
+                className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content w-full text-xs"
+                value={formData.DocumentType || "Contrato internacional"}
+                onChange={(e) => handleStrInput(e)}
+                required
+              >
+                <option value="Contrato internacional">Contrato internacional</option>
+                <option value="Contrato de prestación de servicios">Contrato de prestación de servicios</option>
+                <option value="Acuerdo de confidencialidad (NDA)">Acuerdo de confidencialidad (NDA)</option>
+                <option value="Poder notarial / Carta poder">Poder notarial / Carta poder</option>
+                <option value="Acta de entrega y recepción">Acta de entrega y recepción</option>
+                <option value="Memorando / Resolución">Memorando / Resolución</option>
+                <option value="Otro">Otro</option>
+              </select>
             </div>
             <div className="mb-[0.35rem]">
               <label htmlFor="Note" className="text-[13px]">

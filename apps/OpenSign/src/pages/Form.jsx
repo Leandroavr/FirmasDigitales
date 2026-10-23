@@ -60,6 +60,7 @@ const Forms = (props) => {
   const [folder, setFolder] = useState({ ObjectId: "", Name: "" });
   const [formData, setFormData] = useState({
     Name: "",
+    DocumentType: "Contrato internacional",
     Description: "",
     Note: "",
     TimeToCompleteDays: 15,
@@ -409,6 +410,10 @@ const Forms = (props) => {
         const currentUser = Parse.User.current();
         const object = new Parse.Object(props.Cls);
         object.set("Name", formData?.Name);
+        object.set(
+          "DocumentType",
+          formData?.DocumentType || "Contrato internacional"
+        );
         object.set("Description", formData?.Description);
         object.set("Note", formData?.Note);
         if (props.title === "Request Signatures") {
@@ -517,6 +522,7 @@ const Forms = (props) => {
               : true;
           setFormData({
             Name: "",
+            DocumentType: "Contrato internacional",
             Description: "",
             Note:
               props.title === "Sign Yourself"
@@ -611,6 +617,7 @@ const Forms = (props) => {
         : true;
     let obj = {
       Name: "",
+      DocumentType: "Contrato internacional",
       Description: "",
       Note:
         props.title === "Sign Yourself"
@@ -886,7 +893,38 @@ const Forms = (props) => {
                 required
               />
             </div>
-            {props.title === "New Template" && (
+            <div className="text-xs mt-2">
+              <label className="block">
+                Tipo de documento
+                <span className="text-red-500 text-[13px]">*</span>
+              </label>
+              <select
+                name="DocumentType"
+                className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content w-full text-xs"
+                value={formData.DocumentType || "Contrato internacional"}
+                onChange={(e) => handleStrInput(e)}
+                required
+              >
+                <option value="Contrato internacional">Contrato internacional</option>
+                <option value="Contrato de prestación de servicios">Contrato de prestación de servicios</option>
+                <option value="Acuerdo de confidencialidad (NDA)">Acuerdo de confidencialidad (NDA)</option>
+                <option value="Poder notarial / Carta poder">Poder notarial / Carta poder</option>
+                <option value="Acta de entrega y recepción">Acta de entrega y recepción</option>
+                <option value="Memorando / Resolución">Memorando / Resolución</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div className="text-xs mt-2">
+              <label className="block">{t("description")}</label>
+              <input
+                name="Description"
+                className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                value={formData.Description}
+                onChange={(e) => handleStrInput(e)}
+                placeholder="Descripción del documento (Opcional)"
+              />
+            </div>
+            {/* {props.title === "New Template" && (
               <div className="text-xs mt-2">
                 <label className="block">{t("description")}</label>
                 <input
@@ -896,7 +934,7 @@ const Forms = (props) => {
                   onChange={(e) => handleStrInput(e)}
                 />
               </div>
-            )}
+            )} */}
             {props.signers && (
               <SignersInput
                 label={t("signers")}

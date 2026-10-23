@@ -691,10 +691,11 @@ export const mailTemplate = param => {
     `<div style='font-size:11px;font-weight:700;color:${themeColor};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;'>Información del Documento</div>` +
     `<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>` +
     `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Título:</td><td style='padding:6px 0;font-weight:700;color:#0f172a;'>${param.title || 'Documento sin título'}</td></tr>` +
+    (param.documentType ? `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Tipo de documento:</td><td style='padding:6px 0;font-weight:600;color:#0f172a;'>${param.documentType}</td></tr>` : '') +
     (param.description ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Descripción:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.description}</td></tr>` : '') +
     (param.note ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Notas:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.note}</td></tr>` : '') +
     `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Remitente:</td><td style='padding:6px 0;color:#334155;'>${param.senderName}${param.senderMail ? ` (${param.senderMail})` : ''}</td></tr>` +
-    (param.organization ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Organización:</td><td style='padding:6px 0;color:#334155;'>${param.organization}</td></tr>` : '') +
+    // (param.organization ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Organización:</td><td style='padding:6px 0;color:#334155;'>${param.organization}</td></tr>` : '') +
     (param.localExpireDate ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Fecha límite:</td><td style='padding:6px 0;color:#334155;'>${param.localExpireDate}</td></tr>` : '') +
     `</table></div>` +
     `<div style='margin:28px 0 20px 0;text-align:center;'><a target='_blank' href='${param.signingUrl}' style='display:inline-block;padding:12px 28px;background-color:${themeColor};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(11,60,109,0.25);'>Ingresar a Firmar Documento</a></div>` +
