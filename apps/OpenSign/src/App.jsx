@@ -54,6 +54,9 @@ function App() {
     localStorage.setItem("baseUrl", `${serverUrl_fn()}/`);
     hideUpgradeProgress();
     localStorage.removeItem("showUpgradeProgress");
+    // Forzar tema estandar opensigncss para todos los usuarios
+    document.documentElement.setAttribute("data-theme", "opensigncss");
+    localStorage.setItem("theme", "light");
     setIsLoading(false);
   }, []);
 

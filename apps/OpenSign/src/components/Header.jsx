@@ -238,6 +238,8 @@ const Header = ({ isConsole, setIsLoggingOut }) => {
                       {t("verify-document")}
                     </span>
                   </li>
+                  {/* Modo oscuro BETA desactivado para todos los usuarios (comentado) */}
+                  {/*
                   <li>
                     <span>
                       <i className="fa-light fa-moon"></i>
@@ -248,6 +250,7 @@ const Header = ({ isConsole, setIsLoggingOut }) => {
                       <ThemeToggle />
                     </span>
                   </li>
+                  */}
                 </>
               )}
               <li onClick={handleLogout}>
