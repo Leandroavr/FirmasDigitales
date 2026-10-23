@@ -75,11 +75,15 @@ const DocSuccessPage = () => {
   };
 
   const handleDownload = () => {
+    // Descarga directa del PDF sin modal intermedio
+    handleDownloadPdf(pdfDetails, setIsDownloading, pdfBase64Url);
+    /*
     if (pdfDetails?.[0]?.IsCompleted) {
       setIsDownloadModal(true);
     } else {
       handleDownloadPdf(pdfDetails, setIsDownloading, pdfBase64Url);
     }
+    */
   };
 
   return (

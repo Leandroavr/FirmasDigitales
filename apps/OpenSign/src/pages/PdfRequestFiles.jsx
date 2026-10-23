@@ -2077,7 +2077,10 @@ function PdfRequestFiles(
   };
   const handleDownload = async () => {
       setIsCompleted((prev) => ({ ...prev, isModal: false }));
+      await handleDownloadBtn();
+      /*
       setIsDownloadModal(true);
+      */
   };
   return (
     <>

@@ -179,6 +179,9 @@ function Header(props) {
     );
   };
   const handleDownloadBtn = async () => {
+    // Descarga directa del PDF al primer click sin ventana secundaria intermedia
+    await handleDownloadDoc();
+    /*
     if (
       props?.isCompleted
     ) {
@@ -186,6 +189,7 @@ function Header(props) {
     } else {
       await handleDownloadDoc();
     }
+    */
   };
   return (
     <div className="flex py-[5px]">
