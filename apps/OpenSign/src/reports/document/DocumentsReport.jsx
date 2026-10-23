@@ -540,9 +540,20 @@ const DocumentsReport = (props) => {
       year: "numeric"
     });
     const signPdf = `${window.location.origin}/login/${encodeBase64}`;
+    const docDescription =
+      doc?.Description || doc?.TemplateId?.Description || "";
+    const docNote =
+      doc?.Note || doc?.TemplateId?.Note || "";
+
+    // Old variables commented:
+    // const variables = {
+    //   document_title: doc.Name,
+    //   note: doc?.Note || "",
     const variables = {
       document_title: doc.Name,
-      note: doc?.Note || "",
+      title: doc.Name,
+      description: docDescription,
+      note: docNote,
       sender_name:
         doc?.SenderName ||
         doc.ExtUserPtr.Name,
@@ -572,9 +583,20 @@ const DocumentsReport = (props) => {
       year: "numeric"
     });
     const signPdf = `${window.location.origin}/login/${encodeBase64}`;
+    const docDescription =
+      doc?.Description || doc?.TemplateId?.Description || "";
+    const docNote =
+      doc?.Note || doc?.TemplateId?.Note || "";
+
+    // Old variables commented:
+    // const variables = {
+    //   document_title: doc.Name,
+    //   note: doc?.Note || "",
     const variables = {
       document_title: doc.Name,
-      note: doc?.Note || "",
+      title: doc.Name,
+      description: docDescription,
+      note: docNote,
       sender_name:
         doc?.SenderName ||
         doc.ExtUserPtr.Name,

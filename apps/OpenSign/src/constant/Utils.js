@@ -119,7 +119,21 @@ export function getEnv() {
 }
 const appName = "OpenSign™";
 
-export const defaultMailBody = `<p>Hola, {{receiver_name}}:</p><br><p>Esperamos que se encuentre bien. {{sender_name}} le ha solicitado revisar y firmar el documento <b>"{{document_title}}"</b>.</p><p>Su firma es necesaria para continuar con el trámite y confirmar su conformidad.</p><br><p><a href='{{signing_url}}' rel='noopener noreferrer' target='_blank'>Firmar documento aquí</a></p><br><br><p>Si tiene alguna duda o necesita más información, por favor póngase en contacto con el remitente.</p><br><p>Saludos cordiales,</p><p>Firma Digital Brascuba</p><br>`;
+// export const defaultMailBody = `<p>Hola, {{receiver_name}}:</p><br><p>Esperamos que se encuentre bien. {{sender_name}} le ha solicitado revisar y firmar el documento <b>"{{document_title}}"</b>.</p><p>Su firma es necesaria para continuar con el trámite y confirmar su conformidad.</p><br><p><a href='{{signing_url}}' rel='noopener noreferrer' target='_blank'>Firmar documento aquí</a></p><br><br><p>Si tiene alguna duda o necesita más información, por favor póngase en contacto con el remitente.</p><br><p>Saludos cordiales,</p><p>Firma Digital Brascuba</p><br>`;
+export const defaultMailBody =
+  `<p>Hola, {{receiver_name}}:</p>` +
+  `<p>{{sender_name}} le ha solicitado revisar y firmar digitalmente el documento <b>"{{document_title}}"</b>.</p>` +
+  `<div style='background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0b3c6d;border-radius:4px;padding:14px 16px;margin:18px 0'>` +
+  `<div style='font-size:12px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px'>Información del Documento</div>` +
+  `<table style='width:100%;border-collapse:collapse;font-size:13px;color:#333;line-height:1.6'>` +
+  `<tr><td style='padding:4px 0;width:115px;font-weight:bold;color:#475569;vertical-align:top;'>Título:</td><td style='padding:4px 0;font-weight:600;color:#0f172a;'>{{document_title}}</td></tr>` +
+  `<tr><td style='padding:4px 0;font-weight:bold;color:#475569;vertical-align:top;'>Descripción:</td><td style='padding:4px 0;color:#334155;'>{{description}}</td></tr>` +
+  `<tr><td style='padding:4px 0;font-weight:bold;color:#475569;vertical-align:top;'>Notas:</td><td style='padding:4px 0;color:#334155;'>{{note}}</td></tr>` +
+  `<tr><td style='padding:4px 0;font-weight:bold;color:#475569;vertical-align:top;'>Remitente:</td><td style='padding:4px 0;color:#334155;'>{{sender_name}} ({{sender_mail}})</td></tr>` +
+  `<tr><td style='padding:4px 0;font-weight:bold;color:#475569;vertical-align:top;'>Fecha límite:</td><td style='padding:4px 0;color:#334155;'>{{expiry_date}}</td></tr>` +
+  `</table></div>` +
+  `<p><a href='{{signing_url}}' rel='noopener noreferrer' target='_blank' style='display:inline-block;padding:10px 20px;background-color:#0b3c6d;color:white;text-decoration:none;border-radius:4px;font-weight:bold'>Firmar documento aquí</a></p><br>` +
+  `<p>Saludos cordiales,</p><p>Firma Digital Brascuba</p><br>`;
 export const defaultMailSubject = `{{sender_name}} le ha solicitado firmar {{document_title}}`;
 export const nonPresentMaskCss = (base) => ({
   ...base,
@@ -4209,31 +4223,65 @@ function _removeWidgetAnnotations(pdfDoc) {
   }
 }
 
+// export const mailTemplate = (param) => {
+//   const TenantAppName = "Firma Digital Brascuba";
+//   const subject = `[Firma Digital] ${param.senderName} le ha solicitado firmar "${param.title}"`;
+//   const body =
+//     "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body>" +
+//     "<div style='background-color:#f5f5f5;padding:20px'>" +
+//     "<div style='background-color:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" +
+//     "<div style='padding:16px 20px;font-family:system-ui,sans-serif;background-color:#0b3c6d'>" +
+//     "<h2 style='font-size:18px;margin:0;color:white;'>Solicitud de Firma Digital</h2>" +
+//     "</div>" +
+//     "<div style='padding:24px 20px;font-family:system-ui,sans-serif;font-size:14px;color:#333;line-height:1.6'>" +
+//     "<p>Estimado(a) usuario(a),</p>" +
+//     `<p><strong>${param.senderName}</strong> (${param.senderMail}) le ha solicitado revisar y firmar digitalmente el documento <strong>"${param.title}"</strong>.</p>` +
+//     "<div style='background-color:#f0f4f8;border-left:4px solid #0b3c6d;padding:14px 16px;margin:18px 0'>" +
+//     "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#333'>" +
+//     `<tr><td style='padding:4px 0;width:120px;font-weight:bold'>Remitente:</td><td>${param.senderName} (${param.senderMail})</td></tr>` +
+//     (param.organization ? `<tr><td style='padding:4px 0;font-weight:bold'>Organización:</td><td>${param.organization}</td></tr>` : "") +
+//     (param.localExpireDate ? `<tr><td style='padding:4px 0;font-weight:bold'>Vence el:</td><td>${param.localExpireDate}</td></tr>` : "") +
+//     (param.note ? `<tr><td style='padding:4px 0;font-weight:bold'>Nota:</td><td>${param.note}</td></tr>` : "") +
+//     "</table>" +
+//     "</div>" +
+//     `<div style='margin:25px 0'><a target='_blank' href='${param.signingUrl}' style='display:inline-block;padding:12px 24px;background-color:#0b3c6d;color:white;text-decoration:none;border-radius:4px;font-weight:bold'>Ingresar a Firmar Documento</a></div>` +
+//     "<p style='font-size:12px;color:#777;margin-top:20px'><strong>Aviso de seguridad:</strong> Cada usuario debe iniciar sesión obligatoriamente con sus credenciales institucionales para revisar o firmar en la plataforma.</p>" +
+//     "</div></div>" +
+//     `<div><p style='padding:15px;color:#888;font-size:12px;text-align:center'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
+//     "</div></body></html>";
+//   return { subject, body };
+// };
+
 export const mailTemplate = (param) => {
   const TenantAppName = "Firma Digital Brascuba";
   const subject = `[Firma Digital] ${param.senderName} le ha solicitado firmar "${param.title}"`;
   const body =
-    "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body>" +
-    "<div style='background-color:#f5f5f5;padding:20px'>" +
-    "<div style='background-color:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" +
-    "<div style='padding:16px 20px;font-family:system-ui,sans-serif;background-color:#0b3c6d'>" +
-    "<h2 style='font-size:18px;margin:0;color:white;'>Solicitud de Firma Digital</h2>" +
+    "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body style='margin:0;padding:0;background-color:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;'>" +
+    "<div style='background-color:#f4f6f9;padding:25px 15px;'>" +
+    "<div style='background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;margin:0 auto;border:1px solid #e5e7eb;'>" +
+    "<div style='padding:20px 24px;background-color:#0b3c6d;'>" +
+    "<h2 style='font-size:18px;margin:0;color:#ffffff;font-weight:600;letter-spacing:0.3px;'>Solicitud de Firma Digital</h2>" +
     "</div>" +
-    "<div style='padding:24px 20px;font-family:system-ui,sans-serif;font-size:14px;color:#333;line-height:1.6'>" +
-    "<p>Estimado(a) usuario(a),</p>" +
-    `<p><strong>${param.senderName}</strong> (${param.senderMail}) le ha solicitado revisar y firmar digitalmente el documento <strong>"${param.title}"</strong>.</p>` +
-    "<div style='background-color:#f0f4f8;border-left:4px solid #0b3c6d;padding:14px 16px;margin:18px 0'>" +
-    "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#333'>" +
-    `<tr><td style='padding:4px 0;width:120px;font-weight:bold'>Remitente:</td><td>${param.senderName} (${param.senderMail})</td></tr>` +
-    (param.organization ? `<tr><td style='padding:4px 0;font-weight:bold'>Organización:</td><td>${param.organization}</td></tr>` : "") +
-    (param.localExpireDate ? `<tr><td style='padding:4px 0;font-weight:bold'>Vence el:</td><td>${param.localExpireDate}</td></tr>` : "") +
-    (param.note ? `<tr><td style='padding:4px 0;font-weight:bold'>Nota:</td><td>${param.note}</td></tr>` : "") +
+    "<div style='padding:24px;color:#334155;font-size:14px;line-height:1.6;'>" +
+    "<p style='margin-top:0;margin-bottom:14px;font-size:15px;color:#1e293b;'>Estimado(a) usuario(a),</p>" +
+    `<p style='margin-top:0;margin-bottom:20px;'><strong>${param.senderName}</strong>${param.senderMail ? ` (${param.senderMail})` : ""} le ha solicitado revisar y firmar digitalmente el siguiente documento:</p>` +
+    "<div style='background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0b3c6d;border-radius:6px;padding:16px 18px;margin:20px 0;'>" +
+    "<div style='font-size:11px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;'>Información del Documento</div>" +
+    "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>" +
+    `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Título:</td><td style='padding:6px 0;font-weight:700;color:#0f172a;'>${param.title || "Documento sin título"}</td></tr>` +
+    (param.description ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Descripción:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.description}</td></tr>` : "") +
+    (param.note ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Notas:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.note}</td></tr>` : "") +
+    `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Remitente:</td><td style='padding:6px 0;color:#334155;'>${param.senderName}${param.senderMail ? ` (${param.senderMail})` : ""}</td></tr>` +
+    (param.organization ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Organización:</td><td style='padding:6px 0;color:#334155;'>${param.organization}</td></tr>` : "") +
+    (param.localExpireDate ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Fecha límite:</td><td style='padding:6px 0;color:#334155;'>${param.localExpireDate}</td></tr>` : "") +
     "</table>" +
     "</div>" +
-    `<div style='margin:25px 0'><a target='_blank' href='${param.signingUrl}' style='display:inline-block;padding:12px 24px;background-color:#0b3c6d;color:white;text-decoration:none;border-radius:4px;font-weight:bold'>Ingresar a Firmar Documento</a></div>` +
-    "<p style='font-size:12px;color:#777;margin-top:20px'><strong>Aviso de seguridad:</strong> Cada usuario debe iniciar sesión obligatoriamente con sus credenciales institucionales para revisar o firmar en la plataforma.</p>" +
+    `<div style='margin:28px 0 20px 0;text-align:center;'><a target='_blank' href='${param.signingUrl}' style='display:inline-block;padding:12px 28px;background-color:#0b3c6d;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(11,60,109,0.25);'>Ingresar a Firmar Documento</a></div>` +
+    "<div style='background-color:#fefce8;border:1px solid #fef08a;border-radius:4px;padding:10px 14px;margin-top:24px;'>" +
+    "<p style='font-size:12px;color:#854d0e;margin:0;line-height:1.5;'><strong>Aviso de seguridad:</strong> Cada firmante debe iniciar sesión obligatoriamente con sus credenciales institucionales para acceder y firmar el documento en la plataforma.</p>" +
+    "</div>" +
     "</div></div>" +
-    `<div><p style='padding:15px;color:#888;font-size:12px;text-align:center'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
+    `<div><p style='padding:16px;color:#94a3b8;font-size:12px;text-align:center;margin:0;'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
     "</div></body></html>";
   return { subject, body };
 };
@@ -4639,6 +4687,14 @@ export const sendEmailToSigners = async (
           : senderEmail;
 
       const documentName = `${pdfDetails?.[0].Name}`;
+      const docDescription =
+        pdfDetails?.[0]?.Description ||
+        pdfDetails?.[0]?.TemplateId?.Description ||
+        "";
+      const docNote =
+        pdfDetails?.[0]?.Note ||
+        pdfDetails?.[0]?.TemplateId?.Note ||
+        "";
       let replaceVar;
 
       if (customizeMail && isCustomize) {
@@ -4648,9 +4704,24 @@ export const sendEmailToSigners = async (
           replacedRequestBody +
           "</body> </html>";
 
+        // const variables = {
+        //   document_title: documentName,
+        //   note: pdfDetails?.[0]?.Note,
+        //   sender_name: senderName,
+        //   sender_mail: senderEmail,
+        //   sender_phone: senderPhone || "",
+        //   receiver_name: signerMail[i]?.Name || "",
+        //   receiver_email: signerMail[i].Email,
+        //   receiver_phone: signerMail[i]?.Phone || "",
+        //   expiry_date: localExpireDate,
+        //   company_name: orgName,
+        //   signing_url: signPdf
+        // };
         const variables = {
           document_title: documentName,
-          note: pdfDetails?.[0]?.Note,
+          title: documentName,
+          description: docDescription,
+          note: docNote,
           sender_name: senderName,
           sender_mail: senderEmail,
           sender_phone: senderPhone || "",
@@ -4674,9 +4745,24 @@ export const sendEmailToSigners = async (
           "<html><head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8' /></head><body>" +
           replacedRequestBody +
           "</body> </html>";
+        // const variables = {
+        //   document_title: documentName,
+        //   note: pdfDetails?.[0]?.Note,
+        //   sender_name: senderName,
+        //   sender_mail: senderEmail,
+        //   sender_phone: senderPhone || "",
+        //   receiver_name: signerMail[i]?.Name || "",
+        //   receiver_email: signerMail[i].Email,
+        //   receiver_phone: signerMail[i]?.Phone || "",
+        //   expiry_date: localExpireDate,
+        //   company_name: orgName,
+        //   signing_url: signPdf
+        // };
         const variables = {
           document_title: documentName,
-          note: pdfDetails?.[0]?.Note,
+          title: documentName,
+          description: docDescription,
+          note: docNote,
           sender_name: senderName,
           sender_mail: senderEmail,
           sender_phone: senderPhone || "",
@@ -4689,9 +4775,19 @@ export const sendEmailToSigners = async (
         };
         replaceVar = replaceMailVaribles(mailSubject, htmlReqBody, variables);
       }
+      // const mailparam = {
+      //   senderName: senderName,
+      //   note: pdfDetails?.[0]?.Note || "",
+      //   senderMail: senderEmail,
+      //   title: documentName,
+      //   organization: orgName,
+      //   localExpireDate: localExpireDate,
+      //   signingUrl: signPdf
+      // };
       const mailparam = {
         senderName: senderName,
-        note: pdfDetails?.[0]?.Note || "",
+        note: docNote,
+        description: docDescription,
         senderMail: senderEmail,
         title: documentName,
         organization: orgName,

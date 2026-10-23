@@ -665,31 +665,43 @@ export const getSecureUrl = url => {
   }
 };
 
+// Old mailTemplate commented:
+// export const mailTemplate = param => {
+//   const themeColor = '#0b3c6d';
+//   const AppName = 'Firma Digital Brascuba';
+//   const subject = `[Firma Digital] ${param.senderName} le ha solicitado firmar "${param.title}"`;
+//   ...
+// };
+
 export const mailTemplate = param => {
   const themeColor = '#0b3c6d';
   const AppName = 'Firma Digital Brascuba';
   const subject = `[Firma Digital] ${param.senderName} le ha solicitado firmar "${param.title}"`;
 
   const body =
-    "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body>" +
-    "<div style='background-color:#f5f5f5;padding:20px'>" +
-    "<div style='background:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" +
-    `<div style='padding:16px 20px;font-family:system-ui,sans-serif;background-color:${themeColor}'>` +
-    `<h2 style='font-size:18px;margin:0;color:white;'>Solicitud de Firma Digital</h2></div>` +
-    `<div style='padding:24px 20px;font-family:system-ui,sans-serif;font-size:14px;color:#333;line-height:1.6'>` +
-    `<p>Estimado(a) usuario(a),</p>` +
-    `<p><strong>${param.senderName}</strong> le ha solicitado revisar y firmar digitalmente el documento <strong>"${param.title}"</strong>.</p>` +
-    `<div style='background-color:#f0f4f8;border-left:4px solid ${themeColor};padding:12px 16px;margin:18px 0'>` +
-    `<table style='font-size:13px;color:#333;line-height:1.8'>` +
-    `<tr><td style='font-weight:bold;padding-right:15px'>Remitente:</td><td>${param.senderMail || ''}</td></tr>` +
-    (param.organization ? `<tr><td style='font-weight:bold;padding-right:15px'>Organización:</td><td>${param.organization}</td></tr>` : '') +
-    (param.localExpireDate ? `<tr><td style='font-weight:bold;padding-right:15px'>Fecha límite:</td><td>${param.localExpireDate}</td></tr>` : '') +
-    (param.note ? `<tr><td style='font-weight:bold;padding-right:15px'>Nota:</td><td>${param.note}</td></tr>` : '') +
+    "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body style='margin:0;padding:0;background-color:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;'>" +
+    "<div style='background-color:#f4f6f9;padding:25px 15px;'>" +
+    "<div style='background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;margin:0 auto;border:1px solid #e5e7eb;'>" +
+    `<div style='padding:20px 24px;background-color:${themeColor};'>` +
+    `<h2 style='font-size:18px;margin:0;color:#ffffff;font-weight:600;letter-spacing:0.3px;'>Solicitud de Firma Digital</h2></div>` +
+    `<div style='padding:24px;color:#334155;font-size:14px;line-height:1.6;'>` +
+    `<p style='margin-top:0;margin-bottom:14px;font-size:15px;color:#1e293b;'>Estimado(a) usuario(a),</p>` +
+    `<p style='margin-top:0;margin-bottom:20px;'><strong>${param.senderName}</strong>${param.senderMail ? ` (${param.senderMail})` : ''} le ha solicitado revisar y firmar digitalmente el siguiente documento:</p>` +
+    `<div style='background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid ${themeColor};border-radius:6px;padding:16px 18px;margin:20px 0;'>` +
+    `<div style='font-size:11px;font-weight:700;color:${themeColor};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;'>Información del Documento</div>` +
+    `<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>` +
+    `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Título:</td><td style='padding:6px 0;font-weight:700;color:#0f172a;'>${param.title || 'Documento sin título'}</td></tr>` +
+    (param.description ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Descripción:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.description}</td></tr>` : '') +
+    (param.note ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Notas:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.note}</td></tr>` : '') +
+    `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Remitente:</td><td style='padding:6px 0;color:#334155;'>${param.senderName}${param.senderMail ? ` (${param.senderMail})` : ''}</td></tr>` +
+    (param.organization ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Organización:</td><td style='padding:6px 0;color:#334155;'>${param.organization}</td></tr>` : '') +
+    (param.localExpireDate ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Fecha límite:</td><td style='padding:6px 0;color:#334155;'>${param.localExpireDate}</td></tr>` : '') +
     `</table></div>` +
-    `<div style='margin:25px 0'><a target='_blank' href='${param.signingUrl}' style='display:inline-block;padding:12px 24px;background-color:${themeColor};color:white;text-decoration:none;border-radius:4px;font-weight:bold'>Firmar Documento</a></div>` +
-    `<p style='font-size:12px;color:#777;margin-top:20px'><strong>Aviso de seguridad:</strong> Cada usuario debe ingresar con sus credenciales institucionales para firmar en la plataforma.</p>` +
-    `</div></div>` +
-    `<div><p style='padding:15px;color:#888;font-size:12px;text-align:center'>Mensaje automático generado por ${AppName}.</p></div>` +
+    `<div style='margin:28px 0 20px 0;text-align:center;'><a target='_blank' href='${param.signingUrl}' style='display:inline-block;padding:12px 28px;background-color:${themeColor};color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(11,60,109,0.25);'>Ingresar a Firmar Documento</a></div>` +
+    `<div style='background-color:#fefce8;border:1px solid #fef08a;border-radius:4px;padding:10px 14px;margin-top:24px;'>` +
+    `<p style='font-size:12px;color:#854d0e;margin:0;line-height:1.5;'><strong>Aviso de seguridad:</strong> Cada firmante debe iniciar sesión obligatoriamente con sus credenciales institucionales para acceder y firmar el documento en la plataforma.</p>` +
+    `</div></div></div>` +
+    `<div><p style='padding:16px;color:#94a3b8;font-size:12px;text-align:center;margin:0;'>Mensaje automático generado por ${AppName}.</p></div>` +
     `</div></body></html>`;
 
   return { subject, body };

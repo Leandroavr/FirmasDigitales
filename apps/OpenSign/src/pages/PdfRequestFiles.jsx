@@ -1133,9 +1133,35 @@ function PdfRequestFiles(
                             replacedRequestBody +
                             "</body></html>";
 
+                          const docDescription =
+                            pdfDetails?.[0]?.Description ||
+                            updatedDoc?.updatedPdfDetails?.[0]?.Description ||
+                            updatedDoc?.updatedPdfDetails?.[0]?.TemplateId?.Description ||
+                            "";
+                          const docNote =
+                            pdfDetails?.[0]?.Note ||
+                            updatedDoc?.updatedPdfDetails?.[0]?.Note ||
+                            updatedDoc?.updatedPdfDetails?.[0]?.TemplateId?.Note ||
+                            "";
+
+                          // const variables = {
+                          //   document_title: documentName,
+                          //   note: pdfDetails?.[0]?.Note,
+                          //   sender_name: senderName,
+                          //   sender_mail: senderEmail,
+                          //   sender_phone: senderPhone,
+                          //   receiver_name: user?.Name || "",
+                          //   receiver_email: user.Email,
+                          //   receiver_phone: user?.Phone || "",
+                          //   expiry_date: localExpireDate,
+                          //   company_name: orgName,
+                          //   signing_url: signPdf
+                          // };
                           const variables = {
                             document_title: documentName,
-                            note: pdfDetails?.[0]?.Note,
+                            title: documentName,
+                            description: docDescription,
+                            note: docNote,
                             sender_name: senderName,
                             sender_mail: senderEmail,
                             sender_phone: senderPhone,
@@ -1152,8 +1178,18 @@ function PdfRequestFiles(
                             variables
                           );
                         }
+                        // const mailparam = {
+                        //   note: pdfDetails?.[0]?.Note || "",
+                        //   senderName: senderName,
+                        //   senderMail: senderEmail,
+                        //   title: documentName,
+                        //   organization: orgName,
+                        //   localExpireDate: localExpireDate,
+                        //   signingUrl: signPdf
+                        // };
                         const mailparam = {
-                          note: pdfDetails?.[0]?.Note || "",
+                          note: docNote,
+                          description: docDescription,
                           senderName: senderName,
                           senderMail: senderEmail,
                           title: documentName,

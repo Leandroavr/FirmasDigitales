@@ -170,8 +170,20 @@ async function sendMail(document, publicUrl) {
         };
         replaceVar = replaceMailVaribles(mailSubject, htmlReqBody, variables);
       }
+      const docDescription = document?.Description || document?.TemplateId?.Description || '';
+      const docNote = document?.Note || document?.TemplateId?.Note || '';
+      // const mailparam = {
+      //   note: document?.Note || '',
+      //   senderName: senderName,
+      //   senderMail: senderEmail,
+      //   title: document.Name,
+      //   organization: orgName,
+      //   localExpireDate: localExpireDate,
+      //   signingUrl: signPdf,
+      // };
       const mailparam = {
-        note: document?.Note || '',
+        note: docNote,
+        description: docDescription,
         senderName: senderName,
         senderMail: senderEmail,
         title: document.Name,
