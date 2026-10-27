@@ -279,6 +279,40 @@ const UserList = () => {
       setIsLoader(false);
     }
   });
+
+  const handleToggleUserRole = withSessionValidation(async (item) => {
+    const isCurrentAdmin = item?.UserRole === "contracts_Admin";
+    const newRole = isCurrentAdmin ? "contracts_User" : "contracts_Admin";
+    const confirmMsg = isCurrentAdmin
+      ? `¿Está seguro de que desea revocar los privilegios de Administrador a ${item?.Name || item?.Email}?`
+      : `¿Está seguro de que desea promover a ${item?.Name || item?.Email} como Administrador?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsLoader(true);
+    try {
+      await Parse.Cloud.run("updateuserrole", {
+        targetUserId: item.objectId,
+        newRole: newRole
+      });
+      setUserList((prev) =>
+        prev.map((user) =>
+          user.objectId === item.objectId ? { ...user, UserRole: newRole } : user
+        )
+      );
+      showAlert(
+        "success",
+        newRole === "contracts_Admin"
+          ? "Usuario promovido a Administrador con éxito."
+          : "Privilegios de Administrador revocados con éxito."
+      );
+    } catch (err) {
+      console.error("Error updating user role:", err);
+      showAlert("danger", err?.message || "No se pudo actualizar el rol del usuario.");
+    } finally {
+      setIsLoader(false);
+    }
+  });
   return (
     <div className="relative">
       {isLoader && (
@@ -350,8 +384,44 @@ const UserList = () => {
                               <td className="px-4 py-2">
                                 {item?.Phone || "-"}
                               </td>
-                              <td className="px-4 py-2">
-                                {item?.UserRole?.split("_").pop() || "-"}
+                              <td className="px-4 py-2 whitespace-nowrap">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                    item?.UserRole === "contracts_Admin"
+                                      ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                      : "bg-gray-100 text-gray-700"
+                                  }`}
+                                >
+                                  {item?.UserRole === "contracts_Admin"
+                                    ? "Administrador"
+                                    : "Usuario"}
+                                </span>
+                                {isAdmin && item?.objectId !== extClass?.[0]?.objectId && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleUserRole(item)}
+                                    className="ml-2 op-btn op-btn-xs op-btn-outline"
+                                    title={
+                                      item?.UserRole === "contracts_Admin"
+                                        ? "Quitar privilegios de Administrador"
+                                        : "Promover a Administrador"
+                                    }
+                                  >
+                                    <i
+                                      className={`fa-light ${
+                                        item?.UserRole === "contracts_Admin"
+                                          ? "fa-user-minus text-error"
+                                          : "fa-user-shield text-primary"
+                                      }`}
+                                      aria-hidden="true"
+                                    ></i>
+                                    <span className="hidden xl:inline ml-1">
+                                      {item?.UserRole === "contracts_Admin"
+                                        ? "Quitar Admin"
+                                        : "Hacer Admin"}
+                                    </span>
+                                  </button>
+                                )}
                               </td>
                               <td className="px-4 py-2">
                                 {formatRow(item.TeamIds)}

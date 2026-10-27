@@ -5,6 +5,7 @@ services:
     volumes:
       - opensign-files:/usr/src/app/files
       - ./apps/OpenSignServer/cloud:/usr/src/app/cloud
+      - ./apps/OpenSignServer/scripts:/usr/src/app/scripts
       - ./apps/OpenSignServer/index.js:/usr/src/app/index.js
       - ./apps/OpenSignServer/Utils.js:/usr/src/app/Utils.js
     ports:
