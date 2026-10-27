@@ -28,9 +28,15 @@ const DocSuccessPage = () => {
 
   const handleConfirm = () => {
     if (localStorage.getItem("accesstoken")) {
-      navigate("/");
+      const pageType = localStorage.getItem("pageType");
+      const pageLanding = localStorage.getItem("PageLanding");
+      if (pageType && pageLanding) {
+        navigate(`/${pageType}/${pageLanding}`);
+      } else {
+        navigate("/");
+      }
     } else {
-      navigate("/login");
+      navigate("/");
     }
   };
 

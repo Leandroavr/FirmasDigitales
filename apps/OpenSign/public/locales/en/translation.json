@@ -103,7 +103,7 @@
     "OpenSign™ Drive": "Gestor Pdfs",
     "Gestor Pdfs": "Gestor Pdfs",
     "Reports": "Reports",
-    "Documents": "Documents",
+    "Documents": "My Documents",
     "Documents-Children": {
       "Need your sign": "Need your sign",
       "In Progress": "In progress",
@@ -123,7 +123,15 @@
       "Team-update-successfully": "Team Updated successfully.",
       "Users": "Users"
     },
-    "Global SMTP": "Global SMTP"
+    "Global SMTP": "Global SMTP",
+    "Other Documents": "Other Users' Documents",
+    "Other Documents-Children": {
+      "In Progress": "In progress",
+      "Completed": "Completed",
+      "Drafts": "Drafts",
+      "Declined": "Declined",
+      "Expired": "Expired"
+    }
   },
   "dashboard-card": {
     "Need your Signature": "Need your signature",
@@ -1630,5 +1638,7 @@
   "already-copied-to-clipboard": "Already copied to clipboard",
   "Cc": "Visible copy (Cc)",
   "Bcc": "Blind copy (Bcc)",
-  "select-contact-placeholder": "Search or select contact..."
+  "select-contact-placeholder": "Search or select contact...",
+  "user-folder": "User Folder",
+  "select-user-folder-first": "Please select a user folder first to create folders."
 }

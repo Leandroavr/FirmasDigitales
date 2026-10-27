@@ -129,6 +129,7 @@ const sidebarList = [
       }
     ]
   },
+  /*
   {
     icon: "fa-light fa-address-book",
     title: "Contactbook",
@@ -136,6 +137,57 @@ const sidebarList = [
     pageType: "report",
     description: "",
     objectId: "contacts"
+  },
+  */
+  {
+    icon: "fa-light fa-folder-open",
+    title: "Other Documents",
+    target: "_self",
+    pageType: null,
+    description: "",
+    objectId: null,
+    children: [
+      {
+        icon: "fa-light fa-tasks",
+        title: "In Progress",
+        target: "_self",
+        pageType: "report",
+        description: "",
+        objectId: "other_in_progress"
+      },
+      {
+        icon: "fa-light fa-check-circle",
+        title: "Completed",
+        target: "_self",
+        pageType: "report",
+        description: "",
+        objectId: "other_completed"
+      },
+      {
+        icon: "fa-light fa-edit",
+        title: "Drafts",
+        target: "_self",
+        pageType: "report",
+        description: "",
+        objectId: "other_drafts"
+      },
+      {
+        icon: "fa-light fa-times-circle",
+        title: "Declined",
+        target: "_self",
+        pageType: "report",
+        description: "",
+        objectId: "other_declined"
+      },
+      {
+        icon: "fa-light fa-hourglass-end",
+        title: "Expired",
+        target: "_self",
+        pageType: "report",
+        description: "",
+        objectId: "other_expired"
+      }
+    ]
   },
   {
     icon: "fa-light fa-cog",

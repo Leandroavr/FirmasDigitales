@@ -804,9 +804,24 @@ export const defaultWidthHeight = (type) => {
       return { width: 230, height: 65 };
   }
 };
+// Normalizes file URLs to always use current window origin to avoid cross-origin / CORS issues
+export function normalizeFileUrl(url) {
+  if (!url || typeof url !== "string") return url;
+  try {
+    const fileIndex = url.indexOf("/files/");
+    if (fileIndex !== -1) {
+      const filePathAndQuery = url.substring(fileIndex);
+      return `${window.location.origin}/api/app${filePathAndQuery}`;
+    }
+  } catch (e) {
+    console.warn("normalizeFileUrl error:", e);
+  }
+  return url;
+}
+
 //convert url to base64
 export async function getBase64FromUrl(url, autosign) {
-  const data = await fetch(url);
+  const data = await fetch(normalizeFileUrl(url));
   const blob = await data.blob();
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -824,7 +839,7 @@ export async function getBase64FromUrl(url, autosign) {
 }
 
 export async function getBase64FromIMG(url) {
-  const data = await fetch(url);
+  const data = await fetch(normalizeFileUrl(url));
   const blob = await data.blob();
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -2953,7 +2968,7 @@ export const handleSendOTP = async (email) => {
 };
 export const fetchUrl = async (url, fileName) => {
   try {
-    const response = await fetch(url);
+    const response = await fetch(normalizeFileUrl(url));
     if (!response.ok) {
       alert(i18n.t("something-went-wrong-mssg"));
       throw new Error("Network response was not ok");

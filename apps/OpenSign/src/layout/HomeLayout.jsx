@@ -46,22 +46,32 @@ const HomeLayout = () => {
       } else {
         (async () => {
           try {
-            // Use the session token to validate the user
-            const userQuery = new Parse.Query(Parse.User);
-            const user = await userQuery.get(Parse?.User?.current()?.id, {
-              sessionToken: localStorage.getItem("accesstoken")
-            });
+            const token = localStorage.getItem("accesstoken");
+            let user = Parse.User.current();
+            if (!user && token) {
+              user = await Parse.User.become(token);
+            } else if (user && token) {
+              const userQuery = new Parse.Query(Parse.User);
+              user = await userQuery.get(user.id, {
+                sessionToken: token
+              });
+            }
             if (user) {
               localStorage.setItem("profileImg", user.get("ProfilePic") || "");
-                dispatch(sessionStatus(true));
-                setIsLoader(false);
+              dispatch(sessionStatus(true));
+              setIsLoader(false);
             } else {
               dispatch(sessionStatus(true));
             }
           } catch (error) {
             console.error("error in authentication:", error?.message);
-            // Session token is invalid or there was an error
-            dispatch(sessionStatus(false));
+            // Solo invalidar sesión si el servidor rechaza el sessionToken explícitamente (código 209)
+            if (error?.code === 209 || error?.message?.includes("invalid session") || error?.message?.includes("Invalid session")) {
+              dispatch(sessionStatus(false));
+            } else {
+              dispatch(sessionStatus(true));
+              setIsLoader(false);
+            }
           }
         })();
       }

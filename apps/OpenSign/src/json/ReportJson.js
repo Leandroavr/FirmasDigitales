@@ -1,23 +1,52 @@
+export const COLUMN_ORDER = [
+  "Sr.No",
+  "Title",
+  "Name",
+  "Reason",
+  "Note",
+  "Folder",
+  "File",
+  "Owner",
+  "Signers",
+  "Created Date",
+  "Updated Date",
+  "Expiry Date",
+  "Time to complete (Days)",
+  "Sent Date"
+];
+
+export const sortColumns = (cols) => {
+  if (!cols || !Array.isArray(cols)) return [];
+  return [...cols].sort((a, b) => {
+    const idxA = COLUMN_ORDER.indexOf(a);
+    const idxB = COLUMN_ORDER.indexOf(b);
+    if (idxA === -1 && idxB === -1) return 0;
+    if (idxA === -1) return 1;
+    if (idxB === -1) return -1;
+    return idxA - idxB;
+  });
+};
+
 export const extraCols = [
   "Note",
-  "Time to complete (Days)",
-  // "Enable Tour",
-  "Notify on signatures",
-  // "Redirect url",
   "Created Date",
-  "Updated Date"
+  "Updated Date",
+  "Expiry Date",
+  "Time to complete (Days)"
 ];
 
 export default function reportJson(id) {
-  const head = ["Title", "Note", "Folder", "File", "Owner", "Signers"];
-  const declineHead = ["Title", "Reason", "Folder", "File", "Owner", "Signers"];
-  const iphead = ["Title", "Note", "Folder", "File", "Signers", "Sent Date"];
+  const head = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)"];
+  const declineHead = ["Title", "Reason", "Folder", "File", "Owner", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)"];
+  const iphead = ["Title", "Note", "Folder", "File", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Sent Date"];
+  const otherIphead = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Sent Date"];
   const contactbook = ["Name", "Email", "Phone", "Company", "JobTitle"];
   const dashboardReportHead = ["Title", "File", "Owner", "Signers"];
   const templateReport = ["Title", "File", "Owner", "Signers"];
   switch (id) {
     // draft documents report
     case "ByHuevtCFY":
+    case "other_drafts":
       return {
         reportName: "Draft Documents",
         heading: head,
@@ -63,9 +92,10 @@ export default function reportJson(id) {
       };
     // In progess report
     case "1MwEuxLEkF":
+    case "other_in_progress":
       return {
         reportName: "In-progress documents",
-        heading: iphead,
+        heading: id === "other_in_progress" ? otherIphead : iphead,
         actions: [
           {
             btnId: "8901",
@@ -147,6 +177,7 @@ export default function reportJson(id) {
       };
     // completed documents report
     case "kQUoW4hUXz":
+    case "other_completed":
       return {
         reportName: "Completed Documents",
         heading: head,
@@ -201,6 +232,7 @@ export default function reportJson(id) {
       };
     //  declined documents report
     case "UPr2Fm5WY3":
+    case "other_declined":
       return {
         reportName: "Declined Documents",
         heading: declineHead,
@@ -254,6 +286,7 @@ export default function reportJson(id) {
       };
     //  Expired Documents report
     case "zNqBHXHsYH":
+    case "other_expired":
       return {
         reportName: "Expired Documents",
         heading: head,

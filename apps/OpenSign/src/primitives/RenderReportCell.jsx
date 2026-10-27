@@ -51,11 +51,12 @@ export const RenderReportCell = ({
       return (
         <td key={col} className="p-2 min-w-56 max-w-56">
           <div className="font-semibold break-words">{rowData?.Name}</div>
-          {rowData?.ExpiryDate?.iso && (
+          {/* Antiguo: fecha debajo del título. Reemplazado por columna individual de Expiry Date
+          rowData?.ExpiryDate?.iso && (
             <div className="text-gray-500">
               {t("expires")} {formatDateToDdMmmYyyy(rowData?.ExpiryDate?.iso)}
             </div>
-          )}
+          ) */}
         </td>
       );
     case "Reason":

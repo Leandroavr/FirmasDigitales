@@ -1,3 +1,4 @@
+import { isUserAdmin } from '../adminHelper.js';
 /**
  * Escapes special characters in a string so it can safely be used in a RegExp.
  */
@@ -31,7 +32,10 @@ async function fetchDocumentsByName(
   }
 
   // 2) Filter by CreatedBy pointer
-  query.equalTo('CreatedBy', user);
+  const isAdmin = await isUserAdmin(user?.get('email'), user?.id);
+  if (!isAdmin) {
+    query.equalTo('CreatedBy', user);
+  }
 
   // 3) Pagination & sorting
   query.limit(limit);

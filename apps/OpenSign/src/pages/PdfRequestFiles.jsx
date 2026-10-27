@@ -208,15 +208,16 @@ function PdfRequestFiles(
   }
 
   const routeId = route && route?.split("/"); // ['', 'load', 'recipientSignPdf', ':docId', ':contactBookId']
-  if (routeId && routeId.length > 4) {
-    // this condition will be occur only in guest flow in which load routeId will be include
+  if (routeId && routeId[1] === "load") {
+    // Guest flow: soporta /load/recipientSignPdf/:docId y /load/recipientSignPdf/:docId/:contactBookId
     isGuestSignFlow = true;
     getDocId = routeId[3];
-    contactBookId = routeId[4];
+    contactBookId = (routeId[4] && routeId[4] !== "undefined") ? routeId[4] : "";
   } else {
-    // this condition will be occur only in if user is logged in and load routeId will be exclude
+    // Logged-in flow: soporta /recipientSignPdf/:docId y /recipientSignPdf/:docId/:contactBookId
+    isGuestSignFlow = false;
     getDocId = routeId[2];
-    contactBookId = routeId?.[3] || "";
+    contactBookId = (routeId?.[3] && routeId[3] !== "undefined") ? routeId[3] : "";
   }
   let getDocumentId = getDocId || documentId;
   useEffect(() => {
@@ -367,8 +368,10 @@ function PdfRequestFiles(
         const getSigners = documentData[0].Signers;
         const isTourEnabled =
           documentData[0]?.IsTourEnabled === true ? true : false;
+        const loggedInEmail = (localStorage.getItem("userEmail") || jsonSender?.email)?.toLowerCase()?.replace(/\s/g, "");
         const getCurrentSigner = getSigners?.find(
-          (data) => data.UserId.objectId === jsonSender?.objectId
+          (data) => (jsonSender?.objectId && data?.UserId?.objectId === jsonSender?.objectId) ||
+                    (loggedInEmail && data?.Email?.toLowerCase()?.replace(/\s/g, "") === loggedInEmail)
         );
         currUserId = getCurrentSigner?.objectId
           ? getCurrentSigner.objectId
@@ -2159,12 +2162,17 @@ function PdfRequestFiles(
   };
 
   const getSignerEmail = () => {
-    const isSignerAssigned = unsignedSigners[0]?.objectId;
-    let email = formData[0]?.email;
-    if (isSignerAssigned) {
-      email = unsignedSigners[0]?.Email;
+    try {
+      if (unsignedSigners && unsignedSigners.length > 0) {
+        return unsignedSigners[0]?.Email || unsignedSigners[0]?.email || "";
+      }
+      if (typeof currentSignerEmail !== "undefined" && currentSignerEmail) {
+        return currentSignerEmail;
+      }
+      return localStorage.getItem("userEmail") || localStorage.getItem("email") || "";
+    } catch (e) {
+      return localStorage.getItem("userEmail") || localStorage.getItem("email") || "";
     }
-    return email;
   };
   const handleDownload = async () => {
       setIsCompleted((prev) => ({ ...prev, isModal: false }));

@@ -82,6 +82,11 @@ function App() {
                 path="/load/recipientSignPdf/:docId/:contactBookId"
                 element={<DragProvider Page={PdfRequestFiles} />}
               />
+              <Route
+                exact
+                path="/load/recipientSignPdf/:docId"
+                element={<DragProvider Page={PdfRequestFiles} />}
+              />
             </Route>
             <Route
               path="/login/:base64url"

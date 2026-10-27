@@ -7,19 +7,36 @@ const ValidateRoute = () => {
   const { i18n } = useTranslation();
   useEffect(() => {
     (async () => {
-      if (localStorage.getItem("accesstoken")) {
+      const token = localStorage.getItem("accesstoken");
+      if (token) {
         try {
-          // Use the session token to validate the user
-          const userQuery = new Parse.Query(Parse.User);
-          const user = await userQuery.get(Parse?.User?.current()?.id, {
-            sessionToken: localStorage.getItem("accesstoken")
-          });
-          if (!user) {
+          // Antiguo:
+          // const userQuery = new Parse.Query(Parse.User);
+          // const user = await userQuery.get(Parse?.User?.current()?.id, {
+          //   sessionToken: localStorage.getItem("accesstoken")
+          // });
+          // if (!user) { handlelogout(); }
+
+          // En recarga o nueva pestaña, Parse.User.current() no siempre está en memoria de inmediato.
+          // Parse.User.become(token) hidrata la sesión de forma segura contra el servidor Parse.
+          let currentUser = Parse.User.current();
+          if (!currentUser) {
+            currentUser = await Parse.User.become(token);
+          } else {
+            const userQuery = new Parse.Query(Parse.User);
+            await userQuery.get(currentUser.id, {
+              sessionToken: token
+            });
+          }
+          if (!currentUser) {
             handlelogout();
           }
         } catch (error) {
           console.log("err in validate route", error);
-          handlelogout();
+          // Solo invalidar si el token expiró o fue rechazado explícitamente por el servidor (código 209)
+          if (error?.code === 209 || error?.message?.includes("invalid session") || error?.message?.includes("Invalid session")) {
+            handlelogout();
+          }
         }
       }
     })();

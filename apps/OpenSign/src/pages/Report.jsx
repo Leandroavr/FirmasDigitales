@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import Parse from "parse";
 import axios from "axios";
-import reportJson, { extraCols } from "../json/ReportJson";
+import reportJson, { extraCols, sortColumns } from "../json/ReportJson";
 import { useParams } from "react-router";
 import PageNotFound from "./PageNotFound";
 import Loader from "../primitives/Loader";
@@ -52,10 +52,12 @@ const Report = () => {
     setMobileSearchOpen(false);
     const saved = JSON.parse(localStorage.getItem("reportColumns") || "{}");
     if (saved[id]) {
-      const savedVisible = (saved[id].visible || saved[id]).filter(
-        (c) => !["Enable Tour", "Redirect url"].includes(c)
-      );
-      setVisibleColumns(savedVisible);
+      const savedVisible = (saved[id].visible || saved[id])
+        .map((c) => (c === "Notify on signatures" ? "Expiry Date" : c))
+        .filter(
+          (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
+        );
+      setVisibleColumns(sortColumns(Array.from(new Set(savedVisible))));
       setColumnLabels(saved[id].labels || {});
     } else {
       setVisibleColumns([]);
@@ -195,18 +197,21 @@ const Report = () => {
         const savedCols = JSON.parse(
           localStorage.getItem("reportColumns") || "{}"
         );
-        const visible = (savedCols[id]?.visible || json.heading).filter(
-          (c) => !["Enable Tour", "Redirect url"].includes(c)
-        );
+        const visible = (savedCols[id]?.visible || json.heading)
+          .map((c) => (c === "Notify on signatures" ? "Expiry Date" : c))
+          .filter(
+            (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
+          );
         const labels = savedCols[id]?.labels || {};
         if (!savedCols[id] || id === "contacts") {
           savedCols[id] = { visible: json.heading, labels: {} };
           localStorage.setItem("reportColumns", JSON.stringify(savedCols));
         }
-        setVisibleColumns(visible);
+        const uniqueVisible = sortColumns(Array.from(new Set(visible)));
+        setVisibleColumns(uniqueVisible);
         setColumnLabels(labels);
-        setHeading(visible);
-        setDefaultColumns(json.heading);
+        setHeading(uniqueVisible);
+        setDefaultColumns(sortColumns(json.heading));
         setReportName(json.reportName);
         setReportHelp(json?.helpMsg);
         const currentUser = Parse.User.current().id;
@@ -231,9 +236,18 @@ const Report = () => {
             headers: headers,
             signal: abortController.signal // is used to cancel fetch query
           });
-          const extraHeads =
-            id === "4Hhwbp482K" ? [...extraCols, "Expiry Date"] : extraCols;
-          setAllColumns(Array.from(new Set([...json.heading, ...extraHeads])));
+          const extraHeads = extraCols.filter((c) => c !== "Notify on signatures");
+          setAllColumns(
+            sortColumns(
+              Array.from(
+                new Set(
+                  [...json.heading, ...extraHeads].filter(
+                    (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
+                  )
+                )
+              )
+            )
+          );
           if (id === "6TeaPr321t") {
             setTourData(templateReportTour);
           }
@@ -350,13 +364,14 @@ const Report = () => {
         columnLabels={columnLabels}
         defaultColumns={defaultColumns}
         onApply={(cols, labels) => {
-          setVisibleColumns(cols);
-          setHeading(cols);
+          const sortedCols = sortColumns(cols);
+          setVisibleColumns(sortedCols);
+          setHeading(sortedCols);
           setColumnLabels(labels);
           const saved = JSON.parse(
             localStorage.getItem("reportColumns") || "{}"
           );
-          saved[id] = { visible: cols, labels };
+          saved[id] = { visible: sortedCols, labels };
           localStorage.setItem("reportColumns", JSON.stringify(saved));
         }}
         onClose={() => setIsColumnModal(false)}

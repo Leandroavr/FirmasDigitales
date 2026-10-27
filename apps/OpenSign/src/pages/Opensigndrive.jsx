@@ -286,15 +286,23 @@ function Opensigndrive() {
       const getParentObjId = folderName[folderName.length - 1];
       const parentId = getParentObjId && getParentObjId.objectId;
       const foldercls = "contracts_Document";
-      const folderPtr = {
-        __type: "Pointer",
-        className: foldercls,
-        objectId: parentId
-      };
+      const isUserFolderParent = parentId && parentId.startsWith("user_");
+      const realParentId = isUserFolderParent ? null : parentId;
+      const targetUserId = isUserFolderParent
+        ? parentId.replace("user_", "")
+        : jsonCurrentUser.objectId;
+
+      const folderPtr = realParentId
+        ? {
+            __type: "Pointer",
+            className: foldercls,
+            objectId: realParentId
+          }
+        : null;
       const CreatedBy = {
         __type: "Pointer",
         className: "_User",
-        objectId: jsonCurrentUser.objectId
+        objectId: targetUserId
       };
 
       try {
@@ -302,8 +310,11 @@ function Opensigndrive() {
         exsitQuery.equalTo("Name", newFolderName);
         exsitQuery.equalTo("Type", "Folder");
         exsitQuery.notEqualTo("IsArchive", true);
-        if (parentId) {
+        if (folderPtr) {
           exsitQuery.equalTo("Folder", folderPtr);
+        } else {
+          exsitQuery.doesNotExist("Folder");
+          exsitQuery.equalTo("CreatedBy", CreatedBy);
         }
         const templExist = await exsitQuery.first();
         if (templExist) {
@@ -319,7 +330,7 @@ function Opensigndrive() {
             className: "contracts_Users",
             objectId: ExtCls[0].objectId
           });
-          if (parentId) {
+          if (folderPtr) {
             template.set("Folder", folderPtr);
           }
           template.set("CreatedBy", CreatedBy);
@@ -347,23 +358,20 @@ function Opensigndrive() {
 
   //function to use sorting document list according to type and order
   const sortedBy = (appInfo, type, order) => {
-    if (type === orderName.Name) {
-      if (order === orderName.Ascending) {
-        return appInfo.sort((a, b) =>
-          a.Name.toLowerCase() < b.Name.toLowerCase() ? -1 : 1
-        );
-      } else if (order === orderName.Descending) {
-        return appInfo.sort((a, b) =>
-          a.Name.toLowerCase() < b.Name.toLowerCase() ? 1 : -1
-        );
+    return appInfo.sort((a, b) => {
+      if (a.isUserFolder && b.isUserFolder) {
+        if (a.targetUserId === jsonCurrentUser?.objectId) return -1;
+        if (b.targetUserId === jsonCurrentUser?.objectId) return 1;
       }
-    } else if (type === orderName.Date) {
-      if (order === orderName.Ascending) {
-        return appInfo.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
-      } else if (order === orderName.Descending) {
-        return appInfo.sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1));
+      if (type === orderName.Name) {
+        const cmp = a.Name.toLowerCase().localeCompare(b.Name.toLowerCase());
+        return order === orderName.Ascending ? cmp : -cmp;
+      } else if (type === orderName.Date) {
+        const cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        return order === orderName.Ascending ? cmp : -cmp;
       }
-    }
+      return 0;
+    });
   };
 
   //function to use get sorting type, order and document list to sort
@@ -530,6 +538,13 @@ function Opensigndrive() {
   const handleSearchChange = async (e) => {
     const name = e.target.value.toLowerCase();
     setSearchTerm(name);
+    if (!name.trim()) {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      setPdfData([]);
+      setSkip(0);
+      getDetails();
+      return;
+    }
     // Clear previous timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
@@ -544,6 +559,18 @@ function Opensigndrive() {
         alert(`Error: ${err.message}`);
       }
     }, 300);
+  };
+
+  const handleCreateFolderClick = () => {
+    const Extand_Class = localStorage.getItem("Extand_Class");
+    const extClass = Extand_Class && JSON.parse(Extand_Class);
+    const userRole = extClass?.[0]?.UserRole || "contracts_User";
+    const isGeneralAdmin = userRole === "contracts_Admin" || userRole === "contracts_OrgAdmin";
+    if (isGeneralAdmin && !docId) {
+      alert("Por favor, seleccione primero la carpeta de un usuario para crear carpetas.");
+      return;
+    }
+    setIsFolder(true);
   };
 
   const handleSearchPaste = (e) => {
@@ -722,7 +749,7 @@ function Opensigndrive() {
                   <div className="flex flex-col">
                     <span
                       className="dropdown-item text-[10px] md:text-[13px]"
-                      onClick={() => setIsFolder(true)}
+                      onClick={handleCreateFolderClick}
                     >
                       <i
                         className="fa-light fa-plus mr-[5px]"
@@ -853,7 +880,7 @@ function Opensigndrive() {
                   <div className="flex flex-col">
                     <span
                       className="dropdown-item text-[10px] md:text-[13px]"
-                      onClick={() => setIsFolder(true)}
+                      onClick={handleCreateFolderClick}
                     >
                       <i
                         className="fa-light fa-plus mr-[5px]"

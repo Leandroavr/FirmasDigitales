@@ -281,7 +281,11 @@ function Login() {
                 const { docId, contactId } = JSON.parse(pendingRedirect);
                 sessionStorage.removeItem("redirectAfterLogin");
                 if (docId) {
-                  const targetDoc = contactId ? `/load/recipientSignPdf/${docId}/${contactId}` : `/load/recipientSignPdf/${docId}`;
+                  // Antiguo: const targetDoc = contactId ? `/load/recipientSignPdf/${docId}/${contactId}` : `/load/recipientSignPdf/${docId}`;
+                  // Redirigir al usuario autenticado a la ruta bajo HomeLayout con barra de navegación e inicio
+                  const targetDoc = (contactId && contactId !== "undefined")
+                    ? `/recipientSignPdf/${docId}/${contactId}`
+                    : `/recipientSignPdf/${docId}`;
                   navigate(targetDoc);
                   return;
                 }
@@ -430,7 +434,11 @@ function Login() {
                 const { docId, contactId } = JSON.parse(pendingRedirect);
                 sessionStorage.removeItem("redirectAfterLogin");
                 if (docId) {
-                  const targetDoc = contactId ? `/load/recipientSignPdf/${docId}/${contactId}` : `/load/recipientSignPdf/${docId}`;
+                  // Antiguo: const targetDoc = contactId ? `/load/recipientSignPdf/${docId}/${contactId}` : `/load/recipientSignPdf/${docId}`;
+                  // Redirigir al usuario autenticado a la ruta bajo HomeLayout con barra de navegación e inicio
+                  const targetDoc = (contactId && contactId !== "undefined")
+                    ? `/recipientSignPdf/${docId}/${contactId}`
+                    : `/recipientSignPdf/${docId}`;
                   navigate(targetDoc);
                   return;
                 }

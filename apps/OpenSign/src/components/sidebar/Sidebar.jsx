@@ -43,10 +43,13 @@ const Sidebar = () => {
         const Extand_Class = localStorage.getItem("Extand_Class");
         const extClass = Extand_Class && JSON.parse(Extand_Class);
         const userRole = extClass?.[0]?.UserRole || "contracts_User";
-        // El apartado Ajustes sólo está permitido para el admin general (contracts_Admin) con la vista de Usuarios
-        const isGeneralAdmin = userRole === "contracts_Admin";
+        // El apartado Ajustes y Documentos de otros usuarios sólo están permitidos para el admin (contracts_Admin o contracts_OrgAdmin)
+        const isGeneralAdmin = userRole === "contracts_Admin" || userRole === "contracts_OrgAdmin";
         const newSidebarList = sidebarList
           .map((item) => {
+            if (item.title === "Other Documents" && !isGeneralAdmin) {
+              return null;
+            }
             if (item.title !== "Settings") return item;
             if (isGeneralAdmin) {
               return {

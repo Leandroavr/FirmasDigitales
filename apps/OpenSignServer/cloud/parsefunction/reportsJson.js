@@ -79,7 +79,7 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
         },
         keys: [...needYourSignKeys, ...filterKeys],
       };
-    // In progress report
+    // In progress report (Mis documentos)
     case '1MwEuxLEkF':
       return {
         reportName: 'In-progress documents',
@@ -90,12 +90,14 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           IsCompleted: { $ne: true },
           IsDeclined: { $ne: true },
           IsArchive: { $ne: true },
-          ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
+          // En "Mis Documentos", solo los documentos del propio usuario:
+          CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId },
+          // ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
           ExpiryDate: { $gt: { __type: 'Date', iso: new Date().toISOString() } },
         },
         keys: [...inProgressKeys, ...filterKeys],
       };
-    // completed documents report
+    // completed documents report (Mis documentos)
     case 'kQUoW4hUXz':
       return {
         reportName: 'Completed Documents',
@@ -104,6 +106,21 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           IsCompleted: true,
           IsDeclined: { $ne: true },
           IsArchive: { $ne: true },
+          // En "Mis Documentos", solo los documentos creados por el usuario o donde sea firmante:
+          $or: [
+            { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
+            {
+              Signers: {
+                $inQuery: {
+                  where: {
+                    UserId: { __type: 'Pointer', className: '_User', objectId: currentUserId },
+                  },
+                  className: 'contracts_Contactbook',
+                },
+              },
+            },
+          ],
+          /*
           ...(isAdmin
             ? {}
             : {
@@ -121,10 +138,11 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
                   },
                 ],
               }),
+          */
         },
         keys: [...commanKeys, ...filterKeys, 'IsCompleted'],
       };
-    //  declined documents report
+    //  declined documents report (Mis documentos)
     case 'UPr2Fm5WY3':
       return {
         reportName: 'Declined Documents',
@@ -132,11 +150,13 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           Type: null,
           IsArchive: { $ne: true },
           IsDeclined: true,
-          ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
+          // En "Mis Documentos", solo los documentos del propio usuario:
+          CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId },
+          // ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
         },
         keys: [...commanKeys, 'DeclineReason'],
       };
-    //  Expired Documents report
+    //  Expired Documents report (Mis documentos)
     case 'zNqBHXHsYH':
       return {
         reportName: 'Expired Documents',
@@ -147,7 +167,80 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           Type: { $ne: 'Folder' },
           SignedUrl: { $ne: null },
           ExpiryDate: { $lt: { __type: 'Date', iso: new Date().toISOString() } },
-          ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
+          // En "Mis Documentos", solo los documentos del propio usuario:
+          CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId },
+          // ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
+        },
+        keys: [...commanKeys, ...filterKeys],
+      };
+    // Documentos de otros usuarios (Solo para administradores)
+    case 'other_in_progress':
+      if (!isAdmin) return null;
+      return {
+        reportName: 'In-progress documents',
+        params: {
+          Type: { $ne: 'Folder' },
+          SignedUrl: { $ne: null },
+          Placeholders: { $ne: null },
+          IsCompleted: { $ne: true },
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          CreatedBy: { $ne: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
+          ExpiryDate: { $gt: { __type: 'Date', iso: new Date().toISOString() } },
+        },
+        keys: [...inProgressKeys, ...filterKeys],
+      };
+    case 'other_completed':
+      if (!isAdmin) return null;
+      return {
+        reportName: 'Completed Documents',
+        params: {
+          Type: { $ne: 'Folder' },
+          IsCompleted: true,
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          CreatedBy: { $ne: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
+        },
+        keys: [...commanKeys, ...filterKeys, 'IsCompleted'],
+      };
+    case 'other_drafts':
+      if (!isAdmin) return null;
+      return {
+        reportName: 'Draft Documents',
+        params: {
+          Type: { $ne: 'Folder' },
+          IsCompleted: { $ne: true },
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          SignedUrl: { $exists: false },
+          CreatedBy: { $ne: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
+        },
+        keys: [...commanKeys, ...filterKeys],
+      };
+    case 'other_declined':
+      if (!isAdmin) return null;
+      return {
+        reportName: 'Declined Documents',
+        params: {
+          Type: null,
+          IsArchive: { $ne: true },
+          IsDeclined: true,
+          CreatedBy: { $ne: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
+        },
+        keys: [...commanKeys, 'DeclineReason'],
+      };
+    case 'other_expired':
+      if (!isAdmin) return null;
+      return {
+        reportName: 'Expired Documents',
+        params: {
+          IsCompleted: { $ne: true },
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          Type: { $ne: 'Folder' },
+          SignedUrl: { $ne: null },
+          ExpiryDate: { $lt: { __type: 'Date', iso: new Date().toISOString() } },
+          CreatedBy: { $ne: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
         },
         keys: [...commanKeys, ...filterKeys],
       };
