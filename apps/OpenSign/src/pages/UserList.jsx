@@ -16,7 +16,7 @@ import PasswordResetModal from "../primitives/PasswordResetModal";
 import { usersActions } from "../json/ReportJson";
 import { withSessionValidation } from "../utils";
 
-const heading = ["Sr.No", "Name", "Email", "Phone", "Role", "Team", "Active"];
+const heading = ["Sr.No", "Name", "Email", "JobTitle", "Phone", "Role", "AuthType", "Team", "Active"];
 const UserList = () => {
   const { t } = useTranslation();
   const [userList, setUserList] = useState([]);
@@ -337,6 +337,50 @@ const UserList = () => {
       setIsLoader(false);
     }
   });
+
+  const handleToggleAuthType = withSessionValidation(async (item) => {
+    if (!isSuperAdmin) {
+      showAlert("danger", "Solo el Administrador Principal puede cambiar el método de autenticación.");
+      return;
+    }
+    if (checkIsSuperAdmin(item)) {
+      showAlert("danger", "El Administrador Principal siempre utiliza autenticación local.");
+      return;
+    }
+
+    const currentIsLdap = item?.isLdap === true || item?.UserId?.isLdap === true;
+    const newIsLdap = !currentIsLdap;
+    const confirmMsg = newIsLdap
+      ? `¿Desea cambiar la autenticación de ${item?.Name || item?.Email} a LDAP (Directorio Activo)?`
+      : `¿Desea cambiar la autenticación de ${item?.Name || item?.Email} a Contraseña Local?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsLoader(true);
+    try {
+      await Parse.Cloud.run("toggleuserauthtype", {
+        targetUserId: item.objectId,
+        isLdap: newIsLdap
+      });
+      setUserList((prev) =>
+        prev.map((user) =>
+          user.objectId === item.objectId ? { ...user, isLdap: newIsLdap } : user
+        )
+      );
+      showAlert(
+        "success",
+        newIsLdap
+          ? "El usuario ahora iniciará sesión mediante LDAP (Directorio Activo)."
+          : "El usuario ahora iniciará sesión mediante Contraseña Local."
+      );
+    } catch (err) {
+      console.error("Error toggling auth type:", err);
+      showAlert("danger", err?.message || "No se pudo cambiar el tipo de autenticación.");
+    } finally {
+      setIsLoader(false);
+    }
+  });
+
   return (
     <div className="relative">
       {isLoader && (
@@ -407,6 +451,9 @@ const UserList = () => {
                               <td className="px-4 py-2 ">
                                 {item?.Email || "-"}
                               </td>
+                              <td className="px-4 py-2 font-medium">
+                                {item?.JobTitle || "-"}
+                              </td>
                               <td className="px-4 py-2">
                                 {item?.Phone || "-"}
                               </td>
@@ -445,6 +492,45 @@ const UserList = () => {
                                       {item?.UserRole === "contracts_Admin"
                                         ? "Quitar Admin"
                                         : "Hacer Admin"}
+                                    </span>
+                                  </button>
+                                )}
+                              </td>
+                              <td className="px-4 py-2 whitespace-nowrap">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                    item?.isLdap === true || item?.UserId?.isLdap === true
+                                      ? "bg-purple-100 text-purple-800 border border-purple-200"
+                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                  }`}
+                                >
+                                  {item?.isLdap === true || item?.UserId?.isLdap === true
+                                    ? "LDAP"
+                                    : "Local"}
+                                </span>
+                                {isSuperAdmin && !checkIsSuperAdmin(item) && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleAuthType(item)}
+                                    className="ml-2 op-btn op-btn-xs op-btn-outline"
+                                    title={
+                                      item?.isLdap === true || item?.UserId?.isLdap === true
+                                        ? "Cambiar a Contraseña Local"
+                                        : "Cambiar a LDAP (Directorio Activo)"
+                                    }
+                                  >
+                                    <i
+                                      className={`fa-light ${
+                                        item?.isLdap === true || item?.UserId?.isLdap === true
+                                          ? "fa-key text-info"
+                                          : "fa-network-wired text-primary"
+                                      }`}
+                                      aria-hidden="true"
+                                    ></i>
+                                    <span className="hidden xl:inline ml-1">
+                                      {item?.isLdap === true || item?.UserId?.isLdap === true
+                                        ? "Pasar a Local"
+                                        : "Pasar a LDAP"}
                                     </span>
                                   </button>
                                 )}

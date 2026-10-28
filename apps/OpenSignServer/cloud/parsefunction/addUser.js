@@ -1,5 +1,5 @@
 export default async function addUser(request) {
-  const { phone, name, password, organization, team, tenantId, timezone, role } = request.params;
+  const { phone, name, password, organization, team, tenantId, timezone, role, jobTitle, isLdap } = request.params;
   const email = request.params?.email?.toLowerCase()?.replace(/\s/g, '');
   if (!request.user) {
     throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token.');
@@ -7,10 +7,7 @@ export default async function addUser(request) {
   const currentUser = { __type: 'Pointer', className: '_User', objectId: request.user.id };
   if (name && email && password && organization && team && role && tenantId) {
     try {
-      // Derive the caller's tenant/organization/role from the server-side
-      // record rather than trusting client-supplied identifiers. This
-      // prevents an authenticated low-privileged user from creating an admin
-      // or assigning the new user to an arbitrary tenant/organization/team.
+      // Verificar que quien crea usuarios sea exclusivamente el Administrador Principal (Superadmin)
       const callerQuery = new Parse.Query('contracts_Users');
       callerQuery.equalTo('UserId', currentUser);
       callerQuery.notEqualTo('IsDisabled', true);
@@ -18,11 +15,18 @@ export default async function addUser(request) {
       if (!callerExtUser) {
         throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'User not found.');
       }
-      const callerRole = callerExtUser.get('UserRole');
-      const isAdmin = callerRole === 'contracts_Admin';
-      const isOrgAdmin = callerRole === 'contracts_OrgAdmin';
-      if (!isAdmin && !isOrgAdmin) {
-        throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Unauthorized.');
+
+      const isCallerSuperAdmin =
+        request.user.get('isSuperAdmin') === true ||
+        request.user.get('email') === 'admin@brascuba.cu' ||
+        callerExtUser?.get('isSuperAdmin') === true ||
+        callerExtUser?.get('Email') === 'admin@brascuba.cu';
+
+      if (!isCallerSuperAdmin) {
+        throw new Parse.Error(
+          Parse.Error.OPERATION_FORBIDDEN,
+          'Solo el Administrador Principal puede crear nuevos usuarios.'
+        );
       }
       const callerTenantId = callerExtUser.get('TenantId')?.id;
       const callerOrgId = callerExtUser.get('OrganizationId')?.id;
@@ -65,6 +69,10 @@ export default async function addUser(request) {
       if (phone) {
         extUser.set('Phone', phone);
       }
+      if (jobTitle) {
+        extUser.set('JobTitle', jobTitle);
+      }
+      extUser.set('isLdap', isLdap === true);
       extUser.set('Email', email);
       extUser.set('UserRole', `contracts_${role}`);
       extUser.set('TeamIds', [
@@ -98,6 +106,7 @@ export default async function addUser(request) {
         _user.set('username', email);
         _user.set('email', email);
         _user.set('password', password);
+        _user.set('isLdap', isLdap === true);
         if (phone) {
           _user.set('phone', phone);
         }
@@ -125,6 +134,7 @@ export default async function addUser(request) {
           userQuery.equalTo('email', email);
           const userRes = await userQuery.first({ useMasterKey: true });
           userRes.setPassword(password);
+          userRes.set('isLdap', isLdap === true);
           await userRes.save(null, { useMasterKey: true });
           extUser.set('CreatedBy', currentUser);
           extUser.set('UserId', { __type: 'Pointer', className: '_User', objectId: userRes.id });

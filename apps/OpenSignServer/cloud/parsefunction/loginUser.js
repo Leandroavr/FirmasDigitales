@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import axios from 'axios';
 import { cloudServerUrl, serverAppId } from '../../Utils.js';
 import { authenticateLdap } from './ldapService.js';
@@ -12,42 +11,86 @@ export default async function loginUser(request) {
   const password = request.params.password;
 
   if (!inputIdentifier || !password) {
-    throw new Parse.Error(Parse.Error.PASSWORD_MISSING, 'username/password is missing.');
+    throw new Parse.Error(Parse.Error.PASSWORD_MISSING, 'Usuario o contraseña requeridos.');
   }
 
   const isLdapEnabled =
     process.env.LDAP_ENABLED === 'true' || process.env.LDAP_ENABLED === true;
 
-  // 1. Identificar si el usuario es Superadmin local
-  const superAdminEmail = (process.env.SUPERADMIN_EMAIL || '').trim().toLowerCase();
-  let localUser = null;
+  // 1. Normalizar identificador para admitir alias (ej: leandro.valdes) y correo (ej: leandro.valdes@brascuba.cu)
+  const LDAP_DOMAIN = process.env.LDAP_DOMAIN || 'brascuba.cu';
+  let shortName = inputIdentifier;
+  let fullEmail = inputIdentifier;
 
-  try {
-    const userQuery = new Parse.Query(Parse.User);
-    userQuery.equalTo('username', inputIdentifier);
-    localUser = await userQuery.first({ useMasterKey: true });
-    if (!localUser) {
-      const emailQuery = new Parse.Query(Parse.User);
-      emailQuery.equalTo('email', inputIdentifier);
-      localUser = await emailQuery.first({ useMasterKey: true });
-    }
-  } catch (e) {
-    console.error('Error buscando usuario local:', e);
+  if (inputIdentifier.includes('@')) {
+    shortName = inputIdentifier.split('@')[0];
+  } else {
+    fullEmail = `${inputIdentifier}@${LDAP_DOMAIN}`;
   }
 
-  const isLocalSuperAdmin =
-    localUser &&
-    (localUser.get('isSuperAdmin') === true ||
-      localUser.get('isLdap') === false ||
-      (superAdminEmail &&
-        (inputIdentifier === superAdminEmail ||
-          localUser.get('email') === superAdminEmail)));
+  // 2. Buscar usuario registrado en OpenSign
+  let user = null;
+  const qEmail = new Parse.Query(Parse.User).equalTo('email', fullEmail);
+  const qUsername = new Parse.Query(Parse.User).equalTo('username', fullEmail);
+  const qShort = new Parse.Query(Parse.User).equalTo('username', shortName);
+  const qRaw = new Parse.Query(Parse.User).equalTo('username', inputIdentifier);
+  const userQuery = Parse.Query.or(qEmail, qUsername, qShort, qRaw);
+  user = await userQuery.first({ useMasterKey: true });
 
-  // 2. Si LDAP está habilitado y NO es un superadmin local:
-  if (isLdapEnabled && !isLocalSuperAdmin) {
+  let extUser = null;
+  if (user) {
+    const extQ = new Parse.Query('contracts_Users');
+    extQ.equalTo('UserId', user);
+    extUser = await extQ.first({ useMasterKey: true });
+  } else {
+    // Búsqueda alternativa en contracts_Users por Email
+    const extQ1 = new Parse.Query('contracts_Users').equalTo('Email', fullEmail);
+    const extQ2 = new Parse.Query('contracts_Users').equalTo('Email', inputIdentifier);
+    const extUserQuery = Parse.Query.or(extQ1, extQ2);
+    extUserQuery.include('UserId');
+    extUser = await extUserQuery.first({ useMasterKey: true });
+    if (extUser && extUser.get('UserId')) {
+      user = extUser.get('UserId');
+    }
+  }
+
+  // REQUISITO: Los usuarios deben ser pre-creados manualmente por el Superadmin.
+  // No se permite creación automática Just-In-Time mediante LDAP.
+  if (!user) {
+    console.warn(
+      `[Login Rejected] Intento de acceso de usuario no registrado en OpenSign: ${inputIdentifier}`
+    );
+    throw new Parse.Error(
+      Parse.Error.OBJECT_NOT_FOUND,
+      'Usuario no autorizado o no registrado en el sistema. Contacte al administrador.'
+    );
+  }
+
+  // 3. Verificar si el usuario está deshabilitado
+  if (extUser && extUser.get('IsDisabled') === true) {
+    throw new Parse.Error(
+      1001,
+      'Su cuenta se encuentra deshabilitada en la plataforma. Contacte al administrador.'
+    );
+  }
+
+  // 4. Determinar si es Superadmin o si su método de acceso es LDAP vs Local
+  const superAdminEmail = (process.env.SUPERADMIN_EMAIL || 'admin@brascuba.cu').trim().toLowerCase();
+  const isSuperAdminUser =
+    user.get('isSuperAdmin') === true ||
+    user.get('email') === superAdminEmail ||
+    fullEmail === superAdminEmail ||
+    (extUser && (extUser.get('isSuperAdmin') === true || extUser.get('Email') === superAdminEmail));
+
+  // El Superadmin siempre usa contraseña local; los demás usuarios según su campo isLdap
+  const isLdapUser =
+    !isSuperAdminUser &&
+    (user.get('isLdap') === true || (extUser && extUser.get('isLdap') === true));
+
+  // 5. Flujo A: Autenticación mediante LDAP / Directorio Activo
+  if (isLdapEnabled && isLdapUser) {
     try {
-      // Autenticar estrictamente con LDAP
-      const ldapUser = await authenticateLdap(inputIdentifier, password);
+      const ldapUser = await authenticateLdap(shortName, password);
       if (!ldapUser || !ldapUser.authenticated) {
         throw new Parse.Error(
           Parse.Error.OBJECT_NOT_FOUND,
@@ -55,80 +98,16 @@ export default async function loginUser(request) {
         );
       }
 
-      const normalizedEmail = (ldapUser.email || inputIdentifier)
-        .toLowerCase()
-        .replace(/\s/g, '');
-
-      // Buscar si el usuario ya existe en OpenSign
-      const query = new Parse.Query(Parse.User);
-      query.equalTo('email', normalizedEmail);
-      let user = await query.first({ useMasterKey: true });
-
-      if (!user) {
-        const userQ = new Parse.Query(Parse.User);
-        userQ.equalTo('username', normalizedEmail);
-        user = await userQ.first({ useMasterKey: true });
-      }
-
-      if (user) {
-        // Usuario existente: verificar si está deshabilitado
-        const extQuery = new Parse.Query('contracts_Users');
-        extQuery.equalTo('UserId', user);
-        const extUser = await extQuery.first({ useMasterKey: true });
-
-        if (extUser && extUser.get('IsDisabled') === true) {
-          throw new Parse.Error(
-            1001,
-            'Su cuenta se encuentra deshabilitada en la plataforma. Contacte al administrador.'
-          );
-        }
-
-        // Actualizar nombre si cambió en el Directorio Activo
-        if (ldapUser.name && user.get('name') !== ldapUser.name) {
+      // Sincronizar nombre si varió en el Directorio Activo
+      if (ldapUser.name) {
+        if (user.get('name') !== ldapUser.name) {
           user.set('name', ldapUser.name);
           await user.save(null, { useMasterKey: true });
         }
-        if (extUser && ldapUser.name && extUser.get('Name') !== ldapUser.name) {
+        if (extUser && extUser.get('Name') !== ldapUser.name) {
           extUser.set('Name', ldapUser.name);
           await extUser.save(null, { useMasterKey: true });
         }
-      } else {
-        // Just-In-Time Provisioning: Registrar automáticamente por primera vez
-        const randomPassword = crypto.randomBytes(32).toString('hex');
-        user = new Parse.User();
-        user.set('username', normalizedEmail);
-        user.set('email', normalizedEmail);
-        user.set('name', ldapUser.name || normalizedEmail.split('@')[0]);
-        user.set('password', randomPassword);
-        user.set('isLdap', true);
-        if (ldapUser.phone) user.set('phone', ldapUser.phone);
-        await user.signUp(null, { useMasterKey: true });
-
-        // Obtener el Tenant por defecto (Brascuba)
-        const tenantQuery = new Parse.Query('partners_Tenant');
-        const defaultTenant = await tenantQuery.first({ useMasterKey: true });
-
-        // Obtener organización por defecto
-        const orgQuery = new Parse.Query('contracts_Organizations');
-        const defaultOrg = await orgQuery.first({ useMasterKey: true });
-
-        const extUser = new Parse.Object('contracts_Users');
-        extUser.set('Name', ldapUser.name || normalizedEmail.split('@')[0]);
-        extUser.set('Email', normalizedEmail);
-        extUser.set('UserRole', 'contracts_User');
-        extUser.set('UserId', user);
-        extUser.set('Company', ldapUser.company || 'Brascuba');
-        extUser.set('JobTitle', ldapUser.jobTitle || '');
-        extUser.set('Department', ldapUser.department || '');
-        extUser.set('IsDisabled', false);
-        if (defaultTenant) {
-          extUser.set('TenantId', defaultTenant);
-        }
-        if (defaultOrg) {
-          extUser.set('OrganizationId', defaultOrg);
-        }
-        await extUser.save(null, { useMasterKey: true });
-        console.log(`[LDAP Provisioning] Nuevo usuario aprovisionado: ${normalizedEmail} (${ldapUser.name})`);
       }
 
       // Generar sesión oficial con /loginAs
@@ -160,18 +139,22 @@ export default async function loginUser(request) {
     }
   }
 
-  // 3. Fallback: Autenticación local en Parse para SuperAdmin o cuando LDAP_ENABLED=false
+  // 6. Flujo B: Autenticación con contraseña local de Parse
   try {
-    const user = await Parse.User.logIn(inputIdentifier, password);
-    if (user) {
+    const parseUsername = user.get('username') || fullEmail;
+    const loggedUser = await Parse.User.logIn(parseUsername, password);
+    if (loggedUser) {
       return {
-        ...user.toJSON(),
+        ...loggedUser.toJSON(),
       };
     } else {
-      throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Usuario no encontrado.');
+      throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Usuario o contraseña incorrectos.');
     }
   } catch (err) {
-    console.log('Error en autenticación local de usuario:', err.message);
-    throw err;
+    console.log(`Error en autenticación local de usuario (${inputIdentifier}):`, err.message);
+    throw new Parse.Error(
+      Parse.Error.OBJECT_NOT_FOUND,
+      'Usuario o contraseña incorrectos.'
+    );
   }
 }

@@ -29,11 +29,13 @@ const AddUser = (props) => {
   const { t } = useTranslation();
   const [formdata, setFormdata] = useState({
     name: "",
+    jobTitle: "",
     phone: "",
     email: "",
     team: "",
     password: "",
-    role: "Editor"
+    role: "User",
+    isLdap: true
   });
   const [isFormLoader, setIsFormLoader] = useState(false);
   const [teamList, setTeamList] = useState([]);
@@ -87,11 +89,13 @@ const AddUser = (props) => {
           try {
             const params = {
               name: formdata.name,
+              jobTitle: formdata.jobTitle,
               email: formdata.email,
               phone: formdata.phone,
               password: formdata.password,
-              role: formdata.role,
+              role: formdata.role || "User",
               team: formdata.team,
+              isLdap: formdata.isLdap,
               timezone: timezone,
               tenantId: localStorage.getItem("TenantId"),
               organization: {
@@ -186,6 +190,22 @@ const AddUser = (props) => {
                       </div>
                       <div className="mb-3">
                         <label
+                          htmlFor="jobTitle"
+                          className="block text-xs font-semibold"
+                        >
+                          Cargo / Puesto
+                        </label>
+                        <input
+                          type="text"
+                          name="jobTitle"
+                          value={formdata.jobTitle}
+                          onChange={(e) => handleChange(e)}
+                          className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                          placeholder="ej: Especialista de Sistemas"
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label
                           htmlFor="email"
                           className="block text-xs font-semibold"
                         >
@@ -236,6 +256,34 @@ const AddUser = (props) => {
                           onChange={(e) => handleChange(e)}
                           className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
                         />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-xs font-semibold mb-1">
+                          Método de Autenticación
+                          <span className="text-[red] text-[13px]"> *</span>
+                        </label>
+                        <div className="flex items-center gap-4 text-xs mt-1 p-2 rounded bg-base-200/50">
+                          <label className="flex items-center gap-2 cursor-pointer font-medium">
+                            <input
+                              type="radio"
+                              name="isLdap"
+                              className="op-radio op-radio-sm op-radio-primary"
+                              checked={formdata.isLdap === true}
+                              onChange={() => setFormdata((prev) => ({ ...prev, isLdap: true }))}
+                            />
+                            <span>LDAP (Directorio Activo)</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer font-medium">
+                            <input
+                              type="radio"
+                              name="isLdap"
+                              className="op-radio op-radio-sm op-radio-primary"
+                              checked={formdata.isLdap === false}
+                              onChange={() => setFormdata((prev) => ({ ...prev, isLdap: false }))}
+                            />
+                            <span>Contraseña Local</span>
+                          </label>
+                        </div>
                       </div>
                       <div className="mb-3">
                         <label

@@ -145,6 +145,8 @@ function Login() {
       console.error("Error while logging in user", error);
       if (error?.code === 1001) {
         showToast("danger", t("action-prohibited"));
+      } else if (error?.message) {
+        showToast("danger", error.message);
       } else {
         showToast("danger", t("invalid-username-password-region"));
       }
@@ -152,8 +154,8 @@ function Login() {
   };
   const handleLoginBtn = async (event) => {
     event.preventDefault();
-    if (!emailRegex.test(state.email)) {
-      alert(t("valid-email-alert"));
+    if (!state.email || !state.email.trim()) {
+      alert("Por favor ingrese su usuario o correo.");
       return;
     }
     await handleLogin();
@@ -507,13 +509,14 @@ function Login() {
                       </legend>
                       <div className="w-full px-6 py-3 my-1 op-card bg-base-100 shadow-md outline outline-1 outline-slate-300/50">
                         <label className="block text-xs" htmlFor="email">
-                          {t("email")}
+                          Usuario o Correo
                         </label>
                         <input
                           id="email"
-                          type="email"
+                          type="text"
                           className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
                           name="email"
+                          placeholder="ej: usuario o usuario@brascuba.cu"
                           autoComplete="username"
                           value={state.email}
                           onChange={handleChange}
