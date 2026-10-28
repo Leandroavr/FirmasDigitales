@@ -16,6 +16,7 @@ import Loader from "../primitives/Loader";
 import { useTranslation } from "react-i18next";
 import { sessionStatus } from "../redux/reducers/userReducer";
 import SessionExpiredModal from "../primitives/SessionExpiredModal";
+import { validateSessionOnStartup, initInactivityTracker } from "../utils/sessionManager";
 
 const HomeLayout = () => {
   const appName =
@@ -40,7 +41,20 @@ const HomeLayout = () => {
   }, []);
 
   useEffect(() => {
+    // Rastreador de inactividad de 30 minutos y comprobación de sesión de navegador
+    const cleanup = initInactivityTracker(dispatch);
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, [dispatch]);
+
+  useEffect(() => {
     if (localStorage.getItem("accesstoken")) {
+      const isSessionValid = validateSessionOnStartup(dispatch);
+      if (!isSessionValid) {
+        setIsLoader(false);
+        return;
+      }
       if (!tenantId) {
         dispatch(sessionStatus(false));
       } else {

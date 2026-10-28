@@ -21,6 +21,9 @@ export default async function getDrive(request) {
         const isAdmin = await isUserAdmin(userEmail, userId);
 
         // Para administradores en la raíz de Gestor Pdfs: organizar los documentos en carpetas por usuario
+        const isCallerSuperAdmin =
+          userEmail === 'admin@brascuba.cu' || userRes.data?.isSuperAdmin === true;
+
         if (isAdmin && !docId) {
           const extUserQuery = new Parse.Query('contracts_Users');
           extUserQuery.include('UserId');
@@ -41,7 +44,17 @@ export default async function getDrive(request) {
           });
 
           const userFolders = extUsers
-            .filter((u) => u.get('UserId'))
+            .filter((u) => {
+              if (!u.get('UserId')) return false;
+              const uEmail = u.get('Email');
+              const isSuper =
+                uEmail === 'admin@brascuba.cu' || u.get('isSuperAdmin') === true;
+              // A los administradores normales nunca les sale la carpeta del Superadmin
+              if (isSuper && !isCallerSuperAdmin) {
+                return false;
+              }
+              return true;
+            })
             .map((u) => {
               const uId = u.get('UserId').id;
               const isCurrentAdmin = uId === userId;
@@ -72,12 +85,25 @@ export default async function getDrive(request) {
           return userFolders.slice(0, limit);
         }
 
-        const query = new Parse.Query('contracts_Document');
+        let query = new Parse.Query('contracts_Document');
         if (isAdmin) {
           if (docId) {
             if (docId.startsWith('user_')) {
               // El administrador ingresó a la carpeta de un usuario específico
               const targetUserId = docId.replace('user_', '');
+
+              // Si un admin normal intenta acceder a la carpeta del superadmin por URL, bloquear
+              if (!isCallerSuperAdmin) {
+                const targetExt = extUsers?.find
+                  ? extUsers.find((eu) => eu.get('UserId')?.id === targetUserId)
+                  : await new Parse.Query('contracts_Users')
+                      .equalTo('UserId', { __type: 'Pointer', className: '_User', objectId: targetUserId })
+                      .first({ useMasterKey: true });
+                if (targetExt && (targetExt.get('Email') === 'admin@brascuba.cu' || targetExt.get('isSuperAdmin') === true)) {
+                  return [];
+                }
+              }
+
               query.equalTo('CreatedBy', {
                 __type: 'Pointer',
                 className: '_User',
@@ -95,7 +121,7 @@ export default async function getDrive(request) {
             }
           }
         } else {
-          // Usuarios normales: sólo ven sus propios documentos y carpetas
+          // Usuarios normales: ven sus propios documentos/carpetas y aquellos donde son firmantes
           if (docId) {
             query.equalTo('Folder', {
               __type: 'Pointer',
@@ -103,11 +129,24 @@ export default async function getDrive(request) {
               objectId: docId,
             });
             query.include('Folder');
+            query.equalTo('CreatedBy', { __type: 'Pointer', className: '_User', objectId: userId });
           } else {
-            query.doesNotExist('Folder', true);
+            const userPtr = { __type: 'Pointer', className: '_User', objectId: userId };
+            const creatorQuery = new Parse.Query('contracts_Document');
+            creatorQuery.equalTo('CreatedBy', userPtr);
+            creatorQuery.doesNotExist('Folder');
+
+            const contactQuery = new Parse.Query('contracts_Contactbook');
+            contactQuery.equalTo('UserId', userPtr);
+
+            const signerQuery = new Parse.Query('contracts_Document');
+            signerQuery.matchesQuery('Signers', contactQuery);
+            signerQuery.doesNotExist('Folder');
+
+            query = Parse.Query.or(creatorQuery, signerQuery);
           }
-          query.equalTo('CreatedBy', { __type: 'Pointer', className: '_User', objectId: userId });
         }
+        query.notEqualTo('HiddenForUsers', userId);
         query.include('ExtUserPtr');
         query.include('ExtUserPtr.TenantId');
         query.include('Signers');

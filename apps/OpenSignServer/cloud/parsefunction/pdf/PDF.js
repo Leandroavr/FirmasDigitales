@@ -158,6 +158,11 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
       console.log(`[sendNotifyMail] Notificaciones desactivadas para "${doc?.Name}". Omitiendo envío.`);
       return;
     }
+    // En "Firma tú mismo", no enviar notificación de avance entre firmantes
+    if (doc?.IsSignyourself === true) {
+      console.log(`[sendNotifyMail] Documento "${doc?.Name}" es de Firma tú mismo. Omitiendo notificación de avance.`);
+      return;
+    }
     const TenantAppName = 'Firma Digital Brascuba';
 
     // Contar firmantes completados únicos de forma precisa
@@ -188,6 +193,12 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
       1
     );
     const auditTrailCount = Math.min(completedSignerIds.size, signersCount);
+
+    // Si el documento tiene un solo firmante en total (o es Firma tú mismo), no aplica el flujo multifirma de avance
+    if (signersCount <= 1) {
+      console.log(`[sendNotifyMail] Documento "${doc?.Name}" es de un solo firmante (${signersCount}). Se omite la notificación de avance multifirma.`);
+      return;
+    }
 
     const sender = doc?.ExtUserPtr;
     const pdfName = doc?.Name || 'Documento';
@@ -332,13 +343,28 @@ async function sendCompletedMail(obj) {
   ).toString('base64');
   const viewDocUrl = `${publicUrl}/login/${encodeBase64}`;
 
+  // Comprobar si el documento es de un solo firmante para adaptar el mensaje
+  const placeholderSigners = new Set(
+    (doc?.Placeholders || [])
+      .filter(isCompletionRelevant)
+      .map(p => p?.signerObjId || p?.signerPtr?.objectId || p?.email)
+      .filter(Boolean)
+  );
+  const totalSigners = Math.max((doc?.Signers || []).length, placeholderSigners.size);
+  const isSingleSigner = totalSigners <= 1;
+  const signerName = firstSigner?.Name || firstSigner?.Email || 'el firmante';
+
+  const completionMessage = isSingleSigner
+    ? `Le confirmamos que el documento <strong>"${pdfName}"</strong> ha sido firmado satisfactoriamente por <strong>${signerName}</strong> y el proceso ha finalizado con éxito.`
+    : `Todas las partes requeridas han firmado satisfactoriamente el documento <strong>"${pdfName}"</strong>.`;
+
   let subject = `[Firma Digital] Documento completado: "${pdfName}"`;
   let body =
     "<html><head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8' /></head><body><div style='background-color:#f5f5f5;padding:20px'><div style='background-color:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" +
     `<div style='padding:16px 20px;font-family:system-ui,sans-serif;background-color:#28a745'><h2 style='font-size:18px;margin:0;color:white;'>Documento Completado y Sellado</h2></div>` +
     `<div style='padding:24px 20px;font-family:system-ui,sans-serif;font-size:14px;color:#333;line-height:1.6'>` +
     `<p>Estimado(a) usuario(a),</p>` +
-    `<p>Todas las partes requeridas han firmado satisfactoriamente el documento <strong>"${pdfName}"</strong>.</p>` +
+    `<p>${completionMessage}</p>` +
     `<div style='background-color:#e8f5e9;border-left:4px solid #28a745;padding:12px 16px;margin:18px 0'>` +
     `<p style='margin:0;font-size:13px;color:#1e4620'><strong>Estado final:</strong> El documento ha sido completado y sellado digitalmente. No admite más firmas ni alteraciones posteriores.</p>` +
     `</div>` +
@@ -428,6 +454,125 @@ async function sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, file
   saveFileUsage(CertificateBuffer.length, file.imageUrl, doc?.CreatedBy?.objectId);
   unlinkFile(pfx.name);
   return file.imageUrl;
+}
+
+// `sendSelfSignCompletedMail` envía un correo único y limpio con el PDF adjunto para "Firma tú mismo"
+async function sendSelfSignCompletedMail(obj) {
+  const url = obj.doc?.SignedUrl;
+  const doc = obj.doc;
+  const signUser = obj.signUser;
+  const sender = obj.doc.ExtUserPtr;
+  const pdfName = doc.Name || 'Documento';
+  const TenantAppName = 'Firma Digital Brascuba';
+
+  // El destinatario es única y exclusivamente el usuario firmante
+  const recipient = (
+    signUser?.Email ||
+    signUser?.email ||
+    sender?.Email ||
+    sender?.email ||
+    doc?.SenderMail ||
+    ''
+  ).toLowerCase().trim();
+
+  if (!recipient) {
+    console.warn(`[sendSelfSignCompletedMail] No se encontró correo de destinatario para el doc: ${doc?.objectId}`);
+    return;
+  }
+
+  const signerName = signUser?.Name || signUser?.name || sender?.Name || recipient;
+  const publicUrl = process.env.PUBLIC_URL || obj.publicUrl || 'https://localhost:3001';
+  const encodeBase64 = Buffer.from(`${doc.objectId}/${recipient}`).toString('base64');
+  const viewDocUrl = `${publicUrl}/login/${encodeBase64}`;
+
+  let subject = `[Firma Digital] Usted ha firmado correctamente el documento "${pdfName}"`;
+  let body =
+    "<html><head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8' /></head><body><div style='background-color:#f5f5f5;padding:20px'>" +
+    "<div style='background-color:white;border-radius:6px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)'>" +
+    `<div style='padding:16px 20px;font-family:system-ui,sans-serif;background-color:#0b3c6d'><h2 style='font-size:18px;margin:0;color:white;'>Documento Firmado Correctamente</h2></div>` +
+    `<div style='padding:24px 20px;font-family:system-ui,sans-serif;font-size:14px;color:#333;line-height:1.6'>` +
+    `<p>Estimado(a) <strong>${signerName}</strong>,</p>` +
+    `<p>Le confirmamos que <strong>usted ha firmado correctamente</strong> el documento <strong>"${pdfName}"</strong>.</p>` +
+    `<div style='background-color:#e8f5e9;border-left:4px solid #28a745;padding:12px 16px;margin:18px 0'>` +
+    `<p style='margin:0;font-size:13px;color:#1e4620'><strong>Completado:</strong> El proceso de firma ha finalizado con éxito. Adjunto a este correo encontrará una copia oficial del documento firmado digitalmente.</p>` +
+    `</div>` +
+    `<div style='margin:25px 0'><a target='_blank' href='${viewDocUrl}' style='display:inline-block;padding:12px 24px;background-color:#0b3c6d;color:white;text-decoration:none;border-radius:4px;font-weight:bold'>Ver Documento en la Plataforma</a></div>` +
+    `<p style='font-size:13px;color:#555'>También puede consultar y descargar el documento firmado directamente desde el archivo adjunto a este mensaje.</p>` +
+    `</div></div>` +
+    `<div><p style='padding:15px;color:#888;font-size:12px;text-align:center'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
+    `</div></body></html>`;
+
+  const formatId = doc?.ExtUserPtr?.DownloadFilenameFormat;
+  const filename = pdfName?.length > 100 ? pdfName?.slice(0, 100) : pdfName;
+  const docName = buildDownloadFilename(formatId, {
+    docName: filename,
+    email: recipient,
+    isSigned: true,
+  });
+
+  const params = {
+    extUserId: sender?.objectId,
+    url: url,
+    from: TenantAppName,
+    recipient: recipient,
+    subject: subject,
+    pdfName: pdfName,
+    html: body,
+    mailProvider: obj.mailProvider,
+    certificatePath: `./exports/signed_certificate_${doc.objectId}.pdf`,
+    filename: docName,
+  };
+
+  try {
+    console.log(`[sendSelfSignCompletedMail] Enviando confirmación con adjunto a ${recipient} para doc "${pdfName}"`);
+    const res = await sendMailWithAttachment(params);
+    if (res?.status !== 'success') {
+      unlinkFile(`./exports/signed_certificate_${doc.objectId}.pdf`);
+    }
+  } catch (err) {
+    console.error('[sendSelfSignCompletedMail] Error enviando correo:', err);
+    unlinkFile(`./exports/signed_certificate_${doc.objectId}.pdf`);
+  }
+}
+
+// `sendSelfSignSaveCertificate` genera el certificado en Parse y envía el correo único de confirmación
+async function sendSelfSignSaveCertificate(doc, pfx, isCustomMail, mailProvider, filename, signUser, publicUrl) {
+  try {
+    const certificate = await GenerateCertificate(doc);
+    const certificatePdf = await PDFDocument.load(certificate);
+    const P12Buffer = fs.readFileSync(pfx.name);
+    const p12 = new P12Signer(P12Buffer, { passphrase: pfx.passphrase || null });
+    pdflibAddPlaceholder({
+      pdfDoc: certificatePdf,
+      reason: `Digitally signed by ${eSignName}.`,
+      location: 'n/a',
+      name: eSignName,
+      contactInfo: eSigncontact,
+      signatureLength: 16000,
+    });
+    const pdfWithPlaceholderBytes = await certificatePdf.save();
+    const CertificateBuffer = Buffer.from(pdfWithPlaceholderBytes);
+    const certificateOBJ = new SignPdf();
+    const signedCertificate = await certificateOBJ.sign(CertificateBuffer, p12);
+    const certificatePath = `./exports/signed_certificate_${doc.objectId}.pdf`;
+
+    fs.writeFileSync(certificatePath, signedCertificate);
+    const file = await uploadFile('certificate.pdf', certificatePath);
+    const body = { CertificateUrl: file.imageUrl };
+    await axios.put(`${docUrl}/${doc.objectId}`, body, { headers });
+
+    if (doc.IsSendMail === false) {
+      console.log("[sendSelfSignSaveCertificate] IsSendMail es false, omitiendo correo");
+    } else {
+      await sendSelfSignCompletedMail({ isCustomMail, doc, mailProvider, filename, signUser, publicUrl });
+    }
+    saveFileUsage(CertificateBuffer.length, file.imageUrl, doc?.CreatedBy?.objectId);
+    unlinkFile(pfx.name);
+    return file.imageUrl;
+  } catch (err) {
+    console.error('[sendSelfSignSaveCertificate] Error:', err);
+    unlinkFile(pfx.name);
+  }
 }
 
 /**
@@ -632,12 +777,19 @@ async function PDF(req) {
           isCompleted ? documentHash : undefined,
           auditActivity
         );
-        const docForNotify = {
-          ..._resDoc,
-          AuditTrail: updatedDoc?.AuditTrail || _resDoc?.AuditTrail,
-          SignedUrl: data?.imageUrl || _resDoc?.SignedUrl,
-        };
-        sendNotifyMail(docForNotify, signUser, mailProvider, publicUrl);
+        // sendNotifyMail(docForNotify, signUser, mailProvider, publicUrl);
+        const isSelfSign = req.params?.isSelfSign === true || _resDoc?.IsSignyourself === true;
+
+        if (isSelfSign) {
+          console.log(`[signPdf] Modo Firma tú mismo detectado para "${_resDoc?.Name}". Omitiendo notificación de avance.`);
+        } else {
+          const docForNotify = {
+            ..._resDoc,
+            AuditTrail: updatedDoc?.AuditTrail || _resDoc?.AuditTrail,
+            SignedUrl: data?.imageUrl || _resDoc?.SignedUrl,
+          };
+          sendNotifyMail(docForNotify, signUser, mailProvider, publicUrl);
+        }
         saveFileUsage(pdfSize, data.imageUrl, _resDoc?.CreatedBy?.objectId);
         if (updatedDoc && updatedDoc.isCompleted) {
           const hashForDoc = documentHash || updatedDoc?.DocumentHash;
@@ -645,7 +797,11 @@ async function PDF(req) {
           if (hashForDoc) {
             doc.DocumentHash = hashForDoc;
           }
-          sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, `signed_${name}`);
+          if (isSelfSign) {
+            sendSelfSignSaveCertificate(doc, pfx, isCustomMail, mailProvider, `signed_${name}`, signUser, publicUrl);
+          } else {
+            sendMailsaveCertifcate(doc, pfx, isCustomMail, mailProvider, `signed_${name}`);
+          }
         } else {
           unlinkFile(pfxname);
         }
@@ -898,12 +1054,27 @@ export async function completeCorporateSignature(req) {
     if (!updated || updated === 'err' || updated.message !== 'success') {
       throw new Error('No se pudo actualizar el documento tras la firma.');
     }
-    const docForNotify = {
-      ...data,
-      AuditTrail: updated?.AuditTrail || data?.AuditTrail,
-      SignedUrl: uploaded?.imageUrl || data?.SignedUrl,
-    };
-    sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
+    // sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
+    const isSelfSign = req.params?.isSelfSign === true || data?.IsSignyourself === true;
+    const placeholderSigners = new Set(
+      (data?.Placeholders || [])
+        .filter(isCompletionRelevant)
+        .map(p => p?.signerObjId || p?.signerPtr?.objectId || p?.email)
+        .filter(Boolean)
+    );
+    const totalSigners = Math.max((data?.Signers || []).length, placeholderSigners.size);
+    const isSingleSigner = isSelfSign || totalSigners <= 1;
+
+    if (isSingleSigner) {
+      console.log(`[completeCorporateSignature] Documento con un solo firmante detectado para "${data?.Name}". Omitiendo notificación de avance.`);
+    } else {
+      const docForNotify = {
+        ...data,
+        AuditTrail: updated?.AuditTrail || data?.AuditTrail,
+        SignedUrl: uploaded?.imageUrl || data?.SignedUrl,
+      };
+      sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
+    }
     saveFileUsage(signedPdf.length, uploaded.imageUrl, data?.CreatedBy?.objectId);
     if (updated.isCompleted) {
       const tenantPfx = data?.ExtUserPtr?.TenantId?.PfxFile;
@@ -922,13 +1093,25 @@ export async function completeCorporateSignature(req) {
           SignedUrl: uploaded.imageUrl,
           DocumentHash: updated.DocumentHash,
         };
-        await sendMailsaveCertifcate(
-          completedDoc,
-          pfx,
-          Boolean(isCustomCompletionMail),
-          mailProvider || '',
-          `corporate_signed_${filename}`
-        );
+        if (isSelfSign) {
+          await sendSelfSignSaveCertificate(
+            completedDoc,
+            pfx,
+            Boolean(isCustomCompletionMail),
+            mailProvider || '',
+            `corporate_signed_${filename}`,
+            signer,
+            req.headers.public_url
+          );
+        } else {
+          await sendMailsaveCertifcate(
+            completedDoc,
+            pfx,
+            Boolean(isCustomCompletionMail),
+            mailProvider || '',
+            `corporate_signed_${filename}`
+          );
+        }
       }
     }
     return { status: 'success', data: uploaded.imageUrl };
@@ -1033,12 +1216,27 @@ export async function signCorporatePdfDirect(req) {
     if (!updated || updated === 'err' || updated.message !== 'success') {
       throw new Error('No se pudo actualizar el documento tras la firma.');
     }
-    const docForNotify = {
-      ...data,
-      AuditTrail: updated?.AuditTrail || data?.AuditTrail,
-      SignedUrl: uploaded?.imageUrl || data?.SignedUrl,
-    };
-    sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
+    // sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
+    const isSelfSign = req.params?.isSelfSign === true || data?.IsSignyourself === true;
+    const placeholderSigners = new Set(
+      (data?.Placeholders || [])
+        .filter(isCompletionRelevant)
+        .map(p => p?.signerObjId || p?.signerPtr?.objectId || p?.email)
+        .filter(Boolean)
+    );
+    const totalSigners = Math.max((data?.Signers || []).length, placeholderSigners.size);
+    const isSingleSigner = isSelfSign || totalSigners <= 1;
+
+    if (isSingleSigner) {
+      console.log(`[signCorporatePdfDirect] Documento con un solo firmante detectado para "${data?.Name}". Omitiendo notificación de avance.`);
+    } else {
+      const docForNotify = {
+        ...data,
+        AuditTrail: updated?.AuditTrail || data?.AuditTrail,
+        SignedUrl: uploaded?.imageUrl || data?.SignedUrl,
+      };
+      sendNotifyMail(docForNotify, signer, mailProvider || '', req.headers.public_url);
+    }
     saveFileUsage(signedPdf.length, uploaded.imageUrl, data?.CreatedBy?.objectId);
     if (updated.isCompleted) {
       const tenantPfx = data?.ExtUserPtr?.TenantId?.PfxFile;
@@ -1057,13 +1255,25 @@ export async function signCorporatePdfDirect(req) {
           SignedUrl: uploaded.imageUrl,
           DocumentHash: updated.DocumentHash,
         };
-        await sendMailsaveCertifcate(
-          completedDoc,
-          pfx,
-          Boolean(isCustomCompletionMail),
-          mailProvider || '',
-          `corporate_signed_${filename}`
-        );
+        if (isSelfSign) {
+          await sendSelfSignSaveCertificate(
+            completedDoc,
+            pfx,
+            Boolean(isCustomCompletionMail),
+            mailProvider || '',
+            `corporate_signed_${filename}`,
+            signer,
+            req.headers.public_url
+          );
+        } else {
+          await sendMailsaveCertifcate(
+            completedDoc,
+            pfx,
+            Boolean(isCustomCompletionMail),
+            mailProvider || '',
+            `corporate_signed_${filename}`
+          );
+        }
       }
     }
     return { status: 'success', data: uploaded.imageUrl };

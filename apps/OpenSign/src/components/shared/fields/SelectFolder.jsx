@@ -46,29 +46,62 @@ const SelectFolder = ({ required, onSuccess, folderCls, isReset }) => {
   const fetchFolder = async (folderPtr) => {
     setIsLoader(true);
     try {
+      const currentUser = Parse.User.current();
+      let currentUserId = currentUser?.id;
+      if (!currentUserId) {
+        try {
+          const userStr = localStorage.getItem("UserInformation");
+          if (userStr) currentUserId = JSON.parse(userStr)?.objectId;
+        } catch (e) {}
+      }
+      if (!currentUserId) {
+        try {
+          const extStr = localStorage.getItem("Extand_Class");
+          if (extStr) currentUserId = JSON.parse(extStr)?.[0]?.UserId?.objectId;
+        } catch (e) {}
+      }
+
+      const userPointer = currentUserId
+        ? {
+            __type: "Pointer",
+            className: "_User",
+            objectId: currentUserId
+          }
+        : null;
+
       const FolderQuery = new Parse.Query(folderCls);
+      FolderQuery.equalTo("Type", "Folder");
+      FolderQuery.notEqualTo("IsArchive", true);
+
       if (folderPtr) {
         FolderQuery.equalTo("Folder", folderPtr);
-        FolderQuery.notEqualTo("IsArchive", true);
-        FolderQuery.descending("Type");
-        FolderQuery.equalTo("CreatedBy", Parse.User.current());
       } else {
         FolderQuery.doesNotExist("Folder");
-        FolderQuery.notEqualTo("IsArchive", true);
-        FolderQuery.descending("Type");
-        FolderQuery.equalTo("CreatedBy", Parse.User.current());
+      }
+
+      if (userPointer) {
+        FolderQuery.equalTo("CreatedBy", userPointer);
       }
 
       const res = await FolderQuery.find();
       if (res) {
-        const result = JSON.parse(JSON.stringify(res));
-        if (result) {
-          setFolderList(result);
-          setIsLoader(false);
+        let result = JSON.parse(JSON.stringify(res));
+        if (result && currentUserId) {
+          result = result.filter((item) => {
+            if (item.Type !== "Folder") return false;
+            const cId =
+              item.CreatedBy?.objectId ||
+              item.CreatedBy?.id ||
+              (typeof item.CreatedBy === "string" ? item.CreatedBy : null);
+            if (cId && cId !== currentUserId) return false;
+            return true;
+          });
         }
-        setIsLoader(false);
+        setFolderList(result || []);
       }
     } catch (error) {
+      console.error("Error fetching folders:", error);
+    } finally {
       setIsLoader(false);
     }
   };
@@ -169,9 +202,11 @@ const SelectFolder = ({ required, onSuccess, folderCls, isReset }) => {
   return (
     <div className="text-xs mt-2 ">
       <div>
-        <label className="block">
-          {t("select-folder")}
-          {required && <span className="text-red-500 text-[13px]">*</span>}
+        <label className="block font-medium mb-1">
+          {t("select-folder-label", {
+            defaultValue: "Seleccione la carpeta donde guardará el documento"
+          })}
+          {required && <span className="text-red-500 text-[13px] ml-1">*</span>}
         </label>
       </div>
       <div className="relative max-w-sm">

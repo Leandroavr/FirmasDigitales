@@ -5,15 +5,21 @@ export default async function updateUserRole(request) {
     throw new Parse.Error(Parse.Error.SESSION_MISSING, 'Debe iniciar sesión para realizar esta acción.');
   }
 
-  // 1. Verificar que el usuario que ejecuta la acción sea Administrador
+  // 1. Verificar que el usuario que ejecuta la acción sea el Administrador Principal (Superadmin)
   const callerExtQuery = new Parse.Query('contracts_Users');
   callerExtQuery.equalTo('UserId', request.user);
   const callerExt = await callerExtQuery.first({ useMasterKey: true });
 
-  if (!callerExt || callerExt.get('UserRole') !== 'contracts_Admin') {
+  const isCallerSuperAdmin =
+    request.user.get('isSuperAdmin') === true ||
+    request.user.get('email') === 'admin@brascuba.cu' ||
+    callerExt?.get('isSuperAdmin') === true ||
+    callerExt?.get('Email') === 'admin@brascuba.cu';
+
+  if (!isCallerSuperAdmin) {
     throw new Parse.Error(
       Parse.Error.OPERATION_FORBIDDEN,
-      'Solo los usuarios con rol Administrador pueden modificar privilegios.'
+      'Solo el Administrador Principal puede otorgar o revocar privilegios de administrador.'
     );
   }
 
@@ -31,8 +37,20 @@ export default async function updateUserRole(request) {
     throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Usuario objetivo no encontrado.');
   }
 
+  // Prevenir modificar o degradar al Administrador Principal
+  const isTargetSuperAdmin =
+    targetExtUser.get('isSuperAdmin') === true ||
+    targetExtUser.get('Email') === 'admin@brascuba.cu';
+
+  if (isTargetSuperAdmin) {
+    throw new Parse.Error(
+      Parse.Error.OPERATION_FORBIDDEN,
+      'No se pueden modificar los privilegios del Administrador Principal.'
+    );
+  }
+
   // Prevenir que un admin se degrade a sí mismo por error
-  if (targetExtUser.id === callerExt.id && newRole !== 'contracts_Admin') {
+  if (targetExtUser.id === callerExt?.id && newRole !== 'contracts_Admin') {
     throw new Parse.Error(
       Parse.Error.OPERATION_FORBIDDEN,
       'No puede revocar sus propios privilegios de administrador.'

@@ -90,6 +90,13 @@ export const RenderReportCell = ({
         </td>
       );
     case "File":
+      if (!rowData?.IsCompleted) {
+        return (
+          <td key={col} className="p-2 text-center text-gray-400">
+            -
+          </td>
+        );
+      }
       return (
         <td key={col} className="p-2 text-center">
           <button

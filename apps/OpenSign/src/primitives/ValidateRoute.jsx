@@ -3,12 +3,17 @@ import Parse from "parse";
 import { Outlet } from "react-router";
 import { saveLanguageInLocal } from "../constant/Utils";
 import { useTranslation } from "react-i18next";
+import { validateSessionOnStartup, endUserSession } from "../utils/sessionManager";
 const ValidateRoute = () => {
   const { i18n } = useTranslation();
   useEffect(() => {
     (async () => {
       const token = localStorage.getItem("accesstoken");
       if (token) {
+        if (!validateSessionOnStartup()) {
+          handlelogout();
+          return;
+        }
         try {
           // Antiguo:
           // const userQuery = new Parse.Query(Parse.User);
@@ -43,6 +48,10 @@ const ValidateRoute = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const handlelogout = async () => {
+    endUserSession();
+    try {
+      await Parse.User.logOut();
+    } catch (e) {}
     let appdata = localStorage.getItem("userSettings");
     let applogo = localStorage.getItem("appLogo");
     let defaultmenuid = localStorage.getItem("defaultmenuid");

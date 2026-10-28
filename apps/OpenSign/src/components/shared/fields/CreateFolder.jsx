@@ -24,12 +24,39 @@ const CreateFolder = ({ parentFolderId, onSuccess, folderCls, onBack }) => {
     handleLoader(true);
     if (name) {
       const currentUser = Parse.User.current();
+      let currentUserId = currentUser?.id;
+      if (!currentUserId) {
+        try {
+          const userStr = localStorage.getItem("UserInformation");
+          if (userStr) currentUserId = JSON.parse(userStr)?.objectId;
+        } catch (e) {}
+      }
+      if (!currentUserId) {
+        try {
+          const extStr = localStorage.getItem("Extand_Class");
+          if (extStr) currentUserId = JSON.parse(extStr)?.[0]?.UserId?.objectId;
+        } catch (e) {}
+      }
+
+      const userPointer = currentUserId
+        ? {
+            __type: "Pointer",
+            className: "_User",
+            objectId: currentUserId
+          }
+        : null;
+
       const exsitQuery = new Parse.Query(folderCls);
       exsitQuery.equalTo("Name", name);
       exsitQuery.equalTo("Type", "Folder");
       exsitQuery.notEqualTo("IsArchive", true);
+      if (userPointer) {
+        exsitQuery.equalTo("CreatedBy", userPointer);
+      }
       if (parentFolderId) {
         exsitQuery.equalTo("Folder", folderPtr);
+      } else {
+        exsitQuery.doesNotExist("Folder");
       }
       const templExist = await exsitQuery.first();
       if (templExist) {
@@ -41,7 +68,9 @@ const CreateFolder = ({ parentFolderId, onSuccess, folderCls, onBack }) => {
         if (parentFolderId) {
           template.set("Folder", folderPtr);
         }
-        template.set("CreatedBy", Parse.User.createWithoutData(currentUser.id));
+        if (userPointer) {
+          template.set("CreatedBy", userPointer);
+        }
         const ExtCls = JSON.parse(localStorage.getItem("Extand_Class"));
         template.set("ExtUserPtr", {
           __type: "Pointer",

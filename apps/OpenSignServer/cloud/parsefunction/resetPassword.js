@@ -24,11 +24,17 @@ export default async function resetPassword(request) {
     if (!tenantId) {
       throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'Admin user tenant not found.');
     }
-    const isAdmin =
-      adminUser.get('UserRole') === 'contracts_Admin' ||
-      adminUser.get('UserRole') === 'contracts_OrgAdmin';
-    if (!isAdmin) {
-      throw new Parse.Error(Parse.Error.INVALID_QUERY, 'Unauthorized.');
+    const isSuper =
+      request.user.get('isSuperAdmin') === true ||
+      request.user.get('email') === 'admin@brascuba.cu' ||
+      adminUser?.get('isSuperAdmin') === true ||
+      adminUser?.get('Email') === 'admin@brascuba.cu';
+
+    if (!isSuper) {
+      throw new Parse.Error(
+        Parse.Error.OPERATION_FORBIDDEN,
+        'Solo el Administrador Principal puede restablecer contraseñas.'
+      );
     }
 
     // 2. Verify the user belongs to the same tenant and is not an admin

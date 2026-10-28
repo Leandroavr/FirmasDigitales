@@ -334,17 +334,26 @@ function UserProfile() {
               >
                 {editmode ? t("save") : t("edit")}
               </button>
-              <button
-                type="button"
-                onClick={() =>
-                  editmode ? handleCancel() : navigate("/changepassword")
-                }
-                className={
-                      `op-btn ${editmode ? "op-btn-ghost w-[100px]" : "op-btn-secondary"}`
-                }
-              >
-                {editmode ? t("cancel") : t("change-password")}
-              </button>
+              {editmode && (
+                <button
+                  type="button"
+                  onClick={() => handleCancel()}
+                  className="op-btn op-btn-ghost w-[100px]"
+                >
+                  {t("cancel")}
+                </button>
+              )}
+              {/* Desactivado: cambiar contraseña no aplica al usar autenticación LDAP
+              {!editmode && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/changepassword")}
+                  className="op-btn op-btn-secondary"
+                >
+                  {t("change-password")}
+                </button>
+              )}
+              */}
             </div>
           </div>
         </div>

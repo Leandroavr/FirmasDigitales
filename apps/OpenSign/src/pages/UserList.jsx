@@ -41,6 +41,19 @@ const UserList = () => {
   const [isActModal, setIsActModal] = useState({});
   const Extand_Class = localStorage.getItem("Extand_Class");
   const extClass = Extand_Class && JSON.parse(Extand_Class);
+
+  const checkIsSuperAdmin = (u) => {
+    if (!u) return false;
+    return (
+      u.isSuperAdmin === true ||
+      u.Email === "admin@brascuba.cu" ||
+      u.email === "admin@brascuba.cu" ||
+      u.UserId?.isSuperAdmin === true ||
+      u.UserId?.email === "admin@brascuba.cu"
+    );
+  };
+  const [isSuperAdmin, setIsSuperAdmin] = useState(() => checkIsSuperAdmin(extClass?.[0]));
+
   const recordperPage = 10;
   const startIndex = (currentPage - 1) * recordperPage; // user per page
 
@@ -113,6 +126,8 @@ const UserList = () => {
       if (extUser) {
         const admin = extUser?.UserRole === "contracts_Admin";
         setIsAdmin(admin);
+        const superAdmin = checkIsSuperAdmin(extUser);
+        setIsSuperAdmin(superAdmin);
         if (!admin) {
           navigate("/dashboard/35KBoSgoAK");
           return;
@@ -242,27 +257,28 @@ const UserList = () => {
       setIsActModal({ [`${act.action}_${item.objectId}`]: true });
   });
   const handleBtnVisibility = (act, item) => {
-    if (act.restrictAdmin) {
-      if (item?.UserRole === "contracts_Admin") {
-        return false;
-      } else {
-        return item?.objectId !== extClass?.[0]?.objectId;
-      }
-    } else if (
-      act.restrictBtn === true &&
-      item?.objectId === extClass?.[0]?.objectId
-    ) {
-      return true;
-    } else {
-      return true;
+    if (!isSuperAdmin) {
+      return false;
     }
+    if (checkIsSuperAdmin(item)) {
+      return false;
+    }
+    if (item?.objectId === extClass?.[0]?.objectId) {
+      return false;
+    }
+    return true;
   };
   const handleActiveToggleVisibility = (item) => {
-    if (item?.UserRole === "contracts_Admin") {
+    if (!isSuperAdmin) {
       return false;
-    } else {
-      return item?.objectId !== extClass?.[0]?.objectId;
     }
+    if (checkIsSuperAdmin(item)) {
+      return false;
+    }
+    if (item?.objectId === extClass?.[0]?.objectId) {
+      return false;
+    }
+    return true;
   };
 
   const submitPassword = withSessionValidation(async (userId, password) => {
@@ -281,6 +297,14 @@ const UserList = () => {
   });
 
   const handleToggleUserRole = withSessionValidation(async (item) => {
+    if (!isSuperAdmin) {
+      showAlert("danger", "Solo el Administrador Principal puede otorgar o revocar privilegios.");
+      return;
+    }
+    if (checkIsSuperAdmin(item)) {
+      showAlert("danger", "No se pueden modificar los privilegios del Administrador Principal.");
+      return;
+    }
     const isCurrentAdmin = item?.UserRole === "contracts_Admin";
     const newRole = isCurrentAdmin ? "contracts_User" : "contracts_Admin";
     const confirmMsg = isCurrentAdmin
@@ -341,14 +365,16 @@ const UserList = () => {
                         <Tooltip message={t("users-from-teams")} />
                       </span>
                     </div>
-                    <div className="flex flex-row gap-2 items-center">
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => handleModal("form")}
-                      >
-                        <i className="fa-light fa-square-plus text-accent text-[30px] md:text-[40px]"></i>
+                    {isSuperAdmin && (
+                      <div className="flex flex-row gap-2 items-center">
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => handleModal("form")}
+                        >
+                          <i className="fa-light fa-square-plus text-accent text-[30px] md:text-[40px]"></i>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   <div className="w-full overflow-x-auto">
                     <table className="op-table border-collapse w-full mb-[50px]">
@@ -359,7 +385,7 @@ const UserList = () => {
                               {t(`report-heading.${item}`)}
                             </th>
                           ))}
-                          {usersActions?.length > 0 && (
+                          {usersActions?.length > 0 && isSuperAdmin && (
                             <th className="p-2 text-transparent pointer-events-none">
                               {t("action")}
                             </th>
@@ -396,7 +422,7 @@ const UserList = () => {
                                     ? "Administrador"
                                     : "Usuario"}
                                 </span>
-                                {isAdmin && item?.objectId !== extClass?.[0]?.objectId && (
+                                {isSuperAdmin && !checkIsSuperAdmin(item) && item?.objectId !== extClass?.[0]?.objectId && (
                                   <button
                                     type="button"
                                     onClick={() => handleToggleUserRole(item)}
@@ -476,10 +502,20 @@ const UserList = () => {
                                   )}
                                 </td>
                               ) : (
-                                <td className="px-4 py-2 font-semibold"></td>
+                                <td className="px-4 py-2 font-semibold">
+                                  <span
+                                    className={`px-2 py-0.5 rounded text-xs ${
+                                      item?.IsDisabled
+                                        ? "bg-red-100 text-red-800 border border-red-200"
+                                        : "bg-green-100 text-green-800 border border-green-200"
+                                    }`}
+                                  >
+                                    {item?.IsDisabled ? "Inactivo" : "Activo"}
+                                  </span>
+                                </td>
                               )}
 
-                              {isAdmin && (
+                              {isAdmin && isSuperAdmin && (
                                 <td className="px-3 py-2">
                                   <div className="text-base-content min-w-max flex flex-row gap-x-2 gap-y-1 justify-start items-center">
                                     {usersActions?.length > 0 &&

@@ -69,6 +69,8 @@ import triggerEvent from './parsefunction/triggerEvent.js';
 import setWidgetPreferences from './parsefunction/setWidgetPreferences.js';
 import createDocumentFromApp from './parsefunction/createDocumentFromApp.js';
 import updateUserRole from './parsefunction/updateUserRole.js';
+import deleteDocumentPermanent from './parsefunction/deleteDocumentPermanent.js';
+import hideDocumentForUser from './parsefunction/hideDocumentForUser.js';
 
 // This afterSave function triggers after an object is added or updated in the specified class, allowing for post-processing logic.
 Parse.Cloud.afterSave('contracts_Document', DocumentAftersave);
@@ -147,3 +149,5 @@ Parse.Cloud.define('triggerevent', triggerEvent);
 Parse.Cloud.define('setwidgetpreferences', setWidgetPreferences);
 Parse.Cloud.define('createdocumentfromapp', createDocumentFromApp);
 Parse.Cloud.define('updateuserrole', updateUserRole);
+Parse.Cloud.define('deleteDocumentPermanent', deleteDocumentPermanent);
+Parse.Cloud.define('hideDocumentForUser', hideDocumentForUser);

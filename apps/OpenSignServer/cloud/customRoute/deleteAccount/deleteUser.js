@@ -380,6 +380,12 @@ export const deleteUserByAdmin = async (req, res) => {
     if (adminId === userId) {
       return res.status(400).json({ message: 'You cannot delete your own account.' });
     }
+
+    // Proteger cuenta de Superadmin
+    if (user.get('isSuperAdmin') === true || user.get('email') === 'admin@brascuba.cu') {
+      return res.status(403).json({ message: 'No se puede eliminar la cuenta del Administrador Principal.' });
+    }
+
     // 2. ext user details
     const extUserQuery = new Parse.Query('contracts_Users');
     extUserQuery.equalTo('UserId', { __type: 'Pointer', className: '_User', objectId: adminId });
@@ -388,17 +394,19 @@ export const deleteUserByAdmin = async (req, res) => {
       const errorMessage = 'User not found.';
       return res.status(400).json({ message: errorMessage });
     }
-    const isAdmin =
-      extUser?.get('UserRole') === 'contracts_Admin' ||
-      extUser?.get('UserRole') === 'contracts_OrgAdmin'
-        ? true
-        : false;
+
+    const isCallerSuper =
+      axiosRes?.data?.isSuperAdmin === true ||
+      axiosRes?.data?.email === 'admin@brascuba.cu' ||
+      extUser?.get('isSuperAdmin') === true ||
+      extUser?.get('Email') === 'admin@brascuba.cu';
+
+    if (!isCallerSuper) {
+      return res.status(403).json({ message: 'Solo el Administrador Principal puede eliminar usuarios.' });
+    }
     const isOrgAdmin = extUser?.get('UserRole') === 'contracts_OrgAdmin';
     const tenantId = extUser?.get('TenantId');
     const orgPtr = isOrgAdmin && extUser?.get('OrganizationId');
-    if (!isAdmin) {
-      return res.status(400).json({ message: 'Unauthorized.' });
-    }
     const response = await deleteUser(userId, adminId, tenantId, isOrgAdmin, orgPtr);
     const code = response?.code || 400;
     const message = response?.message || 'An error occurred while deleting your account.';

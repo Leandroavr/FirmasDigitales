@@ -27,6 +27,21 @@ function DriveBody(props) {
     { type: "Delete", icon: "fa-light fa-trash" }
   ];
   const navigate = useNavigate();
+  const currentUserObj = localStorage.getItem(
+    `Parse/${localStorage.getItem("parseAppId")}/currentUser`
+  );
+  const currentUserId = currentUserObj ? JSON.parse(currentUserObj)?.objectId : "";
+  const userRole = localStorage.getItem("_user_role");
+  const isAdmin = userRole === "Admin" || userRole === "superAdmin";
+
+  const checkIsOwner = (doc) => {
+    if (isAdmin) return true;
+    const docOwnerId =
+      doc?.CreatedBy?.objectId ||
+      doc?.CreatedBy?.id ||
+      (typeof doc?.CreatedBy === "string" ? doc?.CreatedBy : "");
+    return docOwnerId === currentUserId;
+  };
 
   //to focus input box on press rename to change doc name
   useEffect(() => {
@@ -143,7 +158,12 @@ function DriveBody(props) {
         break;
       }
       case "Delete": {
-        setIsDeleteDoc({ status: true, deleteType });
+        setIsDeleteDoc({ status: true, isHide: false, deleteType });
+        setSelectDoc(data);
+        break;
+      }
+      case "Hide": {
+        setIsDeleteDoc({ status: true, isHide: true, deleteType });
         setSelectDoc(data);
         break;
       }
@@ -155,38 +175,73 @@ function DriveBody(props) {
         null;
     }
   };
-  //function for delete document
+
+  // function for hide document from current user view (for signers / non-owners)
+  const handleHideDocument = withSessionValidation(async (docData) => {
+    setIsDeleteDoc({});
+    const docId = docData.objectId;
+    props.setIsLoading({
+      isLoad: true,
+      message: t("loading-mssg")
+    });
+
+    try {
+      const res = await Parse.Cloud.run("hideDocumentForUser", { docId });
+      if (res && res.status === "success") {
+        const updatedData = props.pdfData.filter((x) => x.objectId !== docId);
+        props.setPdfData(updatedData);
+        props.setIsAlert({
+          isShow: true,
+          alertMessage: res.message || "El documento ha sido ocultado de tu lista.",
+          type: "success"
+        });
+      }
+    } catch (err) {
+      console.error("Err in hide doc", err);
+      props.setIsAlert({
+        isShow: true,
+        alertMessage: err?.message || t("something-went-wrong-mssg")
+      });
+    } finally {
+      props.setIsLoading({ isLoad: false });
+    }
+  });
+
+  //function for delete document de raíz (disco y base de datos)
   const handleDeleteDocument = withSessionValidation(async (docData) => {
     setIsDeleteDoc({});
     const docId = docData.objectId;
-    const data = { IsArchive: true };
+    if (!checkIsOwner(docData)) {
+      return handleHideDocument(docData);
+    }
+    props.setIsLoading({
+      isLoad: true,
+      message: t("loading-mssg")
+    });
 
-    await axios
-      .put(
-        `${localStorage.getItem("baseUrl")}classes/contracts_Document/${docId}`,
-        data,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "X-Parse-Application-Id": localStorage.getItem("parseAppId"),
-            "X-Parse-Session-Token": localStorage.getItem("accesstoken")
-          }
-        }
-      )
-      .then((result) => {
-        const res = result.data;
-        if (res) {
-          const updatedData = props.pdfData.filter((x) => x.objectId !== docId);
-          props.setPdfData(updatedData);
-        }
-      })
-      .catch((err) => {
-        console.error("Err in delete doc", err);
+    try {
+      const res = await Parse.Cloud.run("deleteDocumentPermanent", { docId });
+      if (res && res.status === "success") {
+        const updatedData = props.pdfData.filter((x) => x.objectId !== docId);
+        props.setPdfData(updatedData);
         props.setIsAlert({
           isShow: true,
-          alertMessage: t("something-went-wrong-mssg")
+          alertMessage: res.message || t("record-delete-alert"),
+          type: "success"
         });
+      }
+    } catch (err) {
+      console.error("Err in delete doc", err);
+      // Fallback anterior comentado:
+      // const data = { IsArchive: true };
+      // await axios.put(`${localStorage.getItem("baseUrl")}classes/contracts_Document/${docId}`, data, ...)
+      props.setIsAlert({
+        isShow: true,
+        alertMessage: err?.message || t("something-went-wrong-mssg")
       });
+    } finally {
+      props.setIsLoading({ isLoad: false });
+    }
   });
   const handleMoveDocument = async (docData) => {
     setIsOpenMoveModal(true);
@@ -278,21 +333,34 @@ function DriveBody(props) {
     const isEmptyFolder = await checkFolderEmpty(docData);
     if (isEmptyFolder) {
       const docId = docData?.objectId;
+      props.setIsLoading({
+        isLoad: true,
+        message: t("loading-mssg")
+      });
       try {
-        const updateQuery = new Parse.Query("contracts_Document");
-        const updateObj = await updateQuery.get(docId);
-        updateObj.set("IsArchive", true);
-        const res = await updateObj.save();
-        if (res) {
+        const res = await Parse.Cloud.run("deleteDocumentPermanent", { docId });
+        if (res && res.status === "success") {
           const updatedData = props.pdfData.filter((x) => x.objectId !== docId);
           props.setPdfData(updatedData);
+          props.setIsAlert({
+            isShow: true,
+            alertMessage: res.message || t("record-delete-alert"),
+            type: "success"
+          });
         }
       } catch (err) {
         console.error("Err in delete folder", err);
+        // Fallback anterior comentado:
+        // const updateQuery = new Parse.Query("contracts_Document");
+        // const updateObj = await updateQuery.get(docId);
+        // updateObj.set("IsArchive", true);
+        // await updateObj.save();
         props.setIsAlert({
           isShow: true,
-          alertMessage: t("something-went-wrong-mssg")
+          alertMessage: err?.message || t("something-went-wrong-mssg")
         });
+      } finally {
+        props.setIsLoading({ isLoad: false });
       }
     } else {
       alert(t("delete-folder-alert-1"));
@@ -378,14 +446,38 @@ function DriveBody(props) {
           <td>{t("pdf")}</td>
           <td>{t(`drive-document-status.${status}`)}</td>
           <td>
-            <i
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMenuItemClick("Download", data);
-              }}
-              className="fa-light fa-download mr-[8px] op-text-primary cursor-pointer"
-              aria-hidden="true"
-            ></i>
+            {data.IsCompleted && (
+              <i
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMenuItemClick("Download", data);
+                }}
+                className="fa-light fa-download mr-[12px] op-text-primary cursor-pointer"
+                aria-hidden="true"
+                title={t("download")}
+              ></i>
+            )}
+            {checkIsOwner(data) ? (
+              <i
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMenuItemClick("Delete", data, data.Type);
+                }}
+                className="fa-light fa-trash text-red-500 cursor-pointer"
+                aria-hidden="true"
+                title={t("context-menu.Delete")}
+              ></i>
+            ) : (
+              <i
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMenuItemClick("Hide", data, data.Type);
+                }}
+                className="fa-light fa-eye-slash text-gray-500 hover:text-red-500 cursor-pointer"
+                aria-hidden="true"
+                title="Ocultar de mi vista"
+              ></i>
+            )}
           </td>
         </tr>
       )
@@ -564,20 +656,36 @@ function DriveBody(props) {
                   sideOffset={5}
                   align="end"
                 >
-                  {contextMenu.map((menu, ind) => {
-                    return (
-                      <ContextMenu.Item
-                        key={ind}
-                        onClick={() => handleMenuItemClick(menu.type, data)}
-                        className="ContextMenuItem"
-                      >
-                        <i className={menu.icon}></i>
-                        <span className="ml-[8px]">
-                          {t(`context-menu.${menu.type}`)}
-                        </span>
-                      </ContextMenu.Item>
-                    );
-                  })}
+                  {contextMenu
+                    .filter((menu) => menu.type !== "Download" || data.IsCompleted)
+                    .map((menu, ind) => {
+                      if (menu.type === "Delete" && !checkIsOwner(data)) {
+                        return (
+                          <ContextMenu.Item
+                            key={ind}
+                            onClick={() => handleMenuItemClick("Hide", data)}
+                            className="ContextMenuItem"
+                          >
+                            <i className="fa-light fa-eye-slash"></i>
+                            <span className="ml-[8px]">
+                              Ocultar de mi vista
+                            </span>
+                          </ContextMenu.Item>
+                        );
+                      }
+                      return (
+                        <ContextMenu.Item
+                          key={ind}
+                          onClick={() => handleMenuItemClick(menu.type, data)}
+                          className="ContextMenuItem"
+                        >
+                          <i className={menu.icon}></i>
+                          <span className="ml-[8px]">
+                            {t(`context-menu.${menu.type}`)}
+                          </span>
+                        </ContextMenu.Item>
+                      );
+                    })}
                 </ContextMenu.Content>
               </ContextMenu.Portal>
             </ContextMenu.Root>
@@ -662,11 +770,21 @@ function DriveBody(props) {
       )}
       <ModalUi
         isOpen={isDeleteDoc.status}
-        title={t("delete-document")}
+        title={
+          isDeleteDoc.isHide
+            ? "Ocultar documento"
+            : isDeleteDoc.deleteType
+              ? t("delete-folder")
+              : t("delete-document")
+        }
         handleClose={() => setIsDeleteDoc({})}
       >
         <div className="h-full p-[20px] text-base-content">
-          {isDeleteDoc.deleteType ? (
+          {isDeleteDoc.isHide ? (
+            <p>
+              ¿Deseas ocultar este documento de tu lista? No se eliminará del servidor ni afectará al propietario ni a los demás participantes.
+            </p>
+          ) : isDeleteDoc.deleteType ? (
             <p>{t("delete-folder-alert")}</p>
           ) : (
             <p>{t("delete-document-alert")}</p>
@@ -675,7 +793,9 @@ function DriveBody(props) {
           <div className="h-[1px] w-full bg-[#9f9f9f] my-[15px]"></div>
           <button
             onClick={() => {
-              if (isDeleteDoc.deleteType) {
+              if (isDeleteDoc.isHide) {
+                handleHideDocument(selectDoc);
+              } else if (isDeleteDoc.deleteType) {
                 handleDeleteFolder(selectDoc);
               } else {
                 handleDeleteDocument(selectDoc);

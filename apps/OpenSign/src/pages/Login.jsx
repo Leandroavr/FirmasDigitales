@@ -20,6 +20,7 @@ import {
 } from "../constant/Utils";
 import Loader from "../primitives/Loader";
 import { useTranslation } from "react-i18next";
+import { startUserSession, validateSessionOnStartup, endUserSession } from "../utils/sessionManager";
 
 function Login() {
   const appName =
@@ -68,7 +69,7 @@ function Login() {
 
   const setLocalVar = (user) => {
     localStorage.setItem("accesstoken", user.sessionToken);
-    localStorage.setItem("session_login_time", Date.now().toString());
+    startUserSession();
     localStorage.setItem("UserInformation", JSON.stringify(user));
     localStorage.setItem("userEmail", user.email);
     if (user.ProfilePic) {
@@ -98,15 +99,10 @@ function Login() {
       setImage(appInfo?.applogo || undefined);
     }
     dispatch(fetchAppInfo());
-    const loginTime = localStorage.getItem("session_login_time");
-    const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000; // 12 horas
-    if (loginTime && Date.now() - parseInt(loginTime, 10) > SESSION_MAX_AGE_MS) {
-      localStorage.removeItem("accesstoken");
-      localStorage.removeItem("session_login_time");
-      try { Parse.User.logOut(); } catch (e) {}
-    }
 
-    if (localStorage.getItem("accesstoken")) {
+    // Validar si la sesión sigue activa (inactividad < 30min y navegador no cerrado)
+    const isSessionValid = validateSessionOnStartup();
+    if (isSessionValid && localStorage.getItem("accesstoken")) {
       setState({ ...state, loading: true });
       GetLoginData();
     }
@@ -364,6 +360,7 @@ function Login() {
 
   const logOutUser = async () => {
     setIsModal(false);
+    endUserSession();
     try {
       await Parse.User.logOut();
     } catch (err) {

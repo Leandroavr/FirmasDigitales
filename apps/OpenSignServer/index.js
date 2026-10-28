@@ -121,6 +121,7 @@ export const config = {
   appName: appName,
   allowClientClassCreation: false,
   allowExpiredAuthDataToken: false,
+  sessionLength: parseInt(process.env.SESSION_LENGTH || '28800', 10), // Session validity in seconds (default 8h)
   enableInsecureAuthAdapters: false,
   databaseOptions: { allowPublicExplain: false },
   encodeParseObjectInCloudFunction: true,

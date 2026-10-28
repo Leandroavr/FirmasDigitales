@@ -43,6 +43,17 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
     'SendinOrder',
   ];
   const needYourSignKeys = [...commanKeys, 'Signers.UserId'];
+  const userOrSigner = [
+    { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
+    {
+      Signers: {
+        $inQuery: {
+          where: { UserId: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
+          className: 'contracts_Contactbook',
+        },
+      },
+    },
+  ];
   switch (id) {
     // draft documents report
     case 'ByHuevtCFY':
@@ -55,6 +66,7 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           IsArchive: { $ne: true },
           SignedUrl: { $exists: false },
           CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId },
+          HiddenForUsers: { $ne: currentUserId },
         },
         keys: [...commanKeys, ...filterKeys],
       };
@@ -76,6 +88,7 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
               className: 'contracts_Contactbook',
             },
           },
+          HiddenForUsers: { $ne: currentUserId },
         },
         keys: [...needYourSignKeys, ...filterKeys],
       };
@@ -90,10 +103,9 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           IsCompleted: { $ne: true },
           IsDeclined: { $ne: true },
           IsArchive: { $ne: true },
-          // En "Mis Documentos", solo los documentos del propio usuario:
-          CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId },
-          // ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
+          $or: userOrSigner,
           ExpiryDate: { $gt: { __type: 'Date', iso: new Date().toISOString() } },
+          HiddenForUsers: { $ne: currentUserId },
         },
         keys: [...inProgressKeys, ...filterKeys],
       };
@@ -106,39 +118,8 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           IsCompleted: true,
           IsDeclined: { $ne: true },
           IsArchive: { $ne: true },
-          // En "Mis Documentos", solo los documentos creados por el usuario o donde sea firmante:
-          $or: [
-            { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
-            {
-              Signers: {
-                $inQuery: {
-                  where: {
-                    UserId: { __type: 'Pointer', className: '_User', objectId: currentUserId },
-                  },
-                  className: 'contracts_Contactbook',
-                },
-              },
-            },
-          ],
-          /*
-          ...(isAdmin
-            ? {}
-            : {
-                $or: [
-                  { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } },
-                  {
-                    Signers: {
-                      $inQuery: {
-                        where: {
-                          UserId: { __type: 'Pointer', className: '_User', objectId: currentUserId },
-                        },
-                        className: 'contracts_Contactbook',
-                      },
-                    },
-                  },
-                ],
-              }),
-          */
+          $or: userOrSigner,
+          HiddenForUsers: { $ne: currentUserId },
         },
         keys: [...commanKeys, ...filterKeys, 'IsCompleted'],
       };
@@ -150,9 +131,8 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           Type: null,
           IsArchive: { $ne: true },
           IsDeclined: true,
-          // En "Mis Documentos", solo los documentos del propio usuario:
-          CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId },
-          // ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
+          $or: userOrSigner,
+          HiddenForUsers: { $ne: currentUserId },
         },
         keys: [...commanKeys, 'DeclineReason'],
       };
@@ -167,9 +147,8 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
           Type: { $ne: 'Folder' },
           SignedUrl: { $ne: null },
           ExpiryDate: { $lt: { __type: 'Date', iso: new Date().toISOString() } },
-          // En "Mis Documentos", solo los documentos del propio usuario:
-          CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId },
-          // ...(isAdmin ? {} : { CreatedBy: { __type: 'Pointer', className: '_User', objectId: currentUserId } }),
+          $or: userOrSigner,
+          HiddenForUsers: { $ne: currentUserId },
         },
         keys: [...commanKeys, ...filterKeys],
       };

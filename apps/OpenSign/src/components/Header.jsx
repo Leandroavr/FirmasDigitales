@@ -15,6 +15,7 @@ import { appInfo } from "../constant/appinfo";
 import { useDispatch } from "react-redux";
 import { toggleSidebar } from "../redux/reducers/sidebarReducer";
 import { sessionStatus } from "../redux/reducers/userReducer";
+import { endUserSession } from "../utils/sessionManager";
 
 const Header = ({ isConsole, setIsLoggingOut }) => {
   const { t, i18n } = useTranslation();
@@ -61,6 +62,7 @@ const Header = ({ isConsole, setIsLoggingOut }) => {
       }
   }
   const handleLogout = async () => {
+    endUserSession();
     setIsOpen(false);
     setIsLoggingOut(true);
     try {
@@ -216,17 +218,19 @@ const Header = ({ isConsole, setIsLoggingOut }) => {
                       <i className="fa-light fa-user"></i> {t("profile")}
                     </span>
                   </li>
-                    <li
-                      onClick={() => {
-                        setIsOpen(false);
-                        navigate("/changepassword");
-                      }}
-                    >
-                      <span>
-                        <i className="fa-light fa-lock"></i>{" "}
-                        {t("change-password")}
-                      </span>
-                    </li>
+                  {/* Desactivado: los usuarios se gestionan mediante LDAP
+                  <li
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate("/changepassword");
+                    }}
+                  >
+                    <span>
+                      <i className="fa-light fa-lock"></i>{" "}
+                      {t("change-password")}
+                    </span>
+                  </li>
+                  */}
                   <li
                     onClick={() => {
                       setIsOpen(false);

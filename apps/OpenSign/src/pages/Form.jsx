@@ -415,7 +415,15 @@ const Forms = (props) => {
           formData?.DocumentType || "Contrato internacional"
         );
         object.set("Description", formData?.Description);
-        object.set("Note", formData?.Note);
+        const defaultNote =
+          props.title === "Sign Yourself"
+            ? "Nota personal"
+            : "Por favor, revise y firme este documento";
+        const finalNote =
+          formData?.Note && formData.Note.trim() !== ""
+            ? formData.Note.trim()
+            : defaultNote;
+        object.set("Note", finalNote);
         if (props.title === "Request Signatures") {
           if (
             extUserData?.TenantId?.RequestBody &&
@@ -524,10 +532,7 @@ const Forms = (props) => {
             Name: "",
             DocumentType: "Contrato internacional",
             Description: "",
-            Note:
-              props.title === "Sign Yourself"
-                ? "Nota personal"
-                : "Por favor, revise y firme este documento",
+            Note: "",
             TimeToCompleteDays: 15,
             SendinOrder: sendinorder,
             password: "",
@@ -619,10 +624,7 @@ const Forms = (props) => {
       Name: "",
       DocumentType: "Contrato internacional",
       Description: "",
-      Note:
-        props.title === "Sign Yourself"
-          ? "Nota personal"
-          : "Por favor, revise y firme este documento",
+      Note: "",
       TimeToCompleteDays: 15,
       SendinOrder: sendinorder,
       password: "",
@@ -948,18 +950,17 @@ const Forms = (props) => {
             <div className="text-xs mt-2">
               <label className="block">
                 {t("report-heading.Note")}
-                <span className="text-red-500 text-[13px]">*</span>
               </label>
               <input
                 name="Note"
                 className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                placeholder={
+                  props.title === "Sign Yourself"
+                    ? "Nota personal"
+                    : "Por favor, revise y firme este documento"
+                }
                 value={formData.Note}
                 onChange={(e) => handleStrInput(e)}
-                onInvalid={(e) =>
-                  e.target.setCustomValidity(t("input-required"))
-                }
-                onInput={(e) => e.target.setCustomValidity("")}
-                required
               />
             </div>
             {props.title === "Sign Yourself" ? (
@@ -971,15 +972,14 @@ const Forms = (props) => {
             ) : (
               <div className="flex flex-col md:flex-row w-full mt-4 md:mt-10 gap-3">
                 <div className="card bg-base-100 rounded-box flex-grow-0 w-full p-3">
-                  {props.title !== "New Template" ? (
-                    <SelectFolder
-                      onSuccess={handleFolder}
-                      folderCls={props.Cls}
-                      isReset={isReset}
-                    />
-                  ) : (
+                  <SelectFolder
+                    onSuccess={handleFolder}
+                    folderCls={props.Cls}
+                    isReset={isReset}
+                  />
+                  {props.title === "New Template" && (
                     <>
-                      <span className=" mb-2 font-[400]">
+                      <span className=" mb-2 font-[400] mt-3 block">
                         {t("form-title-1")}
                       </span>
                       <div className="text-xs mt-3">

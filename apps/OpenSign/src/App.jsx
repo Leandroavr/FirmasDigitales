@@ -99,9 +99,10 @@ function App() {
               />
             <Route element={<HomeLayout />}>
                   <Route path="/users" element={<UserList />} />
+                  {/* Desactivado: Cambiar contraseña no aplica para autenticación LDAP */}
                   <Route
                     path="/changepassword"
-                    element={<Lazy Page={ChangePassword} />}
+                    element={<Navigate to="/profile" replace />}
                   />
               <Route path="/form/:id" element={<Form />} />
               <Route path="/report/:id" element={<Report />} />

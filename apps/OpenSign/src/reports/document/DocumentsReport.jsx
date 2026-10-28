@@ -362,32 +362,54 @@ const DocumentsReport = (props) => {
     }
   };
 
+  const checkIsOwner = (doc) => {
+    const userRole = localStorage.getItem("_user_role");
+    const isAdmin = userRole === "Admin" || userRole === "superAdmin";
+    if (isAdmin) return true;
+    const currentUserObj = localStorage.getItem(
+      `Parse/${localStorage.getItem("parseAppId")}/currentUser`
+    );
+    const currentUserId = currentUserObj ? JSON.parse(currentUserObj)?.objectId : "";
+    const docOwnerId =
+      doc?.CreatedBy?.objectId ||
+      doc?.CreatedBy?.id ||
+      (typeof doc?.CreatedBy === "string" ? doc?.CreatedBy : "");
+    return docOwnerId === currentUserId;
+  };
+
   const handleDelete = utils.withSessionValidation(async (item) => {
     setIsDeleteModal({});
     setActLoader({ [`${item.objectId}`]: true });
+    const isOwner = checkIsOwner(item);
     try {
-      const serverUrl = serverUrl_fn();
-      const cls = "contracts_Document";
-      const url = serverUrl + `/classes/${cls}/`;
-      const body = { IsArchive: true };
-      const res = await axios.put(url + item.objectId, body, {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Parse-Application-Id": localStorage.getItem("parseAppId"),
-          "X-Parse-Session-Token": localStorage.getItem("accesstoken")
+      if (isOwner) {
+        const res = await Parse.Cloud.run("deleteDocumentPermanent", {
+          docId: item.objectId
+        });
+        if (res && res.status === "success") {
+          setActLoader({});
+          showAlert("success", res.message || t("record-delete-alert"));
+          const upldatedList = props.List.filter(
+            (x) => x.objectId !== item.objectId
+          );
+          props.setList(upldatedList);
         }
-      });
-      if (res.data && res.data.updatedAt) {
-        setActLoader({});
-        showAlert("success", t("record-delete-alert"));
-        const upldatedList = props.List.filter(
-          (x) => x.objectId !== item.objectId
-        );
-        props.setList(upldatedList);
+      } else {
+        const res = await Parse.Cloud.run("hideDocumentForUser", {
+          docId: item.objectId
+        });
+        if (res && res.status === "success") {
+          setActLoader({});
+          showAlert("success", res.message || "El documento ha sido ocultado de tu lista.");
+          const upldatedList = props.List.filter(
+            (x) => x.objectId !== item.objectId
+          );
+          props.setList(upldatedList);
+        }
       }
     } catch (err) {
-      console.error("delete document error", err);
-      showAlert("danger", t("something-went-wrong-mssg"));
+      console.error("delete/hide document error", err);
+      showAlert("danger", err?.message || t("something-went-wrong-mssg"));
       setActLoader({});
     }
   });
@@ -1259,17 +1281,29 @@ const DocumentsReport = (props) => {
                                   role="button"
                                   data-tut={act?.selector}
                                   onClick={() => handleActionBtn(act, item)}
-                                  title={t(`btnLabel.${act.hoverLabel}`)}
+                                  title={
+                                    act.action === "delete" && !checkIsOwner(item)
+                                      ? "Ocultar de mi vista"
+                                      : t(`btnLabel.${act.hoverLabel}`)
+                                  }
                                   className={
                                     act.action !== "option"
                                       ? `${act?.btnColor || ""} op-btn op-btn-sm mr-1`
                                       : "text-base-content focus:outline-none text-lg mr-2 relative"
                                   }
                                 >
-                                  <i className={act.btnIcon}></i>
+                                  <i
+                                    className={
+                                      act.action === "delete" && !checkIsOwner(item)
+                                        ? "fa-light fa-eye-slash"
+                                        : act.btnIcon
+                                    }
+                                  ></i>
                                   {act.btnLabel && (
                                     <span className="uppercase font-medium">
-                                      {t(`btnLabel.${act.btnLabel}`)}
+                                      {act.action === "delete" && !checkIsOwner(item)
+                                        ? "Ocultar"
+                                        : t(`btnLabel.${act.btnLabel}`)}
                                     </span>
                                   )}
                                   {/* doc report */}
@@ -1284,19 +1318,25 @@ const DocumentsReport = (props) => {
                                                 onClick={() =>
                                                   handleActionBtn(subact, item)
                                                 }
-                                                title={t(
-                                                  `btnLabel.${subact.hoverLabel}`
-                                                )}
+                                                title={
+                                                  subact.action === "delete" && !checkIsOwner(item)
+                                                    ? "Ocultar de mi vista"
+                                                    : t(`btnLabel.${subact.hoverLabel}`)
+                                                }
                                               >
                                                 <span>
                                                   <i
-                                                    className={`${subact.btnIcon} mr-1.5`}
+                                                    className={`${
+                                                      subact.action === "delete" && !checkIsOwner(item)
+                                                        ? "fa-light fa-eye-slash"
+                                                        : subact.btnIcon
+                                                    } mr-1.5`}
                                                   ></i>
                                                   {subact.btnLabel && (
                                                     <span className="text-[13px] capitalize font-medium">
-                                                      {t(
-                                                        `btnLabel.${subact.btnLabel}`
-                                                      )}
+                                                      {subact.action === "delete" && !checkIsOwner(item)
+                                                        ? "Ocultar de mi vista"
+                                                        : t(`btnLabel.${subact.btnLabel}`)}
                                                     </span>
                                                   )}
                                                 </span>
@@ -1512,12 +1552,14 @@ const DocumentsReport = (props) => {
                       {isDeleteModal[item.objectId] && (
                         <ModalUi
                           isOpen
-                          title={t("delete-document")}
+                          title={checkIsOwner(item) ? t("delete-document") : "Ocultar documento"}
                           handleClose={handleClose}
                         >
                           <div className="m-[20px]">
                             <div className="text-lg font-normal text-base-content">
-                              {t("delete-document-alert")}
+                              {checkIsOwner(item)
+                                ? t("delete-document-alert")
+                                : "¿Deseas ocultar este documento de tu lista? No se eliminará del servidor ni afectará al propietario ni a los demás participantes."}
                             </div>
                             <hr className="bg-[#ccc] mt-4" />
                             <div className="flex items-center mt-3 gap-2 text-white">

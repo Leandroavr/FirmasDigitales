@@ -214,8 +214,13 @@ const EditTemplate = ({
       ReminderDate.setDate(ReminderDate.getDate() + RemindOnceInEvery);
       reminderDate = { NextReminderDate: ReminderDate };
     }
+    const finalNote =
+      formData?.Note && formData.Note.trim() !== ""
+        ? formData.Note.trim()
+        : "Por favor, revise y firme este documento";
     const data = {
       ...formData,
+      Note: finalNote,
       ...(pdfUrl ? { URL: pdfUrl } : {}),
       SendinOrder: isChecked,
       SendInOrderStrict: isStrictOrder,
@@ -408,6 +413,7 @@ const EditTemplate = ({
                 type="text"
                 name="Note"
                 id="Note"
+                placeholder="Por favor, revise y firme este documento"
                 value={formData.Note}
                 onChange={(e) => handleStrInput(e)}
                 className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"

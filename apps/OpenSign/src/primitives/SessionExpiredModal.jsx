@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { sessionStatus } from "../redux/reducers/userReducer";
 import Parse from "parse";
 import ModalUi from "./ModalUi";
+import { endUserSession } from "../utils/sessionManager";
 
 const SessionExpiredModal = () => {
   const { t } = useTranslation();
@@ -12,6 +13,7 @@ const SessionExpiredModal = () => {
   const dispatch = useDispatch();
 
   const handleLoginBtn = async () => {
+    endUserSession();
     try {
       await Parse?.User?.logOut();
     } catch (err) {
