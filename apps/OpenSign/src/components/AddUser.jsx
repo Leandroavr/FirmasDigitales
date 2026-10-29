@@ -30,6 +30,7 @@ const AddUser = (props) => {
   const [formdata, setFormdata] = useState({
     name: "",
     jobTitle: "",
+    department: "",
     phone: "",
     email: "",
     team: "",
@@ -39,7 +40,10 @@ const AddUser = (props) => {
   });
   const [isFormLoader, setIsFormLoader] = useState(false);
   const [teamList, setTeamList] = useState([]);
-  const role = ["Editor", "OrgAdmin", "User"];
+  const roles = [
+    { label: "Usuario", value: "User" },
+    { label: "Administrador", value: "Admin" }
+  ];
   useEffect(() => {
     getTeamList();
     // eslint-disable-next-line
@@ -90,6 +94,7 @@ const AddUser = (props) => {
             const params = {
               name: formdata.name,
               jobTitle: formdata.jobTitle,
+              department: formdata.department,
               email: formdata.email,
               phone: formdata.phone,
               password: formdata.password,
@@ -120,10 +125,14 @@ const AddUser = (props) => {
             setIsFormLoader(false);
             setFormdata({
               name: "",
+              jobTitle: "",
+              department: "",
               email: "",
               phone: "",
               team: "",
-              role: ""
+              role: "User",
+              isLdap: true,
+              password: ""
             });
             props.showAlert("success", t("user-created-successfully"));
           } catch (err) {
@@ -140,7 +149,17 @@ const AddUser = (props) => {
 
   // Define a function to handle the "add yourself" checkbox
   const handleReset = () => {
-    setFormdata({ name: "", email: "", phone: "", team: "", role: "" });
+    setFormdata({
+      name: "",
+      jobTitle: "",
+      department: "",
+      email: "",
+      phone: "",
+      team: "",
+      role: "User",
+      isLdap: true,
+      password: ""
+    });
     if (props.closePopup) {
       props.closePopup();
     }
@@ -202,6 +221,22 @@ const AddUser = (props) => {
                           onChange={(e) => handleChange(e)}
                           className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
                           placeholder="ej: Especialista de Sistemas"
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label
+                          htmlFor="department"
+                          className="block text-xs font-semibold"
+                        >
+                          Departamento
+                        </label>
+                        <input
+                          type="text"
+                          name="department"
+                          value={formdata.department}
+                          onChange={(e) => handleChange(e)}
+                          className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                          placeholder="ej: Recursos Humanos, TI, etc."
                         />
                       </div>
                       <div className="mb-3">
@@ -287,7 +322,7 @@ const AddUser = (props) => {
                       </div>
                       <div className="mb-3">
                         <label
-                          htmlFor="phone"
+                          htmlFor="role"
                           className="block text-xs font-semibold"
                         >
                           {t("Role")}
@@ -297,22 +332,14 @@ const AddUser = (props) => {
                           value={formdata.role}
                           onChange={(e) => handleChange(e)}
                           name="role"
-                          className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content w-full text-xs"
-                          onInvalid={(e) =>
-                            e.target.setCustomValidity(t("input-required"))
-                          }
-                          onInput={(e) => e.target.setCustomValidity("")}
+                          className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content w-full text-xs cursor-pointer font-medium"
                           required
                         >
-                          <option defaultValue={""} value={""}>
-                            {t("Select")}
-                          </option>
-                          {role.length > 0 &&
-                            role.map((x) => (
-                              <option key={x} value={x}>
-                                {x}
-                              </option>
-                            ))}
+                          {roles.map((r) => (
+                            <option key={r.value} value={r.value}>
+                              {r.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="flex items-center mt-3 gap-2 text-white">

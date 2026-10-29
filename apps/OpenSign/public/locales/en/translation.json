@@ -205,6 +205,7 @@
     "Expiry-date": "Expiry date",
     "Company": "Company",
     "JobTitle": "Job title",
+    "Department": "Department",
     "AuthType": "Auth Method",
     "Time to complete (Days)": "Time to complete (Days)",
     "Auto reminder": "Auto reminder",

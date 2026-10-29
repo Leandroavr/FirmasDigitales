@@ -16,7 +16,7 @@ import PasswordResetModal from "../primitives/PasswordResetModal";
 import { usersActions } from "../json/ReportJson";
 import { withSessionValidation } from "../utils";
 
-const heading = ["Sr.No", "Name", "Email", "JobTitle", "Phone", "Role", "AuthType", "Team", "Active"];
+const heading = ["Sr.No", "Name", "Email", "JobTitle", "Department", "Phone", "Role", "AuthType", "Active"];
 const UserList = () => {
   const { t } = useTranslation();
   const [userList, setUserList] = useState([]);
@@ -460,6 +460,9 @@ const UserList = () => {
                               <td className="px-4 py-2 font-medium">
                                 {item?.JobTitle || "-"}
                               </td>
+                              <td className="px-4 py-2 font-medium">
+                                {item?.Department || "-"}
+                              </td>
                               <td className="px-4 py-2">
                                 {item?.Phone || "-"}
                               </td>
@@ -543,9 +546,6 @@ const UserList = () => {
                                       : "Contraseña Local"}
                                   </span>
                                 )}
-                              </td>
-                              <td className="px-4 py-2">
-                                {formatRow(item.TeamIds)}
                               </td>
                               {handleActiveToggleVisibility(item) ? (
                                 <td className="px-4 py-2 font-semibold">

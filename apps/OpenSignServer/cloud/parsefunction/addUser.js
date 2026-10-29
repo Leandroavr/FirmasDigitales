@@ -1,5 +1,5 @@
 export default async function addUser(request) {
-  const { phone, name, password, organization, team, tenantId, timezone, role, jobTitle, isLdap } = request.params;
+  const { phone, name, password, organization, team, tenantId, timezone, role, jobTitle, department, isLdap } = request.params;
   const email = request.params?.email?.toLowerCase()?.replace(/\s/g, '');
   if (!request.user) {
     throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token.');
@@ -36,9 +36,7 @@ export default async function addUser(request) {
         throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Unauthorized.');
       }
 
-      // Only allow creating non-admin roles; never allow elevating to a
-      // tenant Admin through this endpoint.
-      const allowedRoles = ['OrgAdmin', 'Editor', 'User'];
+      const allowedRoles = ['Admin', 'OrgAdmin', 'Editor', 'User'];
       if (!allowedRoles.includes(role)) {
         throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Invalid role.');
       }
@@ -73,9 +71,13 @@ export default async function addUser(request) {
       if (jobTitle) {
         extUser.set('JobTitle', jobTitle);
       }
+      if (department) {
+        extUser.set('Department', department);
+      }
       extUser.set('isLdap', isLdap === true);
       extUser.set('Email', email);
-      extUser.set('UserRole', `contracts_${role}`);
+      const finalRole = role === 'Admin' || role === 'OrgAdmin' ? 'contracts_Admin' : 'contracts_User';
+      extUser.set('UserRole', finalRole);
       extUser.set('TeamIds', [
         {
           __type: 'Pointer',

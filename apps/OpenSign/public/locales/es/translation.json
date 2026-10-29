@@ -205,6 +205,7 @@
     "Expiry-date": "Date d'expiration",
     "Company": "Compañía",
     "JobTitle": "Cargo",
+    "Department": "Departamento",
     "AuthType": "Método de Acceso",
     "Time to complete (Days)": "Días para expirar",
     "Auto reminder": "Recordatorio automático",
