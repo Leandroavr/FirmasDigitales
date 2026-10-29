@@ -171,14 +171,6 @@ const SelectSigners = (props) => {
                 menuPortalTarget={document.getElementById("selectSignerModal")}
               />
             </div>
-            {!props.isContact && (
-              <button
-                onClick={() => props.setIsContact(true)}
-                className="op-btn op-btn-accent  op-btn-outline op-btn-sm  "
-              >
-                <i className="fa-light fa-plus"></i>
-              </button>
-            )}
           </div>
         </div>
         <p

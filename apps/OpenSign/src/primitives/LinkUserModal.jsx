@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import SelectSigners from "../components/shared/fields/SelectSigners";
-import AddContact from "./AddContact";
 import ModalUi from "./ModalUi";
 import { useTranslation } from "react-i18next";
 
 const LinkUserModal = (props) => {
   const { t } = useTranslation();
-  const [isContact, setIsContact] = useState(false);
   const [isExistSigner, setIsExistSIgner] = useState(false);
 
   useEffect(() => {
@@ -26,18 +24,8 @@ const LinkUserModal = (props) => {
     >
       <SelectSigners
         {...props}
-        isContact={isContact}
-        setIsContact={setIsContact}
         isExistSigner={isExistSigner}
       />
-      {isContact && (
-        <>
-          <div className="op-divider text-base-content mx-[25%] my-1">
-            {t("or")}
-          </div>
-          <AddContact {...props} details={props.handleAddUser} />
-        </>
-      )}
     </ModalUi>
   );
 };

@@ -21,7 +21,6 @@ import { useTranslation } from "react-i18next";
 import moment from "moment";
 import AsyncSelect from "react-select/async";
 import axios from "axios";
-import AddContact from "../../primitives/AddContact";
 import Loader from "../../primitives/Loader";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -788,14 +787,6 @@ function PrefillWidgetModal(props) {
       props.handleAddUser(getSigner, signerId);
     }
   };
-  //show modal to create new contact
-  const handleCreateNew = (e, id) => {
-    e.preventDefault();
-    props.setIsNewContact({ status: true, id: id });
-  };
-  const closePopup = () => {
-    props.setIsNewContact({ status: false, id: "" });
-  };
   return (
     <>
       <ModalUi
@@ -867,12 +858,6 @@ function PrefillWidgetModal(props) {
                               )}
                             />
                           </div>
-                          <button
-                            onClick={(e) => handleCreateNew(e, field.value)}
-                            className="op-btn op-btn-accent op-btn-outline op-btn-sm"
-                          >
-                            <i className="fa-light fa-plus"></i>
-                          </button>
                         </div>
                       </div>
                     );
@@ -897,19 +882,6 @@ function PrefillWidgetModal(props) {
                 </button>
           </div>
         </div>
-      </ModalUi>
-      <ModalUi
-        title={t("add-contact")}
-        isOpen={props.isNewContact.status}
-        handleClose={closePopup}
-      >
-        <AddContact
-          isDisableTitle
-          isAddYourSelfCheckbox
-          details={props.handleAddUser}
-          closePopup={closePopup}
-          newContactId={props.isNewContact.id}
-        />
       </ModalUi>
     </>
   );

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AsyncSelect from "react-select/async";
-import AddContact from "../../../primitives/AddContact";
 import Tooltip from "../../../primitives/Tooltip";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { findContact } from "../../../constant/Utils";
 function arrayMove(array, from, to) {
@@ -10,21 +8,6 @@ function arrayMove(array, from, to) {
   array.splice(to < 0 ? array.length + to : to, 0, array.splice(from, 1)[0]);
   return array;
 }
-
-const AddSignerModal = ({ isOpen, children }) => {
-  if (!isOpen) {
-    return null;
-  }
-
-  return createPortal(
-    <div className="op-modal op-modal-open">
-      <div className="op-modal-box p-0 min-w-[90%] md:min-w-[500px] max-h-90 overflow-y-auto hide-scrollbar text-sm">
-        {children}
-      </div>
-    </div>,
-    document.body
-  );
-};
 
 /**
  * react-sortable-hoc is depcreated not usable from react 18.x.x
@@ -36,8 +19,6 @@ const SignersInput = (props) => {
   const { t } = useTranslation();
   const [state, setState] = useState(undefined);
   const [selected, setSelected] = useState([]);
-  const [isModal, setIsModel] = useState(false);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
 
   useEffect(() => {
     // to provide initial data for selected list items in Bcc for edit template
@@ -201,6 +182,7 @@ const SignersInput = (props) => {
             loadingMessage={() => t("loading")}
             noOptionsMessage={() => t("contact-not-found")}
             loadOptions={loadOptions}
+            onFocus={() => loadOptions("")}
             unstyled
             classNames={{
               control: () =>
@@ -218,34 +200,6 @@ const SignersInput = (props) => {
             }}
           />
         </div>
-        <div
-          onClick={() => {
-            setIsModel(true);
-            openModal();
-          }}
-          className="cursor-pointer op-input op-input-bordered focus:outline-none hover:border-base-content max-h-[38px] min-w-[48px] flex justify-center items-center"
-        >
-          <i className="fa-light fa-plus"></i>
-        </div>
-        <AddSignerModal isOpen={modalIsOpen}>
-          <h3 className="text-base-content font-bold text-lg pt-[15px] px-[20px]">
-            {t("add-contact")}
-          </h3>
-          <button
-            onClick={handleModalCloseClick}
-            className="op-btn op-btn-sm op-btn-circle op-btn-ghost text-base-content absolute right-2 top-2"
-          >
-            ✕
-          </button>
-          {isModal && (
-            <AddContact
-              isDisableTitle
-              isAddYourSelfCheckbox={props?.isAddYourSelfCheckbox}
-              details={handleNewDetails}
-              closePopup={handleModalCloseClick}
-            />
-          )}
-        </AddSignerModal>
       </div>
     </div>
   );
