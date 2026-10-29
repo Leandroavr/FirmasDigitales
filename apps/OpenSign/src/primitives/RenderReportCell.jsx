@@ -42,7 +42,7 @@ export const RenderReportCell = ({
   switch (col) {
     case "Sr.No":
       return (
-        <th key={col} className="px-2 py-2">
+        <th key={col} className="px-3 py-3">
           {startIndex + rowIndex + 1}
         </th>
       );
@@ -50,7 +50,7 @@ export const RenderReportCell = ({
     case "Title": {
       const docType = rowData?.DocumentType || rowData?.TemplateId?.DocumentType;
       return (
-        <td key={col} className="p-2 min-w-[130px] max-w-[180px]">
+        <td key={col} className="py-3 px-3 min-w-[130px] max-w-[200px]">
           <div
             className="font-semibold break-words leading-snug text-gray-800"
             title={rowData?.Name}
@@ -60,7 +60,7 @@ export const RenderReportCell = ({
           {docType && (
             <div className="mt-1">
               <span
-                className="inline-block text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded leading-tight break-words"
+                className="inline-block text-[11px] font-medium text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded leading-tight break-words"
                 title={`Tipo de documento: ${docType}`}
               >
                 {docType}
@@ -74,7 +74,7 @@ export const RenderReportCell = ({
       return (
         <td
           key={col}
-          className="p-2 text-center cursor-pointer"
+          className="py-3 px-3 text-center cursor-pointer"
           onClick={() => handleItemClick(col, rowData?.DeclineReason)}
         >
           {rowData?.DeclineReason?.length > 25
@@ -84,7 +84,7 @@ export const RenderReportCell = ({
       );
     case "Note":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           <p
             className="truncate w-[100px] cursor-pointer"
             onClick={() => handleItemClick(col, rowData?.Note)}
@@ -95,7 +95,7 @@ export const RenderReportCell = ({
       );
     case "Folder":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.Folder?.Name ||
             t("sidebar.OpenSign™ Drive", { appName: drivename })}
         </td>
@@ -103,13 +103,13 @@ export const RenderReportCell = ({
     case "File":
       if (!rowData?.IsCompleted) {
         return (
-          <td key={col} className="p-2 text-center text-gray-400">
+          <td key={col} className="py-3 px-3 text-center text-gray-400">
             -
           </td>
         );
       }
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           <button
             onClick={() => handleDownload(rowData)}
             className="op-link op-link-primary"
@@ -123,7 +123,7 @@ export const RenderReportCell = ({
       const ownerName = getSignerDisplayName(rowData?.ExtUserPtr);
       const ownerEmail = rowData?.ExtUserPtr?.Email || "";
       return (
-        <td key={col} className="p-2 text-center whitespace-nowrap">
+        <td key={col} className="py-3 px-3 text-center whitespace-nowrap">
           <span
             className="font-medium text-gray-800 cursor-default"
             title={ownerEmail}
@@ -135,30 +135,32 @@ export const RenderReportCell = ({
     }
     case "Time to complete (Days)":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.TimeToCompleteDays || "-"}
         </td>
       );
     case "Notify on signatures":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.NotifyOnSignatures?.toString() || "-"}
         </td>
       );
     case "Enable Tour":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.IsTourEnabled?.toString() || "-"}
         </td>
       );
     case "Redirect url":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.RedirectUrl?.toString() || "-"}
         </td>
       );
     case "Dates": {
       const createdAt = rowData?.createdAt ? formatDateToDdMmmYyyy(rowData.createdAt) : null;
+      const sentRaw = rowData?.DocSentAt?.iso || rowData?.DocSentAt;
+      const sentAt = sentRaw ? formatDateToDdMmmYyyy(sentRaw) : null;
       const updatedAt = rowData?.updatedAt ? formatDateToDdMmmYyyy(rowData.updatedAt) : null;
       const expiryIso = rowData?.ExpiryDate?.iso;
       let expiryFormatted = null;
@@ -200,12 +202,18 @@ export const RenderReportCell = ({
       }
 
       return (
-        <td key={col} className="p-2 text-left whitespace-nowrap text-[11px] leading-tight text-gray-600">
+        <td key={col} className="py-3 px-3 text-left whitespace-nowrap text-[12px] leading-relaxed text-gray-600">
           <div className="flex flex-col gap-1">
             {createdAt && (
               <div>
                 <span className="font-semibold text-gray-700">Creado:</span>{" "}
                 <span>{createdAt}</span>
+              </div>
+            )}
+            {sentAt && (
+              <div>
+                <span className="font-semibold text-gray-700">Envío:</span>{" "}
+                <span>{sentAt}</span>
               </div>
             )}
             {updatedAt && (
@@ -219,13 +227,13 @@ export const RenderReportCell = ({
                 <span className="font-semibold text-gray-700">Expira:</span>{" "}
                 <span>{expiryFormatted}</span>{" "}
                 {countdownText && (
-                  <span className={`text-[10px] font-semibold ${isUrgent ? "text-amber-600" : "text-gray-500"}`}>
+                  <span className={`text-[11px] font-semibold ${isUrgent ? "text-amber-600" : "text-gray-500"}`}>
                     {countdownText}
                   </span>
                 )}
               </div>
             )}
-            {!createdAt && !updatedAt && !expiryFormatted && (
+            {!createdAt && !sentAt && !updatedAt && !expiryFormatted && (
               <span>-</span>
             )}
           </div>
@@ -234,19 +242,19 @@ export const RenderReportCell = ({
     }
     case "Created Date":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.createdAt ? formatDateToDdMmmYyyy(rowData?.createdAt) : "-"}
         </td>
       );
     case "Updated Date":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.updatedAt ? formatDateToDdMmmYyyy(rowData?.updatedAt) : "-"}
         </td>
       );
     case "Expiry Date":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.ExpiryDate
             ? formatDateToDdMmmYyyy(rowData?.ExpiryDate?.iso)
             : "-"}
@@ -254,7 +262,7 @@ export const RenderReportCell = ({
       );
     case "Sent Date":
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {rowData?.DocSentAt
             ? formatDateToDdMmmYyyy(rowData?.DocSentAt?.iso)
             : "-"}
@@ -271,7 +279,7 @@ export const RenderReportCell = ({
       );
     default:
       return (
-        <td key={col} className="p-2 text-center">
+        <td key={col} className="py-3 px-3 text-center">
           {Array.isArray(rowData[col]) ? (
             <div className="flex flex-row flex-wrap gap-1 justify-center">
               {rowData[col].map((x, i) => (

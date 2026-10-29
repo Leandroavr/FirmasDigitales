@@ -34,8 +34,8 @@ export const extraCols = [
 export default function reportJson(id) {
   const head = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Dates"];
   const declineHead = ["Title", "Reason", "Folder", "File", "Owner", "Signers", "Dates"];
-  const iphead = ["Title", "Note", "Folder", "File", "Signers", "Dates", "Sent Date"];
-  const otherIphead = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Dates", "Sent Date"];
+  const iphead = ["Title", "Note", "Folder", "File", "Signers", "Dates"];
+  const otherIphead = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Dates"];
   const contactbook = ["Name", "Email", "Phone", "Company", "JobTitle"];
   const dashboardReportHead = ["Title", "File", "Owner", "Signers"];
   const templateReport = ["Title", "File", "Owner", "Signers"];

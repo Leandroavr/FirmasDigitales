@@ -55,7 +55,7 @@ const Report = () => {
       let migrated = false;
       const savedVisible = (saved[id].visible || saved[id])
         .map((c) => {
-          if (["Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Notify on signatures"].includes(c)) {
+          if (["Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Notify on signatures", "Sent Date"].includes(c)) {
             migrated = true;
             return "Dates";
           }
@@ -212,7 +212,7 @@ const Report = () => {
         let migrated = false;
         const visible = (savedCols[id]?.visible || json.heading)
           .map((c) => {
-            if (["Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Notify on signatures"].includes(c)) {
+            if (["Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Notify on signatures", "Sent Date"].includes(c)) {
               migrated = true;
               return "Dates";
             }

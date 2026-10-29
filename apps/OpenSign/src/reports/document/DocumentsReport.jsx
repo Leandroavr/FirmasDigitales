@@ -1232,19 +1232,19 @@ const DocumentsReport = (props) => {
             <thead className="text-[14px] text-center">
               <tr className="border-y-[1px]">
                 {props.heading?.map((item, i) => (
-                  <th key={i} className="p-2">
+                  <th key={i} className="py-3 px-3">
                     {props.columnLabels?.[item] ||
                       t(`report-heading.${item}`, { defaultValue: item })}
                   </th>
                 ))}
                 {props.actions?.length > 0 && (
-                  <th className="p-2 text-transparent pointer-events-none">
+                  <th className="py-3 px-3 text-transparent pointer-events-none">
                     {t("action")}
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="text-[12px]">
+            <tbody className="text-[13px]">
               {props.List?.length > 0 &&
                 !props.searchLoader &&
                 currentList.map((item, index) => (
@@ -1270,7 +1270,7 @@ const DocumentsReport = (props) => {
                       />
                     ))}
                     {/* actions */}
-                    <td className="px-2 py-2">
+                    <td className="py-3 px-3">
                       <div className="text-base-content min-w-max flex flex-row gap-x-2 gap-y-1 justify-start items-center">
                         {props.actions?.length > 0 &&
                           props.actions.map((act, index) => (

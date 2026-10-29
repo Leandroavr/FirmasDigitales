@@ -96,7 +96,7 @@ const SignerCell = ({ reportName, item, handleRemovePrefill }) => {
               </button>
             )}
             <div
-              className="text-[12px] font-medium text-gray-800 whitespace-nowrap cursor-default"
+              className="text-[13px] font-medium text-gray-800 whitespace-nowrap cursor-default"
               title={x?.Email !== "-" ? x?.Email : ""}
             >
               {x?.DisplayName || x?.Email || "-"}
@@ -137,14 +137,14 @@ const SignerCell = ({ reportName, item, handleRemovePrefill }) => {
 
   if (shouldShowSigner) {
     return (
-      <td className="px-1 py-2">
+      <td className="px-3 py-3">
         {shouldRender ? <>{formatStatusRow(item)}</> : <>-</>}
       </td>
     );
   }
 
   return (
-    <td className="p-2 text-center">
+    <td className="px-3 py-3 text-center">
       {shouldRender ? (
         <button
           onClick={() => handleViewSigners(item)}
