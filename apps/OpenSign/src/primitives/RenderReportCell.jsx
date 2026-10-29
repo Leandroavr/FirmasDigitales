@@ -47,7 +47,8 @@ export const RenderReportCell = ({
         </th>
       );
     case "Name":
-    case "Title":
+    case "Title": {
+      const docType = rowData?.DocumentType || rowData?.TemplateId?.DocumentType;
       return (
         <td key={col} className="p-2 min-w-[130px] max-w-[180px]">
           <div
@@ -56,8 +57,19 @@ export const RenderReportCell = ({
           >
             {rowData?.Name}
           </div>
+          {docType && (
+            <div className="mt-1">
+              <span
+                className="inline-block text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 px-1.5 py-0.5 rounded leading-tight break-words"
+                title={`Tipo de documento: ${docType}`}
+              >
+                {docType}
+              </span>
+            </div>
+          )}
         </td>
       );
+    }
     case "Reason":
       return (
         <td

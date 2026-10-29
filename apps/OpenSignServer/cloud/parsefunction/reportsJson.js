@@ -17,6 +17,8 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
     'Signers.Phone',
     'Placeholders',
     'TemplateId',
+    'DocumentType',
+    'TemplateId.DocumentType',
     'ExpiryDate',
     'SenderName',
     'SenderMail',
