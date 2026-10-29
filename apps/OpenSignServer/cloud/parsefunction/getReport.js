@@ -18,7 +18,6 @@ export default async function getReport(request) {
   const skip = request.params.skip;
   const searchTerm = request.params.searchTerm || '';
   const signerStatus = request.params.signerStatus || '';
-  const documentType = request.params.documentType || '';
 
   const serverUrl = cloudServerUrl; //process.env.SERVER_URL;
   const appId = serverAppId;
@@ -80,30 +79,6 @@ export default async function getReport(request) {
           signerStatus === 'viewed' ? 'Viewed' : signerStatus === 'signed' ? 'Signed' : '';
         if (normalizedStatus) {
           paramsObj = { ...paramsObj, 'AuditTrail.Activity': normalizedStatus };
-        }
-      }
-
-      if (clsName === 'contracts_Document' && documentType && documentType !== 'all') {
-        if (documentType === 'Contrato internacional') {
-          const typeCondition = {
-            $or: [
-              { DocumentType: 'Contrato internacional' },
-              { DocumentType: { $exists: false } },
-              { DocumentType: null },
-            ],
-          };
-          if (paramsObj.$or) {
-            paramsObj = {
-              $and: [
-                { $or: paramsObj.$or },
-                typeCondition,
-              ],
-            };
-          } else {
-            paramsObj = { ...paramsObj, ...typeCondition };
-          }
-        } else {
-          paramsObj = { ...paramsObj, DocumentType: documentType };
         }
       }
 

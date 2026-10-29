@@ -26,7 +26,6 @@ const Report = () => {
   const [tourData, setTourData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [signerStatusFilter, setSignerStatusFilter] = useState("all");
-  const [docTypeFilter, setDocTypeFilter] = useState("all");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isSearchResult, setIsSearchResult] = useState(false);
   const [allColumns, setAllColumns] = useState([]);
@@ -37,7 +36,6 @@ const Report = () => {
   const [searchLoader, setSearchLoader] = useState(false);
   const debounceTimer = useRef(null);
   const hasMountedSignerFilter = useRef(false);
-  const hasMountedDocTypeFilter = useRef(false);
   const searchAbortRef = useRef(null); // holds AbortController
   // Number of documents to display per page (should always be half of docLimit for proper pagination)
   const docPerPage = 10;
@@ -51,7 +49,6 @@ const Report = () => {
     setList([]);
     setSearchTerm("");
     setSignerStatusFilter("all");
-    setDocTypeFilter("all");
     setMobileSearchOpen(false);
     const saved = JSON.parse(localStorage.getItem("reportColumns") || "{}");
     if (saved[id]) {
@@ -121,33 +118,10 @@ const Report = () => {
     // eslint-disable-next-line
   }, [signerStatusFilter]);
 
-  useEffect(() => {
-    if (!hasMountedDocTypeFilter.current) {
-      hasMountedDocTypeFilter.current = true;
-      return;
-    }
-    setList([]);
-    setIsNextRecord(false);
-    setIsMoreDocs(true);
-    getDocumentbyFilter();
-    // eslint-disable-next-line
-  }, [docTypeFilter]);
-
-  const getDocumentbyFilter = async () => {
-    setSearchLoader(true);
-    try {
-      await getReportData(0, docLimit, searchTerm, signerStatusFilter, docTypeFilter);
-    } catch (error) {
-      console.error("get report by doc type filter error", error);
-    } finally {
-      setSearchLoader(false);
-    }
-  };
-
   const getDocumentbyUserStatus = async () => {
     setSearchLoader(true);
     try {
-      await getReportData(0, docLimit, searchTerm, signerStatusFilter, docTypeFilter);
+      await getReportData(0, docLimit, searchTerm, signerStatusFilter);
     } catch (error) {
       console.error("get report by user status error", error);
     } finally {
@@ -185,7 +159,6 @@ const Report = () => {
             reportId: id,
             searchTerm: term,
             signerStatus: signerStatusFilter,
-            documentType: docTypeFilter,
             skip: 0,
             limit: docPerPage
           },
@@ -233,8 +206,7 @@ const Report = () => {
       skipUserRecord = 0,
       limit = 20,
       term = searchTerm,
-      signerStatus = signerStatusFilter,
-      docType = docTypeFilter
+      signerStatus = signerStatusFilter
     ) => {
       // setIsLoader(true);
       const json = reportJson(id);
@@ -289,9 +261,6 @@ const Report = () => {
           }
           if (signerStatus && signerStatus !== "all") {
             params.signerStatus = signerStatus;
-          }
-          if (docType && docType !== "all") {
-            params.documentType = docType;
           }
           const url = `${localStorage.getItem("baseUrl")}functions/getReport`;
           const res = await axios.post(url, params, {
@@ -394,8 +363,6 @@ const Report = () => {
     searchLoader,
     signerStatusFilter,
     handleSignerStatusFilter: setSignerStatusFilter,
-    docTypeFilter,
-    handleDocTypeFilter: setDocTypeFilter,
     openColumnModal: () => setIsColumnModal(true)
   };
   return (

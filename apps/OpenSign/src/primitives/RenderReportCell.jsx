@@ -36,8 +36,7 @@ export const RenderReportCell = ({
   handleItemClick
 }) => {
   const { t } = useTranslation();
-  const appName =
-    "OpenSign™";
+  const appName = "OpenSign™";
   const drivename = appName === "OpenSign™" ? "OpenSign™" : "";
   switch (col) {
     case "Sr.No":
@@ -48,9 +47,10 @@ export const RenderReportCell = ({
       );
     case "Name":
     case "Title": {
-      const docType = rowData?.DocumentType || rowData?.TemplateId?.DocumentType;
+      const docType =
+        rowData?.DocumentType || rowData?.TemplateId?.DocumentType;
       return (
-        <td key={col} className="py-3 px-3 min-w-[260px] max-w-[360px]">
+        <td key={col} className="py-3 px-3 min-w-[200px] max-w-[260px]">
           <div
             className="text-[13px] font-semibold break-words leading-snug text-gray-800"
             title={rowData?.Name}
@@ -71,7 +71,9 @@ export const RenderReportCell = ({
             <div
               className="mt-1.5 text-[11px] text-gray-500 italic flex items-center gap-1.5 cursor-pointer hover:text-gray-700"
               title={rowData.Note}
-              onClick={() => handleItemClick && handleItemClick("Note", rowData.Note)}
+              onClick={() =>
+                handleItemClick && handleItemClick("Note", rowData.Note)
+              }
             >
               <i className="fa-light fa-note-sticky text-amber-500 shrink-0"></i>
               <span className="truncate max-w-[280px]">{rowData.Note}</span>
@@ -168,10 +170,14 @@ export const RenderReportCell = ({
         </td>
       );
     case "Dates": {
-      const createdAt = rowData?.createdAt ? formatDateToDdMmmYyyy(rowData.createdAt) : null;
+      const createdAt = rowData?.createdAt
+        ? formatDateToDdMmmYyyy(rowData.createdAt)
+        : null;
       const sentRaw = rowData?.DocSentAt?.iso || rowData?.DocSentAt;
       const sentAt = sentRaw ? formatDateToDdMmmYyyy(sentRaw) : null;
-      const updatedAt = rowData?.updatedAt ? formatDateToDdMmmYyyy(rowData.updatedAt) : null;
+      const updatedAt = rowData?.updatedAt
+        ? formatDateToDdMmmYyyy(rowData.updatedAt)
+        : null;
       const expiryIso = rowData?.ExpiryDate?.iso;
       let expiryFormatted = null;
       let countdownText = "";
@@ -212,7 +218,10 @@ export const RenderReportCell = ({
       }
 
       return (
-        <td key={col} className="py-3 px-3 text-left whitespace-nowrap text-[12px] leading-relaxed text-gray-600">
+        <td
+          key={col}
+          className="py-3 px-3 text-left whitespace-nowrap text-[12px] leading-relaxed text-gray-600"
+        >
           <div className="flex flex-col gap-1">
             {createdAt && (
               <div>
@@ -228,7 +237,9 @@ export const RenderReportCell = ({
             )}
             {updatedAt && (
               <div>
-                <span className="font-semibold text-gray-700">Actualizado:</span>{" "}
+                <span className="font-semibold text-gray-700">
+                  Actualizado:
+                </span>{" "}
                 <span>{updatedAt}</span>
               </div>
             )}
@@ -237,7 +248,9 @@ export const RenderReportCell = ({
                 <span className="font-semibold text-gray-700">Expira:</span>{" "}
                 <span>{expiryFormatted}</span>{" "}
                 {countdownText && (
-                  <span className={`text-[11px] font-semibold ${isUrgent ? "text-amber-600" : "text-gray-500"}`}>
+                  <span
+                    className={`text-[11px] font-semibold ${isUrgent ? "text-amber-600" : "text-gray-500"}`}
+                  >
                     {countdownText}
                   </span>
                 )}
