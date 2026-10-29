@@ -53,6 +53,19 @@ const SignersInput = (props) => {
   }, []);
   const onChange = (selectedOptions) => {
     if (selectedOptions && selectedOptions?.length > 0) {
+      const hasAdmin = selectedOptions.some(
+        (item) =>
+          (item?.email || "").toLowerCase().trim() === "admin@brascuba.cu" ||
+          (item?.label || "").toLowerCase().includes("admin@brascuba.cu")
+      );
+      if (hasAdmin) {
+        alert("No se puede enviar a firmar al Administrador General.");
+        selectedOptions = selectedOptions.filter(
+          (item) =>
+            (item?.email || "").toLowerCase().trim() !== "admin@brascuba.cu" &&
+            !(item?.label || "").toLowerCase().includes("admin@brascuba.cu")
+        );
+      }
       const trimEmail = selectedOptions.map((item) => ({
         ...item,
         label: item?.label?.split("<")?.shift()
@@ -103,13 +116,17 @@ const SignersInput = (props) => {
 
   // `handleNewDetails` is used to set just save from quick form to selected option in dropdown
   const handleNewDetails = (data) => {
+    if ((data?.Email || "").toLowerCase().trim() === "admin@brascuba.cu") {
+      alert("No se puede enviar a firmar al Administrador General.");
+      return;
+    }
     const user = {
       value: data["objectId"],
       label: data["Name"],
       email: data?.Email
     };
-    setState([...state, user]);
-    if (selected.length > 0) {
+    setState([...(state || []), user]);
+    if (selected && selected.length > 0) {
       setSelected([...selected, user]);
     } else {
       setSelected([user]);
@@ -121,7 +138,9 @@ const SignersInput = (props) => {
         inputValue,
       );
       if (contactRes) {
-        const res = JSON.parse(JSON.stringify(contactRes));
+        const res = JSON.parse(JSON.stringify(contactRes)).filter(
+          (item) => (item?.Email || "").toLowerCase().trim() !== "admin@brascuba.cu"
+        );
         //compareArrays is a function where compare between two array (total signersList and document signers list)
         //and filter signers from total signer's list which already present in document's signers list
         const compareArrays = (res, signerObj) => {

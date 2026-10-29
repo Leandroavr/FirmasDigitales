@@ -45,6 +45,9 @@ export default async function linkContactToDoc(req) {
   const phone = req.params.phone;
   const jobTitle = req.params.jobTitle;
   const company = req.params.company;
+  if (email === 'admin@brascuba.cu') {
+    throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'No se puede enviar a firmar al Administrador General.');
+  }
   try {
     if (docId) {
       // Execute the query to get the document with the specified 'docId'

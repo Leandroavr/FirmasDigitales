@@ -71,6 +71,12 @@ export default async function createDocumentFromApp(request) {
       docCls.set('Signers', doc.Signers);
     }
     if (Array.isArray(doc.Placeholders) && doc?.Placeholders?.length > 0) {
+      const hasAdminPlaceholder = doc.Placeholders.some(
+        p => (p?.email || p?.Email || '').toLowerCase().trim() === 'admin@brascuba.cu'
+      );
+      if (hasAdminPlaceholder) {
+        throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'No se puede enviar a firmar al Administrador General.');
+      }
       docCls.set('Placeholders', doc.Placeholders);
     }
     if (Array.isArray(doc.SignatureType) && doc.SignatureType.length > 0) {

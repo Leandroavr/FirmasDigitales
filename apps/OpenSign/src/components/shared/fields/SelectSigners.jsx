@@ -40,6 +40,14 @@ const SelectSigners = (props) => {
   const handleOptions = (item) => {
     //checking if user select no signer option from dropdown
     if (item) {
+      if (
+        (item?.email || "").toLowerCase().trim() === "admin@brascuba.cu" ||
+        (item?.label || "").toLowerCase().includes("admin@brascuba.cu")
+      ) {
+        alert("No se puede enviar a firmar al Administrador General.");
+        setSelected("");
+        return;
+      }
       //checking selected signer is already assign to the document or not
       const alreadyAssign = signersData.some(
         (item2) => item2.objectId === item.value
@@ -101,7 +109,9 @@ const SelectSigners = (props) => {
       const axiosRes = await axios.post(url, { search }, { headers });
       const contactRes = axiosRes?.data?.result || [];
       if (contactRes) {
-        const res = JSON.parse(JSON.stringify(contactRes));
+        const res = JSON.parse(JSON.stringify(contactRes)).filter(
+          (item) => (item?.Email || "").toLowerCase().trim() !== "admin@brascuba.cu"
+        );
         //compareArrays is a function where compare between two array (total signersList and document signers list)
         //and filter signers from total signer's list which already present in document's signers list
         // const compareArrays = (res, signerObj) => {

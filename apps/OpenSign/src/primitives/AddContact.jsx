@@ -64,6 +64,8 @@ const AddContact = (props) => {
     e.stopPropagation();
     if (!emailRegex.test(email)) {
       alert(t("valid-email-alert"));
+    } else if (email?.trim().toLowerCase() === "admin@brascuba.cu") {
+      alert("No se puede enviar a firmar al Administrador General.");
     } else {
       setIsLoader(true);
       const user = JSON.parse(

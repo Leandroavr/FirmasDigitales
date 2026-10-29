@@ -7,6 +7,10 @@ export default async function savecontact(request) {
   const company = request.params?.company;
   const jobTitle = request.params?.jobTitle;
 
+  if (email === 'admin@brascuba.cu') {
+    throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'No se puede agregar al Administrador General como contacto de firma.');
+  }
+
   if (request.user) {
     const currentUser = request?.user;
     const currentUserPtr = { __type: 'Pointer', className: '_User', objectId: currentUser?.id };

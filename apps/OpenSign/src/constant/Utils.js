@@ -3221,7 +3221,9 @@ export async function findContact(value) {
     const axiosRes = await axios.post(url, { search: value }, { headers });
     const contactRes = axiosRes?.data?.result || [];
     if (contactRes) {
-      const res = JSON.parse(JSON.stringify(contactRes));
+      const res = JSON.parse(JSON.stringify(contactRes)).filter(
+        (c) => (c?.Email || "").toLowerCase().trim() !== "admin@brascuba.cu"
+      );
       return res;
     }
   } catch (error) {

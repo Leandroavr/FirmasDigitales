@@ -3,6 +3,17 @@ function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special characters
 }
 
+const isGeneralAdmin = (email, obj) => {
+  const normEmail = (email || '').toLowerCase().trim();
+  if (normEmail === 'admin@brascuba.cu') return true;
+  if (obj) {
+    if (obj.get?.('isSuperAdmin') === true || obj.isSuperAdmin === true) return true;
+    const objEmail = (obj.get?.('Email') || obj.get?.('email') || obj.Email || obj.email || '').toLowerCase().trim();
+    if (objEmail === 'admin@brascuba.cu') return true;
+  }
+  return false;
+};
+
 export default async function getSigners(request) {
   if (!request.user) {
     throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token');
@@ -22,7 +33,8 @@ export default async function getSigners(request) {
 
     const corporateUsersQuery = Parse.Query.or(userQueryName, userQueryEmail);
     corporateUsersQuery.limit(100);
-    const corporateUsers = await corporateUsersQuery.find({ useMasterKey: true });
+    const rawCorporateUsers = await corporateUsersQuery.find({ useMasterKey: true });
+    const corporateUsers = rawCorporateUsers.filter(cu => !isGeneralAdmin(cu.get('Email'), cu));
 
     // 2. Query contacts from contracts_Contactbook (global corporate directory, not restricted by CreatedBy)
     const contactNameQuery = new Parse.Query('contracts_Contactbook');
@@ -34,13 +46,14 @@ export default async function getSigners(request) {
     const contactsQuery = Parse.Query.or(contactNameQuery, contactEmailQuery);
     contactsQuery.notEqualTo('IsDeleted', true);
     contactsQuery.limit(100);
-    const contacts = await contactsQuery.find({ useMasterKey: true });
+    const rawContacts = await contactsQuery.find({ useMasterKey: true });
+    const contacts = rawContacts.filter(c => !isGeneralAdmin(c.get('Email'), c));
 
     // Index contacts by lowercase Email
     const contactsByEmail = new Map();
     for (const c of contacts) {
       const email = c.get('Email')?.toLowerCase()?.trim();
-      if (email && !contactsByEmail.has(email)) {
+      if (email && !isGeneralAdmin(email, c) && !contactsByEmail.has(email)) {
         contactsByEmail.set(email, c);
       }
     }
@@ -49,7 +62,7 @@ export default async function getSigners(request) {
     for (const cu of corporateUsers) {
       const email = cu.get('Email')?.toLowerCase()?.trim();
       const name = cu.get('Name') || email;
-      if (!email) continue;
+      if (!email || isGeneralAdmin(email, cu)) continue;
 
       if (!contactsByEmail.has(email)) {
         try {
@@ -75,6 +88,7 @@ export default async function getSigners(request) {
     const seenEmails = new Set();
 
     for (const [email, contact] of contactsByEmail.entries()) {
+      if (isGeneralAdmin(email, contact)) continue;
       if (seenEmails.has(email)) continue;
       seenEmails.add(email);
       result.push({

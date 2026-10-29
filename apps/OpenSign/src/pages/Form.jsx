@@ -405,6 +405,13 @@ const Forms = (props) => {
         alert(t("invalid-redirect-url"));
         return;
       }
+      if (
+        bcc?.some((b) => (b?.Email || "").toLowerCase().trim() === "admin@brascuba.cu") ||
+        cc?.some((c) => (c?.Email || "").toLowerCase().trim() === "admin@brascuba.cu")
+      ) {
+        alert("No se puede enviar a firmar al Administrador General.");
+        return;
+      }
       setIsSubmit(true);
       try {
         const currentUser = Parse.User.current();

@@ -752,7 +752,9 @@ function PrefillWidgetModal(props) {
       const axiosRes = await axios.post(url, { search }, { headers });
       const contactRes = axiosRes?.data?.result || [];
       if (contactRes) {
-        const res = JSON.parse(JSON.stringify(contactRes));
+        const res = JSON.parse(JSON.stringify(contactRes)).filter(
+          (item) => (item?.Email || "").toLowerCase().trim() !== "admin@brascuba.cu"
+        );
         const result = res;
         setUserList(result);
         return await result.map((item) => ({
@@ -766,6 +768,13 @@ function PrefillWidgetModal(props) {
   };
   //`handleInputChange` function to get signers list from dropdown
   const handleInputChange = (item, id) => {
+    if (
+      (item?.email || "").toLowerCase().trim() === "admin@brascuba.cu" ||
+      (item?.label || "").toLowerCase().includes("admin@brascuba.cu")
+    ) {
+      alert("No se puede enviar a firmar al Administrador General.");
+      return;
+    }
     const signerExist = props.forms.some((x) => x.label === item.label);
     if (signerExist) {
       alert(t("already-exist-signer"));
