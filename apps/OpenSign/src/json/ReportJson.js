@@ -8,8 +8,7 @@ export const COLUMN_ORDER = [
   "File",
   "Owner",
   "Signers",
-  "Dates",
-  "Sent Date"
+  "Dates"
 ];
 
 export const sortColumns = (cols) => {
@@ -27,15 +26,16 @@ export const sortColumns = (cols) => {
 export const extraCols = [
   "Note",
   "Folder",
+  "File",
   "Owner",
   "Dates"
 ];
 
 export default function reportJson(id) {
-  const head = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Dates"];
+  const head = ["Title", "Folder", "File", "Owner", "Signers", "Dates"];
   const declineHead = ["Title", "Reason", "Folder", "File", "Owner", "Signers", "Dates"];
-  const iphead = ["Title", "Note", "Folder", "File", "Signers", "Dates"];
-  const otherIphead = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Dates"];
+  const iphead = ["Title", "Folder", "Signers", "Dates"];
+  const otherIphead = ["Title", "Folder", "Owner", "Signers", "Dates"];
   const contactbook = ["Name", "Email", "Phone", "Company", "JobTitle"];
   const dashboardReportHead = ["Title", "File", "Owner", "Signers"];
   const templateReport = ["Title", "File", "Owner", "Signers"];

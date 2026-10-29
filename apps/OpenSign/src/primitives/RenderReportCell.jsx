@@ -50,9 +50,9 @@ export const RenderReportCell = ({
     case "Title": {
       const docType = rowData?.DocumentType || rowData?.TemplateId?.DocumentType;
       return (
-        <td key={col} className="py-3 px-3 min-w-[130px] max-w-[200px]">
+        <td key={col} className="py-3 px-3 min-w-[260px] max-w-[360px]">
           <div
-            className="font-semibold break-words leading-snug text-gray-800"
+            className="text-[13px] font-semibold break-words leading-snug text-gray-800"
             title={rowData?.Name}
           >
             {rowData?.Name}
@@ -65,6 +65,16 @@ export const RenderReportCell = ({
               >
                 {docType}
               </span>
+            </div>
+          )}
+          {rowData?.Note && (
+            <div
+              className="mt-1.5 text-[11px] text-gray-500 italic flex items-center gap-1.5 cursor-pointer hover:text-gray-700"
+              title={rowData.Note}
+              onClick={() => handleItemClick && handleItemClick("Note", rowData.Note)}
+            >
+              <i className="fa-light fa-note-sticky text-amber-500 shrink-0"></i>
+              <span className="truncate max-w-[280px]">{rowData.Note}</span>
             </div>
           )}
         </td>

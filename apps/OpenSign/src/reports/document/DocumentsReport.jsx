@@ -1177,29 +1177,101 @@ const DocumentsReport = (props) => {
                 <i className="fa-light fa-table-columns"></i>
               </button>
             )}
-            {props?.ReportName === "In-progress documents" && (
+            {["In-progress documents", "Completed Documents", "Need your sign", "Draft Documents"].includes(props?.ReportName) && (
               <div className="op-dropdown op-dropdown-end">
                 <div
                   tabIndex={0}
                   role="button"
-                  className="focus:outline-none rounded-md text-[18px]"
+                  className={`focus:outline-none rounded-md text-[18px] relative cursor-pointer ${
+                    (props.signerStatusFilter && props.signerStatusFilter !== "all") ||
+                    (props.docTypeFilter && props.docTypeFilter !== "all")
+                      ? "text-primary font-bold"
+                      : "text-base-content hover:text-primary"
+                  }`}
+                  title="Filtros"
                 >
                   <i className="fa-light fa-filter"></i>
+                  {((props.signerStatusFilter && props.signerStatusFilter !== "all") ||
+                    (props.docTypeFilter && props.docTypeFilter !== "all")) && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full"></span>
+                  )}
                 </div>
-                <ul
+                <div
                   tabIndex="-1"
-                  className="op-dropdown-content op-menu op-menu-sm shadow-black/20 bg-base-100 text-base-content rounded-box z-[70] w-52 p-2 shadow-sm"
+                  className="op-dropdown-content shadow-black/20 bg-base-100 text-base-content rounded-box z-[70] w-64 p-3 shadow-lg border border-base-200"
                 >
-                  <li onClick={() => props.handleSignerStatusFilter("all")}>
-                    <a>{t("all-signer-status")}</a>
-                  </li>
-                  <li onClick={() => props.handleSignerStatusFilter("viewed")}>
-                    <a>{t("viewed")}</a>
-                  </li>
-                  <li onClick={() => props.handleSignerStatusFilter("signed")}>
-                    <a>{t("signed")}</a>
-                  </li>
-                </ul>
+                  {/* Section: Estado de firma (solo para En progreso) */}
+                  {props?.ReportName === "In-progress documents" && (
+                    <div className="mb-3">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                        Estado de firma
+                      </span>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => props.handleSignerStatusFilter("all")}
+                          className={`flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition-colors ${
+                            props.signerStatusFilter === "all" ? "bg-primary/10 text-primary font-semibold" : "hover:bg-base-200"
+                          }`}
+                        >
+                          <span>{t("all-signer-status")}</span>
+                          {props.signerStatusFilter === "all" && <i className="fa-solid fa-check text-xs"></i>}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => props.handleSignerStatusFilter("viewed")}
+                          className={`flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition-colors ${
+                            props.signerStatusFilter === "viewed" ? "bg-primary/10 text-primary font-semibold" : "hover:bg-base-200"
+                          }`}
+                        >
+                          <span>{t("viewed")}</span>
+                          {props.signerStatusFilter === "viewed" && <i className="fa-solid fa-check text-xs"></i>}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => props.handleSignerStatusFilter("signed")}
+                          className={`flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition-colors ${
+                            props.signerStatusFilter === "signed" ? "bg-primary/10 text-primary font-semibold" : "hover:bg-base-200"
+                          }`}
+                        >
+                          <span>{t("signed")}</span>
+                          {props.signerStatusFilter === "signed" && <i className="fa-solid fa-check text-xs"></i>}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Section: Tipo de documento */}
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5 block">
+                      Tipo de documento
+                    </span>
+                    <div className="flex flex-col gap-1 max-h-56 overflow-y-auto pr-1">
+                      {[
+                        { label: "Todos los tipos", value: "all" },
+                        { label: "Contrato internacional", value: "Contrato internacional" },
+                        { label: "Contrato de prestación de servicios", value: "Contrato de prestación de servicios" },
+                        { label: "Acuerdo de confidencialidad (NDA)", value: "Acuerdo de confidencialidad (NDA)" },
+                        { label: "Poder notarial / Carta poder", value: "Poder notarial / Carta poder" },
+                        { label: "Acta de entrega y recepción", value: "Acta de entrega y recepción" },
+                        { label: "Memorando / Resolución", value: "Memorando / Resolución" },
+                        { label: "Otro", value: "Otro" }
+                      ].map((dt) => (
+                        <button
+                          key={dt.value}
+                          type="button"
+                          onClick={() => props.handleDocTypeFilter(dt.value)}
+                          className={`flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md text-left transition-colors ${
+                            (props.docTypeFilter || "all") === dt.value ? "bg-primary/10 text-primary font-semibold" : "hover:bg-base-200"
+                          }`}
+                        >
+                          <span className="truncate mr-2">{dt.label}</span>
+                          {(props.docTypeFilter || "all") === dt.value && <i className="fa-solid fa-check text-xs shrink-0"></i>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
