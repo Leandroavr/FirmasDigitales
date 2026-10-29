@@ -62,17 +62,25 @@ const Report = () => {
           return c;
         })
         .filter(
-          (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
+          (c) => !["Enable Tour", "Redirect url", "Notify on signatures", "Note"].includes(c)
         );
+      if (saved[id].visible?.includes("Note") || (Array.isArray(saved[id]) && saved[id].includes("Note"))) {
+        migrated = true;
+      }
       if (id === "1MwEuxLEkF" || id === "other_in_progress") {
-        if (savedVisible.includes("File") || savedVisible.includes("Note")) {
-          savedVisible = savedVisible.filter((c) => c !== "File" && c !== "Note");
+        if (savedVisible.includes("File")) {
+          savedVisible = savedVisible.filter((c) => c !== "File");
           migrated = true;
         }
       }
+      const mandatory = id === "contacts" ? "Name" : "Title";
+      if (!savedVisible.includes(mandatory)) {
+        savedVisible.unshift(mandatory);
+        migrated = true;
+      }
       const uniqueVisible = sortColumns(Array.from(new Set(savedVisible)));
-      if (migrated && saved[id]?.visible) {
-        saved[id].visible = uniqueVisible;
+      if (migrated || !saved[id]?.visible) {
+        saved[id] = { visible: uniqueVisible, labels: saved[id]?.labels || {} };
         localStorage.setItem("reportColumns", JSON.stringify(saved));
       }
       setVisibleColumns(uniqueVisible);
@@ -225,13 +233,21 @@ const Report = () => {
             return c;
           })
           .filter(
-            (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
+            (c) => !["Enable Tour", "Redirect url", "Notify on signatures", "Note"].includes(c)
           );
+        if (savedCols[id]?.visible?.includes("Note") || (Array.isArray(savedCols[id]) && savedCols[id].includes("Note"))) {
+          migrated = true;
+        }
         if (id === "1MwEuxLEkF" || id === "other_in_progress") {
-          if (visible.includes("File") || visible.includes("Note")) {
-            visible = visible.filter((c) => c !== "File" && c !== "Note");
+          if (visible.includes("File")) {
+            visible = visible.filter((c) => c !== "File");
             migrated = true;
           }
+        }
+        const mandatory = id === "contacts" ? "Name" : "Title";
+        if (!visible.includes(mandatory)) {
+          visible.unshift(mandatory);
+          migrated = true;
         }
         const labels = savedCols[id]?.labels || {};
         const uniqueVisible = sortColumns(Array.from(new Set(visible)));
@@ -267,13 +283,13 @@ const Report = () => {
             headers: headers,
             signal: abortController.signal // is used to cancel fetch query
           });
-          const extraHeads = extraCols.filter((c) => c !== "Notify on signatures");
+          const extraHeads = extraCols.filter((c) => c !== "Notify on signatures" && c !== "Note");
           setAllColumns(
             sortColumns(
               Array.from(
                 new Set(
                   [...json.heading, ...extraHeads].filter(
-                    (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
+                    (c) => !["Enable Tour", "Redirect url", "Notify on signatures", "Note"].includes(c)
                   )
                 )
               )
@@ -395,7 +411,9 @@ const Report = () => {
         columnLabels={columnLabels}
         defaultColumns={defaultColumns}
         onApply={(cols, labels) => {
-          const sortedCols = sortColumns(cols);
+          const mandatory = allColumns.includes("Name") ? "Name" : "Title";
+          const filteredCols = [mandatory, ...cols.filter((c) => c !== "Title" && c !== "Name" && c !== "Note")];
+          const sortedCols = sortColumns(Array.from(new Set(filteredCols)));
           setVisibleColumns(sortedCols);
           setHeading(sortedCols);
           setColumnLabels(labels);

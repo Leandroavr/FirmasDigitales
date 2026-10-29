@@ -3,7 +3,7 @@ export const COLUMN_ORDER = [
   "Title",
   "Name",
   "Reason",
-  "Note",
+  // "Note",
   "Folder",
   "File",
   "Owner",
@@ -23,17 +23,19 @@ export const sortColumns = (cols) => {
   });
 };
 
-export const extraCols = [
-  "Note",
-  "Folder",
-  "File",
-  "Owner",
-  "Dates"
-];
+export const extraCols = [/* "Note", */ "Folder", "File", "Owner", "Dates"];
 
 export default function reportJson(id) {
   const head = ["Title", "Folder", "File", "Owner", "Signers", "Dates"];
-  const declineHead = ["Title", "Reason", "Folder", "File", "Owner", "Signers", "Dates"];
+  const declineHead = [
+    "Title",
+    "Reason",
+    "Folder",
+    "File",
+    "Owner",
+    "Signers",
+    "Dates"
+  ];
   const iphead = ["Title", "Folder", "Signers", "Dates"];
   const otherIphead = ["Title", "Folder", "Owner", "Signers", "Dates"];
   const contactbook = ["Name", "Email", "Phone", "Company", "JobTitle"];
@@ -429,7 +431,7 @@ export default function reportJson(id) {
     case "kC5mfynCi4":
       return {
         reportName: "Drafts",
-        heading: ["Title", "Note", "Folder", "File", "Owner", "Signers"],
+        heading: ["Title", /* "Note", */ "Folder", "File", "Owner", "Signers"],
         actions: [
           {
             btnId: "2003",

@@ -27,7 +27,9 @@ const ColumnSelector = ({
   };
 
   const handleApply = () => {
-    onApply && onApply(selected, names);
+    const mandatory = allColumns.includes("Name") ? "Name" : "Title";
+    const finalSelected = [mandatory, ...selected.filter((c) => c !== "Title" && c !== "Name" && c !== "Note")];
+    onApply && onApply(finalSelected, names);
     onClose && onClose();
   };
 
@@ -35,7 +37,17 @@ const ColumnSelector = ({
     <ModalUi isOpen={isOpen} title={t("select-columns")} handleClose={onClose}>
       <div className="p-[20px] flex flex-col gap-2">
         {sortColumns(allColumns)
-          .filter((col) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(col))
+          .filter(
+            (col) =>
+              ![
+                "Enable Tour",
+                "Redirect url",
+                "Notify on signatures",
+                "Note",
+                "Title",
+                "Name"
+              ].includes(col)
+          )
           .map((col, i) => (
           <div key={col} className="flex justify-between items-center gap-2">
             <span className="flex justify-center items-center h-full">

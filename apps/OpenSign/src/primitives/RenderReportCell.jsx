@@ -94,17 +94,19 @@ export const RenderReportCell = ({
             : rowData?.DeclineReason || "-"}
         </td>
       );
+    // case "Note":
+    //   return (
+    //     <td key={col} className="py-3 px-3 text-center">
+    //       <p
+    //         className="truncate w-[100px] cursor-pointer"
+    //         onClick={() => handleItemClick(col, rowData?.Note)}
+    //       >
+    //         {rowData?.Note || "-"}
+    //       </p>
+    //     </td>
+    //   );
     case "Note":
-      return (
-        <td key={col} className="py-3 px-3 text-center">
-          <p
-            className="truncate w-[100px] cursor-pointer"
-            onClick={() => handleItemClick(col, rowData?.Note)}
-          >
-            {rowData?.Note || "-"}
-          </p>
-        </td>
-      );
+      return null;
     case "Folder":
       return (
         <td key={col} className="py-3 px-3 text-center">
