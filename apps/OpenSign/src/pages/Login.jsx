@@ -226,10 +226,9 @@ function Login() {
           logOutUser();
         }
       } catch (error) {
-        console.error("err in fetching extUser", err);
-        showToast("danger", `${err.message}`);
-        const payload = { sessionToken: _user.sessionToken };
-        handleSubmitbtn(payload);
+        console.error("err in fetching extUser", error);
+        showToast("danger", `${error?.message || t("something-went-wrong-mssg")}`);
+        logOutUser();
       } finally {
         setThirdpartyLoader(false);
       }
@@ -449,7 +448,8 @@ function Login() {
             navigate(redirectUrl);
           } else {
             setState({ ...state, loading: false });
-            setIsModal(true);
+            showToast("danger", t("role-not-found"));
+            logOutUser();
           }
         } else {
           showToast("danger", t("do-not-access-contact-admin"));

@@ -338,7 +338,7 @@ const UserList = () => {
     }
   });
 
-  const handleToggleAuthType = withSessionValidation(async (item) => {
+  const handleToggleAuthType = withSessionValidation(async (item, newIsLdapTarget) => {
     if (!isSuperAdmin) {
       showAlert("danger", "Solo el Administrador Principal puede cambiar el método de autenticación.");
       return;
@@ -349,12 +349,17 @@ const UserList = () => {
     }
 
     const currentIsLdap = item?.isLdap === true || item?.UserId?.isLdap === true;
-    const newIsLdap = !currentIsLdap;
+    const newIsLdap = typeof newIsLdapTarget === "boolean" ? newIsLdapTarget : !currentIsLdap;
+    if (newIsLdap === currentIsLdap) return;
+
     const confirmMsg = newIsLdap
-      ? `¿Desea cambiar la autenticación de ${item?.Name || item?.Email} a LDAP (Directorio Activo)?`
+      ? `¿Desea cambiar la autenticación de ${item?.Name || item?.Email} a Directorio Activo (LDAP)?`
       : `¿Desea cambiar la autenticación de ${item?.Name || item?.Email} a Contraseña Local?`;
 
-    if (!window.confirm(confirmMsg)) return;
+    if (!window.confirm(confirmMsg)) {
+      setUserList((prev) => [...prev]);
+      return;
+    }
 
     setIsLoader(true);
     try {
@@ -376,6 +381,7 @@ const UserList = () => {
     } catch (err) {
       console.error("Error toggling auth type:", err);
       showAlert("danger", err?.message || "No se pudo cambiar el tipo de autenticación.");
+      setUserList((prev) => [...prev]);
     } finally {
       setIsLoader(false);
     }
@@ -497,42 +503,45 @@ const UserList = () => {
                                 )}
                               </td>
                               <td className="px-4 py-2 whitespace-nowrap">
-                                <span
-                                  className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                                    item?.isLdap === true || item?.UserId?.isLdap === true
-                                      ? "bg-purple-100 text-purple-800 border border-purple-200"
-                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                  }`}
-                                >
-                                  {item?.isLdap === true || item?.UserId?.isLdap === true
-                                    ? "LDAP"
-                                    : "Local"}
-                                </span>
-                                {isSuperAdmin && !checkIsSuperAdmin(item) && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleAuthType(item)}
-                                    className="ml-2 op-btn op-btn-xs op-btn-outline"
-                                    title={
+                                {isSuperAdmin && !checkIsSuperAdmin(item) ? (
+                                  <select
+                                    value={
                                       item?.isLdap === true || item?.UserId?.isLdap === true
-                                        ? "Cambiar a Contraseña Local"
-                                        : "Cambiar a LDAP (Directorio Activo)"
+                                        ? "ldap"
+                                        : "local"
                                     }
+                                    onChange={(e) =>
+                                      handleToggleAuthType(item, e.target.value === "ldap")
+                                    }
+                                    className={`op-select op-select-bordered op-select-xs font-semibold text-xs rounded-md shadow-sm transition-colors cursor-pointer ${
+                                      item?.isLdap === true || item?.UserId?.isLdap === true
+                                        ? "bg-purple-50 text-purple-800 border-purple-300 hover:border-purple-500"
+                                        : "bg-emerald-50 text-emerald-800 border-emerald-300 hover:border-emerald-500"
+                                    }`}
+                                    title="Seleccione el método de acceso para este usuario"
+                                  >
+                                    <option value="ldap">Directorio Activo (LDAP)</option>
+                                    <option value="local">Contraseña Local</option>
+                                  </select>
+                                ) : (
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold ${
+                                      item?.isLdap === true || item?.UserId?.isLdap === true
+                                        ? "bg-purple-100 text-purple-800 border border-purple-300"
+                                        : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                                    }`}
                                   >
                                     <i
-                                      className={`fa-light ${
+                                      className={`fa-solid text-[11px] ${
                                         item?.isLdap === true || item?.UserId?.isLdap === true
-                                          ? "fa-key text-info"
-                                          : "fa-network-wired text-primary"
+                                          ? "fa-network-wired text-purple-600"
+                                          : "fa-key text-emerald-600"
                                       }`}
-                                      aria-hidden="true"
                                     ></i>
-                                    <span className="hidden xl:inline ml-1">
-                                      {item?.isLdap === true || item?.UserId?.isLdap === true
-                                        ? "Pasar a Local"
-                                        : "Pasar a LDAP"}
-                                    </span>
-                                  </button>
+                                    {item?.isLdap === true || item?.UserId?.isLdap === true
+                                      ? "Directorio Activo (LDAP)"
+                                      : "Contraseña Local"}
+                                  </span>
                                 )}
                               </td>
                               <td className="px-4 py-2">

@@ -28,37 +28,49 @@ export default async function loginUser(request) {
     fullEmail = `${inputIdentifier}@${LDAP_DOMAIN}`;
   }
 
-  // 2. Buscar usuario registrado en OpenSign
-  let user = null;
-  const qEmail = new Parse.Query(Parse.User).equalTo('email', fullEmail);
-  const qUsername = new Parse.Query(Parse.User).equalTo('username', fullEmail);
-  const qShort = new Parse.Query(Parse.User).equalTo('username', shortName);
-  const qRaw = new Parse.Query(Parse.User).equalTo('username', inputIdentifier);
-  const userQuery = Parse.Query.or(qEmail, qUsername, qShort, qRaw);
-  user = await userQuery.first({ useMasterKey: true });
+  // 2. Buscar usuario registrado en contracts_Users (registro corporativo obligatorio)
+  const extQ1 = new Parse.Query('contracts_Users').equalTo('Email', fullEmail);
+  const extQ2 = new Parse.Query('contracts_Users').equalTo('Email', inputIdentifier);
+  const extUserQuery = Parse.Query.or(extQ1, extQ2);
+  extUserQuery.include('UserId');
+  let extUser = await extUserQuery.first({ useMasterKey: true });
 
-  let extUser = null;
-  if (user) {
-    const extQ = new Parse.Query('contracts_Users');
-    extQ.equalTo('UserId', user);
-    extUser = await extQ.first({ useMasterKey: true });
+  let user = null;
+  if (extUser) {
+    user = extUser.get('UserId');
+    if (!user || !user.id) {
+      const qEmail = new Parse.Query(Parse.User).equalTo('email', fullEmail);
+      const qUsername = new Parse.Query(Parse.User).equalTo('username', fullEmail);
+      const qShort = new Parse.Query(Parse.User).equalTo('username', shortName);
+      const candidateUser = await Parse.Query.or(qEmail, qUsername, qShort).first({ useMasterKey: true });
+      if (candidateUser) {
+        user = candidateUser;
+        extUser.set('UserId', candidateUser);
+        await extUser.save(null, { useMasterKey: true });
+      }
+    }
   } else {
-    // Búsqueda alternativa en contracts_Users por Email
-    const extQ1 = new Parse.Query('contracts_Users').equalTo('Email', fullEmail);
-    const extQ2 = new Parse.Query('contracts_Users').equalTo('Email', inputIdentifier);
-    const extUserQuery = Parse.Query.or(extQ1, extQ2);
-    extUserQuery.include('UserId');
-    extUser = await extUserQuery.first({ useMasterKey: true });
-    if (extUser && extUser.get('UserId')) {
-      user = extUser.get('UserId');
+    // Si no se encontró por Email directo, verificar si existe en Parse.User y si tiene contracts_Users vinculado
+    const qEmail = new Parse.Query(Parse.User).equalTo('email', fullEmail);
+    const qUsername = new Parse.Query(Parse.User).equalTo('username', fullEmail);
+    const qShort = new Parse.Query(Parse.User).equalTo('username', shortName);
+    const qRaw = new Parse.Query(Parse.User).equalTo('username', inputIdentifier);
+    const candidateUser = await Parse.Query.or(qEmail, qUsername, qShort, qRaw).first({ useMasterKey: true });
+    if (candidateUser) {
+      const extQ = new Parse.Query('contracts_Users');
+      extQ.equalTo('UserId', candidateUser);
+      extUser = await extQ.first({ useMasterKey: true });
+      if (extUser) {
+        user = candidateUser;
+      }
     }
   }
 
-  // REQUISITO: Los usuarios deben ser pre-creados manualmente por el Superadmin.
-  // No se permite creación automática Just-In-Time mediante LDAP.
-  if (!user) {
+  // REQUISITO ESTRICTO: Solo usuarios previamente registrados en contracts_Users por el Superadmin pueden acceder.
+  // Queda terminantemente prohibido cualquier auto-registro o acceso sin cuenta previa.
+  if (!user || !extUser) {
     console.warn(
-      `[Login Rejected] Intento de acceso de usuario no registrado en OpenSign: ${inputIdentifier}`
+      `[Login Rejected] Intento de acceso de usuario no registrado en contracts_Users: ${inputIdentifier}`
     );
     throw new Parse.Error(
       Parse.Error.OBJECT_NOT_FOUND,

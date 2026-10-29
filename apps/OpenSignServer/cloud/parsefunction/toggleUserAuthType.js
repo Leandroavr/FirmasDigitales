@@ -48,7 +48,16 @@ export default async function toggleUserAuthType(request) {
   targetExtUser.set('isLdap', newIsLdap);
   await targetExtUser.save(null, { useMasterKey: true });
 
-  const targetUserObj = targetExtUser.get('UserId');
+  let targetUserObj = targetExtUser.get('UserId');
+  if (!targetUserObj || !targetUserObj.id) {
+    const uq = new Parse.Query(Parse.User);
+    uq.equalTo('email', targetExtUser.get('Email'));
+    targetUserObj = await uq.first({ useMasterKey: true });
+    if (targetUserObj) {
+      targetExtUser.set('UserId', targetUserObj);
+      await targetExtUser.save(null, { useMasterKey: true });
+    }
+  }
   if (targetUserObj) {
     targetUserObj.set('isLdap', newIsLdap);
     await targetUserObj.save(null, { useMasterKey: true });

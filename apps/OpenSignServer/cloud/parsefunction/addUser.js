@@ -30,6 +30,7 @@ export default async function addUser(request) {
       }
       const callerTenantId = callerExtUser.get('TenantId')?.id;
       const callerOrgId = callerExtUser.get('OrganizationId')?.id;
+      const isOrgAdmin = callerExtUser.get('UserRole') === 'contracts_OrgAdmin';
       // Enforce tenant-bound writes for all admins and require org scope for OrgAdmin callers.
       if (!callerTenantId || tenantId !== callerTenantId || (isOrgAdmin && !callerOrgId)) {
         throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Unauthorized.');
