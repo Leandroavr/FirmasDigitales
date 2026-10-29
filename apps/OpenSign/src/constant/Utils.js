@@ -4947,8 +4947,8 @@ export const getSignerDisplayName = (data, signers, fallbackEmail = "") => {
     signers?.length > 0 &&
     signers.find((x) => x.objectId === data?.signerObjId);
 
-  const rawName = (signer?.Name || data?.name || "").trim();
-  const email = (signer?.Email || data?.email || fallbackEmail || "").trim();
+  const rawName = (signer?.Name || data?.Name || data?.name || "").trim();
+  const email = (signer?.Email || data?.Email || data?.email || fallbackEmail || "").trim();
 
   // 1. Si hay un nombre registrado y no es una dirección de correo completa:
   if (rawName && !rawName.includes("@")) {

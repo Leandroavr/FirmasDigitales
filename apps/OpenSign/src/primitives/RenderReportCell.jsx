@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { formatDateToDdMmmYyyy } from "../constant/Utils";
+import { formatDateToDdMmmYyyy, getSignerDisplayName } from "../constant/Utils";
 import SignerCell from "./SignerCell";
 
 function isValidDateString(str) {
@@ -107,12 +107,20 @@ export const RenderReportCell = ({
           </button>
         </td>
       );
-    case "Owner":
+    case "Owner": {
+      const ownerName = getSignerDisplayName(rowData?.ExtUserPtr);
+      const ownerEmail = rowData?.ExtUserPtr?.Email || "";
       return (
-        <td key={col} className="p-2 text-center">
-          {rowData?.ExtUserPtr?.Name || "-"}
+        <td key={col} className="p-2 text-center whitespace-nowrap">
+          <span
+            className="font-medium text-gray-800 cursor-default"
+            title={ownerEmail}
+          >
+            {ownerName}
+          </span>
         </td>
       );
+    }
     case "Time to complete (Days)":
       return (
         <td key={col} className="p-2 text-center">
@@ -149,8 +157,20 @@ export const RenderReportCell = ({
         expiryFormatted = formatDateToDdMmmYyyy(expiryIso);
         const expiryDate = new Date(expiryIso);
         const now = new Date();
-        const diffMs = expiryDate.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        // Comparar días de calendario a medianoche local para evitar desfasajes horarios
+        const expiryMidnight = new Date(
+          expiryDate.getFullYear(),
+          expiryDate.getMonth(),
+          expiryDate.getDate()
+        );
+        const todayMidnight = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+        const diffMs = expiryMidnight.getTime() - todayMidnight.getTime();
+        const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
         if (diffDays > 1) {
           countdownText = `(${diffDays} días)`;
@@ -158,9 +178,10 @@ export const RenderReportCell = ({
           countdownText = "(1 día)";
           isUrgent = true;
         } else if (diffDays === 0) {
-          countdownText = "(Hoy)";
+          countdownText = "(Expira hoy)";
           isUrgent = true;
         } else {
+          // diffDays < 0 significa que venció ayer o antes
           countdownText = rowData?.IsCompleted ? "" : "(Expirado)";
           isUrgent = !rowData?.IsCompleted;
         }
