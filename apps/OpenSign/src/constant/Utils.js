@@ -4941,6 +4941,44 @@ export const getSignerEmail = (data, signers) => {
   return getEmail;
 };
 
+// Function to format signer name cleanly without showing raw emails
+export const getSignerDisplayName = (data, signers, fallbackEmail = "") => {
+  const signer =
+    signers?.length > 0 &&
+    signers.find((x) => x.objectId === data?.signerObjId);
+
+  const rawName = (signer?.Name || data?.name || "").trim();
+  const email = (signer?.Email || data?.email || fallbackEmail || "").trim();
+
+  // 1. Si hay un nombre registrado y no es una dirección de correo completa:
+  if (rawName && !rawName.includes("@")) {
+    if (rawName.includes(".")) {
+      return rawName
+        .split(".")
+        .filter(Boolean)
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+        .join(" ");
+    }
+    return rawName;
+  }
+
+  // 2. Si el nombre es un correo o está vacío, extraer el alias antes del @
+  const targetEmail = email || rawName;
+  if (targetEmail && targetEmail.includes("@")) {
+    const alias = targetEmail.split("@")[0];
+    if (alias.includes(".")) {
+      return alias
+        .split(".")
+        .filter(Boolean)
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+        .join(" ");
+    }
+    return alias.charAt(0).toUpperCase() + alias.slice(1);
+  }
+
+  return rawName || email || "-";
+};
+
 //function is used to delete widgets
 export const handleDeleteWidget = (key, Id, pageNumber, signerPos) => {
   // Find the signer by ID

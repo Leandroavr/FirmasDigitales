@@ -52,12 +52,24 @@ const Report = () => {
     setMobileSearchOpen(false);
     const saved = JSON.parse(localStorage.getItem("reportColumns") || "{}");
     if (saved[id]) {
+      let migrated = false;
       const savedVisible = (saved[id].visible || saved[id])
-        .map((c) => (c === "Notify on signatures" ? "Expiry Date" : c))
+        .map((c) => {
+          if (["Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Notify on signatures"].includes(c)) {
+            migrated = true;
+            return "Dates";
+          }
+          return c;
+        })
         .filter(
           (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
         );
-      setVisibleColumns(sortColumns(Array.from(new Set(savedVisible))));
+      const uniqueVisible = sortColumns(Array.from(new Set(savedVisible)));
+      if (migrated && saved[id]?.visible) {
+        saved[id].visible = uniqueVisible;
+        localStorage.setItem("reportColumns", JSON.stringify(saved));
+      }
+      setVisibleColumns(uniqueVisible);
       setColumnLabels(saved[id].labels || {});
     } else {
       setVisibleColumns([]);
@@ -197,17 +209,24 @@ const Report = () => {
         const savedCols = JSON.parse(
           localStorage.getItem("reportColumns") || "{}"
         );
+        let migrated = false;
         const visible = (savedCols[id]?.visible || json.heading)
-          .map((c) => (c === "Notify on signatures" ? "Expiry Date" : c))
+          .map((c) => {
+            if (["Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Notify on signatures"].includes(c)) {
+              migrated = true;
+              return "Dates";
+            }
+            return c;
+          })
           .filter(
             (c) => !["Enable Tour", "Redirect url", "Notify on signatures"].includes(c)
           );
         const labels = savedCols[id]?.labels || {};
-        if (!savedCols[id] || id === "contacts") {
-          savedCols[id] = { visible: json.heading, labels: {} };
+        const uniqueVisible = sortColumns(Array.from(new Set(visible)));
+        if (!savedCols[id] || id === "contacts" || migrated) {
+          savedCols[id] = { visible: uniqueVisible, labels };
           localStorage.setItem("reportColumns", JSON.stringify(savedCols));
         }
-        const uniqueVisible = sortColumns(Array.from(new Set(visible)));
         setVisibleColumns(uniqueVisible);
         setColumnLabels(labels);
         setHeading(uniqueVisible);

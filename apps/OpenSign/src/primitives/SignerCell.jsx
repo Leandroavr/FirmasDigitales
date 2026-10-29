@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { formatDateTime, getSignerEmail } from "../constant/Utils";
+import { formatDateTime, getSignerEmail, getSignerDisplayName } from "../constant/Utils";
 import { useState } from "react";
 import ModalUi from "./ModalUi";
 
@@ -57,9 +57,12 @@ const SignerCell = ({ reportName, item, handleRemovePrefill }) => {
         date
           ? formatDateTime(new Date(date), DateFormat, timezone, Is12Hr)
           : "-";
+      const email = getSignerEmail(x, item?.Signers) || x?.email || "-";
+      const displayName = getSignerDisplayName(x, item?.Signers, email);
       return {
         id: i,
-        Email: getSignerEmail(x, item?.Signers) || x?.email || "-",
+        Email: email,
+        DisplayName: displayName,
         Activity: audit?.Activity?.toUpperCase() || "SENT",
         SignedOn: format(audit?.SignedOn),
         ViewedOn: format(audit?.ViewedOn)
@@ -92,7 +95,12 @@ const SignerCell = ({ reportName, item, handleRemovePrefill }) => {
                 {getActivityLabel(x?.Activity)}
               </button>
             )}
-            <div className="text-[12px]">{x?.Email || "-"}</div>
+            <div
+              className="text-[12px] font-medium text-gray-800 whitespace-nowrap cursor-default"
+              title={x?.Email !== "-" ? x?.Email : ""}
+            >
+              {x?.DisplayName || x?.Email || "-"}
+            </div>
             {!isCompletedReport && isModal[`${item.objectId}_${i}`] && (
               <ModalUi
                 isOpen
@@ -100,7 +108,9 @@ const SignerCell = ({ reportName, item, handleRemovePrefill }) => {
                 handleClose={handleCloseModal}
               >
                 <div className="pl-3 first:mt-2 border-t-[1px] border-gray-600 text-[12px] py-2">
-                  <p className="font-bold"> {x?.Email}</p>
+                  <p className="font-bold">
+                    {x?.DisplayName} <span className="font-normal text-gray-500">({x?.Email})</span>
+                  </p>
                   <p>{t("viewed-on", { ViewedOn: x?.ViewedOn })}</p>
                   <p>{t("signed-on", { SignedOn: x?.SignedOn })}</p>
                 </div>

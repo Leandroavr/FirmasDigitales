@@ -8,10 +8,7 @@ export const COLUMN_ORDER = [
   "File",
   "Owner",
   "Signers",
-  "Created Date",
-  "Updated Date",
-  "Expiry Date",
-  "Time to complete (Days)",
+  "Dates",
   "Sent Date"
 ];
 
@@ -29,17 +26,16 @@ export const sortColumns = (cols) => {
 
 export const extraCols = [
   "Note",
-  "Created Date",
-  "Updated Date",
-  "Expiry Date",
-  "Time to complete (Days)"
+  "Folder",
+  "Owner",
+  "Dates"
 ];
 
 export default function reportJson(id) {
-  const head = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)"];
-  const declineHead = ["Title", "Reason", "Folder", "File", "Owner", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)"];
-  const iphead = ["Title", "Note", "Folder", "File", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Sent Date"];
-  const otherIphead = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Created Date", "Updated Date", "Expiry Date", "Time to complete (Days)", "Sent Date"];
+  const head = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Dates"];
+  const declineHead = ["Title", "Reason", "Folder", "File", "Owner", "Signers", "Dates"];
+  const iphead = ["Title", "Note", "Folder", "File", "Signers", "Dates", "Sent Date"];
+  const otherIphead = ["Title", "Note", "Folder", "File", "Owner", "Signers", "Dates", "Sent Date"];
   const contactbook = ["Name", "Email", "Phone", "Company", "JobTitle"];
   const dashboardReportHead = ["Title", "File", "Owner", "Signers"];
   const templateReport = ["Title", "File", "Owner", "Signers"];

@@ -49,14 +49,13 @@ export const RenderReportCell = ({
     case "Name":
     case "Title":
       return (
-        <td key={col} className="p-2 min-w-56 max-w-56">
-          <div className="font-semibold break-words">{rowData?.Name}</div>
-          {/* Antiguo: fecha debajo del título. Reemplazado por columna individual de Expiry Date
-          rowData?.ExpiryDate?.iso && (
-            <div className="text-gray-500">
-              {t("expires")} {formatDateToDdMmmYyyy(rowData?.ExpiryDate?.iso)}
-            </div>
-          ) */}
+        <td key={col} className="p-2 min-w-[130px] max-w-[180px]">
+          <div
+            className="font-semibold break-words leading-snug text-gray-800"
+            title={rowData?.Name}
+          >
+            {rowData?.Name}
+          </div>
         </td>
       );
     case "Reason":
@@ -138,6 +137,68 @@ export const RenderReportCell = ({
           {rowData?.RedirectUrl?.toString() || "-"}
         </td>
       );
+    case "Dates": {
+      const createdAt = rowData?.createdAt ? formatDateToDdMmmYyyy(rowData.createdAt) : null;
+      const updatedAt = rowData?.updatedAt ? formatDateToDdMmmYyyy(rowData.updatedAt) : null;
+      const expiryIso = rowData?.ExpiryDate?.iso;
+      let expiryFormatted = null;
+      let countdownText = "";
+      let isUrgent = false;
+
+      if (expiryIso) {
+        expiryFormatted = formatDateToDdMmmYyyy(expiryIso);
+        const expiryDate = new Date(expiryIso);
+        const now = new Date();
+        const diffMs = expiryDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays > 1) {
+          countdownText = `(${diffDays} días)`;
+        } else if (diffDays === 1) {
+          countdownText = "(1 día)";
+          isUrgent = true;
+        } else if (diffDays === 0) {
+          countdownText = "(Hoy)";
+          isUrgent = true;
+        } else {
+          countdownText = rowData?.IsCompleted ? "" : "(Expirado)";
+          isUrgent = !rowData?.IsCompleted;
+        }
+      }
+
+      return (
+        <td key={col} className="p-2 text-left whitespace-nowrap text-[11px] leading-tight text-gray-600">
+          <div className="flex flex-col gap-1">
+            {createdAt && (
+              <div>
+                <span className="font-semibold text-gray-700">Creado:</span>{" "}
+                <span>{createdAt}</span>
+              </div>
+            )}
+            {updatedAt && (
+              <div>
+                <span className="font-semibold text-gray-700">Actualizado:</span>{" "}
+                <span>{updatedAt}</span>
+              </div>
+            )}
+            {expiryFormatted && (
+              <div className={isUrgent ? "text-amber-600 font-medium" : ""}>
+                <span className="font-semibold text-gray-700">Expira:</span>{" "}
+                <span>{expiryFormatted}</span>{" "}
+                {countdownText && (
+                  <span className={`text-[10px] font-semibold ${isUrgent ? "text-amber-600" : "text-gray-500"}`}>
+                    {countdownText}
+                  </span>
+                )}
+              </div>
+            )}
+            {!createdAt && !updatedAt && !expiryFormatted && (
+              <span>-</span>
+            )}
+          </div>
+        </td>
+      );
+    }
     case "Created Date":
       return (
         <td key={col} className="p-2 text-center">
