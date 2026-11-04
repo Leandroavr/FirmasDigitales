@@ -74,6 +74,10 @@ export default async function getReport(request) {
 
       const clsName = json?.reportClass ? json.reportClass : 'contracts_Document';
 
+      if (clsName === 'contracts_Document') {
+        paramsObj.IsPurged = { $ne: true };
+      }
+
       if (clsName === 'contracts_Document' && signerStatus) {
         const normalizedStatus =
           signerStatus === 'viewed' ? 'Viewed' : signerStatus === 'signed' ? 'Signed' : '';

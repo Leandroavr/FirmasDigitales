@@ -827,6 +827,13 @@ function SignYourSelf() {
                 setCorporateSigningLocation("");
                 dispatch(setIsShowModal({}));
                 dispatch(setTypedSignFont("Fasthand"));
+                setIsAlert({
+                  isShow: true,
+                  header: "Firma Digital Brascuba",
+                  alertMessage: response?.message || (response?.hasTsa
+                    ? "Documento firmado exitosamente con sello de tiempo RFC 3161."
+                    : "Documento firmado exitosamente con marca de tiempo del servidor.")
+                });
                 await getDocumentDetails(false);
               } else {
                 await signPdfFun(pdfBytes, documentId);

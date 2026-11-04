@@ -206,6 +206,7 @@
     "Company": "Company",
     "JobTitle": "Job title",
     "Department": "Department",
+    "HierarchyLevel": "Hierarchy Level",
     "AuthType": "Auth Method",
     "Time to complete (Days)": "Time to complete (Days)",
     "Auto reminder": "Auto reminder",
@@ -440,6 +441,7 @@
   },
   "fields": "Fields",
   "recipients": "Recipients",
+  "prefill-by-owner": "Prefill by owner",
   "please-add": "Please add a",
   "signed-by": "Signed By",
   "more": "more",
@@ -1643,5 +1645,12 @@
   "Bcc": "Blind copy (Bcc)",
   "select-contact-placeholder": "Search or select contact...",
   "user-folder": "User Folder",
-  "select-user-folder-first": "Please select a user folder first to create folders."
+  "select-user-folder-first": "Please select a user folder first to create folders.",
+  "view-organigrama": "View organization chart",
+  "organigrama-title": "Signer Organization Chart",
+  "search-organigrama": "Search by name, position, department or email...",
+  "expand-all": "Expand all",
+  "collapse-all": "Collapse all",
+  "selected-signers-count": "selected signer(s)",
+  "ready": "Done"
 }

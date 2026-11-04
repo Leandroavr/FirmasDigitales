@@ -790,7 +790,7 @@ function PrefillWidgetModal(props) {
   return (
     <>
       <ModalUi
-        title={uniqueWidget?.length > 0 ? t("prefill-widget") : "Recipients"}
+        title={uniqueWidget?.length > 0 ? t("prefill-widget") : t("recipients")}
         isOpen={true}
         handleClose={props.handleClosePrefillModal}
       >

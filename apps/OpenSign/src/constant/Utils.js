@@ -4583,8 +4583,13 @@ export const decryptPdf = async (file, password) => {
   let formData = new FormData();
   formData.append("file", file);
   formData.append("password", password);
+  const sessionToken = Parse.User.current()?.getSessionToken() || "";
   const config = {
-    headers: { "content-type": "multipart/form-data" },
+    headers: {
+      "content-type": "multipart/form-data",
+      "sessiontoken": sessionToken,
+      "X-Parse-Session-Token": sessionToken,
+    },
     responseType: "blob"
   };
   const response = await axios.post(url, formData, config);

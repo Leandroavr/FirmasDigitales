@@ -30,9 +30,21 @@ cp .env.example .env.prod
 > **Importante:** Asegúrate de configurar valores robustos y únicos para `MASTER_KEY`, `APP_ID`, `CORPORATE_SIGNER_TOKEN` y los accesos a la base de datos.
 
 ### 2. Despliegue de Contenedores
-Para construir y levantar todos los servicios en segundo plano:
+
+#### Modo Desarrollo:
+Publica puertos hacia el host (MongoDB en 27017, Parse Server en 8080, CorporateSigner en 8090, Frontend en 3000, Caddy en 3001):
 ```bash
 docker compose up -d
+```
+
+#### Modo Producción (Recomendado para Servidor Brascuba):
+En este entorno **SOLO Caddy** publica puertos hacia el host exterior (80, 443, 3001). MongoDB, Parse Server, CorporateSigner y Frontend quedan confinados estrictamente en la red interna de Docker (`app-network`).
+```bash
+# Despliegue directo en producción:
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+# O combinando con docker-compose.yml (los puertos de desarrollo quedan anulados con ports: !override []):
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d
 ```
 
 ### 3. Verificación de Estado
@@ -45,6 +57,57 @@ Para consultar los registros de eventos (logs):
 ```bash
 docker compose logs -f
 ```
+
+---
+
+## 🧹 Limpieza de Huérfanos y Depuración Automática
+
+El sistema incluye un script autónomo de depuración para eliminar archivos físicos huérfanos y aplicar retención de documentos. Protege estrictamente certificados (`.p12`), rúbricas escaneadas (`signatures/`), logos y archivos en período de gracia (24 horas por defecto).
+
+* **Simulación / Prueba protegida (DRY-RUN, no borra nada):**
+  ```bash
+  docker exec -it OpenSignServer-container node scripts/auto-purge.js
+  ```
+
+* **Ejecución real de borrado físico:**
+  ```bash
+  docker exec -it OpenSignServer-container node scripts/auto-purge.js --execute
+  ```
+
+* **Depurar documentos antiguos y huérfanos con retención personalizada (ej. 30 días y 12h de gracia):**
+  ```bash
+  docker exec -it OpenSignServer-container node scripts/auto-purge.js --execute --days=30 --grace-hours=12
+  ```
+
+---
+
+## 💾 Respaldos y Restauración
+
+Los respaldos incluyen la base de datos MongoDB completa (`mongodump --archive`), los documentos físicos almacenados (`opensign-files`), los certificados digitales (`.p12`), las firmas escaneadas (`signatures/`) y las raíces de confianza (`trust-roots.pem`). Además, restringen automáticamente los permisos de lectura/escritura a nivel del sistema operativo.
+
+### Realizar un Respaldo:
+* **Windows (PowerShell):**
+  ```powershell
+  # Respaldo estándar con permisos NTFS restringidos:
+  .\scripts\backup.ps1
+
+  # Respaldo cifrado con contraseña (requiere 7-Zip en PATH):
+  .\scripts\backup.ps1 -Password "MiClaveSegura123"
+  ```
+* **Linux (Bash):**
+  ```bash
+  ./scripts/backup.sh ./backups 7 "MiClaveSegura123"
+  ```
+
+### Restaurar un Respaldo:
+* **Windows (PowerShell):**
+  ```powershell
+  .\scripts\restore.ps1 -BackupZip ".\backups\backup_20261102_120000.zip"
+  ```
+* **Linux (Bash):**
+  ```bash
+  ./scripts/restore.sh ./backups/backup_20261102_120000.tar.gz "MiClaveSegura123"
+  ```
 
 ---
 

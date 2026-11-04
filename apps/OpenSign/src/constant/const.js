@@ -16,3 +16,11 @@ export const maxTitleLength = 250; // 250 characters
 export const maxNoteLength = 200; // 200 characters
 export const maxDescriptionLength = 500; // 500 characters
 export const maxFileSize = 80; // for cloud 10MB / 80MB for self-hosted
+
+export const HIERARCHY_LEVELS = [
+  { value: "Presidencia", label: "1. Presidencia (Presidente / Secretaria)" },
+  { value: "Dirección", label: "2. Dirección (Directores)" },
+  { value: "Gerencia", label: "3. Gerencia (Gerentes)" },
+  { value: "Jefatura de Grupo", label: "4. Jefatura de Grupo (Jefes de Grupo)" },
+  { value: "Especialista / Base", label: "5. Especialista / Base (Especialistas, etc.)" },
+];

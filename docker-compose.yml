@@ -19,7 +19,7 @@ services:
       - SERVER_URL=${HOST_URL:-https://172.20.19.12:3001}/api/app
       - PUBLIC_URL=${HOST_URL:-https://172.20.19.12:3001}
       - CORPORATE_SIGNER_URL=http://corporate-signer:8090
-      - CORPORATE_SIGNER_TOKEN=${CORPORATE_SIGNER_TOKEN:-corporate_signing_token_secret_123}
+      - CORPORATE_SIGNER_TOKEN=${CORPORATE_SIGNER_TOKEN}
     networks:
       - app-network
 
@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile
     container_name: OpenSignCorporateSigner-container
     environment:
-      - CORPORATE_SIGNER_TOKEN=${CORPORATE_SIGNER_TOKEN:-corporate_signing_token_secret_123}
+      - CORPORATE_SIGNER_TOKEN=${CORPORATE_SIGNER_TOKEN}
       - CORPORATE_TRUST_ROOTS=/trust/institution-roots.pem
       - CORPORATE_SIGNER_SESSION_TTL=900
       - CORPORATE_REVOCATION_MODE=${CORPORATE_REVOCATION_MODE:-soft-fail}

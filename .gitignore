@@ -56,8 +56,9 @@ apps/OpenSignServer/files/files/*
 # OS and Editor files
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
+# Backups
+backups/
+*.archive
 
 # Local Dev Certs
 cert/

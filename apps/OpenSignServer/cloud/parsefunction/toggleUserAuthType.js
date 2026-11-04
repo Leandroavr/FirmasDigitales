@@ -68,6 +68,7 @@ export default async function toggleUserAuthType(request) {
   );
 
   return {
+    status: 'success',
     success: true,
     objectId: targetExtUser.id,
     isLdap: newIsLdap,

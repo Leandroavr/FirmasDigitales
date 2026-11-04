@@ -88,7 +88,8 @@ async function updateDoc(
   sign,
   documentHash,
   activity,
-  corporateSigning = false
+  corporateSigning = false,
+  extraParams = {}
 ) {
   try {
     const UserPtr = { __type: 'Pointer', className: className, objectId: userId };
@@ -100,6 +101,10 @@ async function updateDoc(
       ipAddress: ipAddress,
       SignedOn: new Date(),
       Signature: sign,
+      ...(extraParams.hasTsa !== undefined && {
+        HasTsa: Boolean(extraParams.hasTsa),
+        TimestampType: extraParams.hasTsa ? 'RFC 3161 TSA' : 'Server Time',
+      }),
     };
     let updateAuditTrail;
     if (data.AuditTrail && data.AuditTrail.length > 0) {
@@ -869,6 +874,24 @@ async function getCorporateSigningContext(req) {
       'Signer is not assigned to this document.'
     );
   }
+
+  // Validación estricta de identidad: la sesión activa debe coincidir con el firmante
+  if (!req?.user && !req?.master) {
+    throw new Parse.Error(
+      Parse.Error.INVALID_SESSION_TOKEN,
+      'Se requiere sesión de usuario activa para firmar con certificado digital.'
+    );
+  }
+  if (!req?.master) {
+    const userEmail = (req.user.get('email') || '').toLowerCase().trim();
+    const signerEmail = (signer.Email || signer.email || '').toLowerCase().trim();
+    if (!userEmail || !signerEmail || userEmail !== signerEmail) {
+      throw new Parse.Error(
+        Parse.Error.OPERATION_FORBIDDEN,
+        'No tiene autorización para firmar este documento. La sesión activa no coincide con el correo del firmante.'
+      );
+    }
+  }
   const className = contactSigner ? 'contracts_Contactbook' : 'contracts_Users';
   if (isSelfSign) {
     if (
@@ -1201,6 +1224,8 @@ export async function signCorporatePdfDirect(req) {
     if (!uploaded?.imageUrl) {
       throw new Error('No se pudo subir el PDF firmado corporativamente.');
     }
+    const hasTsa = Boolean(response.data?.has_tsa);
+    const tsaType = response.data?.tsa_type || (hasTsa ? 'RFC 3161' : 'ServerTimestamp');
     const updated = await updateDoc(
       docId,
       uploaded.imageUrl,
@@ -1211,7 +1236,8 @@ export async function signCorporatePdfDirect(req) {
       '',
       COMPLETION_ACTIVITIES.length ? generateDocumentHash(signedPdf) : undefined,
       'Signed',
-      true
+      true,
+      { hasTsa, tsaType }
     );
     if (!updated || updated === 'err' || updated.message !== 'success') {
       throw new Error('No se pudo actualizar el documento tras la firma.');
@@ -1276,7 +1302,15 @@ export async function signCorporatePdfDirect(req) {
         }
       }
     }
-    return { status: 'success', data: uploaded.imageUrl };
+    return {
+      status: 'success',
+      data: uploaded.imageUrl,
+      hasTsa: hasTsa,
+      tsaType: tsaType,
+      message: hasTsa
+        ? 'Documento firmado exitosamente con sello de tiempo RFC 3161.'
+        : 'Documento firmado exitosamente con marca de tiempo del servidor.',
+    };
   } catch (error) {
     if (error.response?.data?.detail) {
       throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, error.response.data.detail);

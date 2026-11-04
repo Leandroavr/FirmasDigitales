@@ -18,7 +18,7 @@ function SignerListPlace(props) {
     <div>
       <div className="mx-2 pr-2 pt-2 pb-1 text-[15px] text-base-content font-semibold border-b-[1px] border-base-300 flex items-center justify-between">
         <span className="flex items-center">
-          {props.title ? props.title : "Recipients"}
+          {props.title ? props.title : t("recipients")}
           <button
             type="button"
             onClick={() => setShowHelp(!showHelp)}

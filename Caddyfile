@@ -1,10 +1,58 @@
+# ==============================================================================
+# Caddyfile - Configuración de Proxy Inverso y TLS para OpenSign Brascuba
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. ENTORNO DE PRODUCCIÓN (brascuba.cu en puertos estándar 80 / 443)
+# ------------------------------------------------------------------------------
+# Descomentar este bloque o apuntar Caddy a este bloque en el servidor de producción.
+#
+# Para certificados SSL propios de la empresa:
+#   tls /etc/caddy/certs/brascuba.crt /etc/caddy/certs/brascuba.key
+# Para CA interna de Caddy (red corporativa sin salida a Let's Encrypt):
+#   tls internal
+# ------------------------------------------------------------------------------
+# brascuba.cu, www.brascuba.cu {
+#     tls internal
+#
+#     # Proxy seguro para la API de Parse Server
+#     handle_path /api/* {
+#         reverse_proxy server:8080 {
+#             header_up X-Real-IP {remote_host}
+#             header_up X-Forwarded-For {remote_host}
+#             header_up Host {host}
+#         }
+#     }
+#
+#     # Proxy para el frontend web React
+#     reverse_proxy client:3000 {
+#         header_up X-Real-IP {remote_host}
+#         header_up X-Forwarded-For {remote_host}
+#         header_up Host {host}
+#     }
+# }
+
+# ------------------------------------------------------------------------------
+# 2. ENTORNO LOCAL / DESARROLLO (Puerto 3001 con TLS interno)
+# ------------------------------------------------------------------------------
 :3001 {
     tls internal {
         on_demand
     }
-    reverse_proxy client:3000
+
+    # API Parse Server (Backend) con protección anti-spoofing de IP
     handle_path /api/* {
-        reverse_proxy server:8080
-            rewrite * {uri}
+        reverse_proxy server:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up Host {host}
+        }
+    }
+
+    # Frontend React con protección anti-spoofing de IP
+    reverse_proxy client:3000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up Host {host}
     }
 }

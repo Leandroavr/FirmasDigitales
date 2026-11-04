@@ -1065,6 +1065,13 @@ function PdfRequestFiles(
                     setCorporateSigningLocation("");
                     dispatch(setIsShowModal({}));
                     dispatch(setLastIndex(""));
+                    setIsAlert({
+                      isShow: true,
+                      title: "Firma Digital Brascuba",
+                      alertMessage: resSign?.message || (resSign?.hasTsa
+                        ? "Documento firmado exitosamente con sello de tiempo RFC 3161."
+                        : "Documento firmado exitosamente con marca de tiempo del servidor.")
+                    });
                   }
                   dispatch(setTypedSignFont("Fasthand"));
                   setPdfUrl(resSign.data);

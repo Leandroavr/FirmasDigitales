@@ -206,6 +206,7 @@
     "Company": "Compañía",
     "JobTitle": "Cargo",
     "Department": "Departamento",
+    "HierarchyLevel": "Nivel",
     "AuthType": "Método de Acceso",
     "Time to complete (Days)": "Días para expirar",
     "Auto reminder": "Recordatorio automático",
@@ -440,6 +441,7 @@
   },
   "fields": "Campos",
   "recipients": "Destinatarios",
+  "prefill-by-owner": "Prellenado por el propietario",
   "please-add": "Por favor, agrega un",
   "signed-by": "Firmado por",
   "more": "más",
@@ -1642,5 +1644,12 @@
   "Bcc": "Copia oculta (Bcc)",
   "select-contact-placeholder": "Buscar o seleccionar contacto...",
   "user-folder": "Carpeta de usuario",
-  "select-user-folder-first": "Por favor, seleccione primero la carpeta de un usuario para crear carpetas."
+  "select-user-folder-first": "Por favor, seleccione primero la carpeta de un usuario para crear carpetas.",
+  "view-organigrama": "Ver organigrama",
+  "organigrama-title": "Organigrama de Firmantes",
+  "search-organigrama": "Buscar por nombre, cargo, departamento o correo...",
+  "expand-all": "Expandir",
+  "collapse-all": "Colapsar",
+  "selected-signers-count": "firmante(s) seleccionado(s)",
+  "ready": "Listo"
 }

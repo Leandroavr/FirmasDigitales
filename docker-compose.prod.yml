@@ -1,0 +1,126 @@
+# ==============================================================================
+# OpenSign Brascuba - Configuración de Producción (docker-compose.prod.yml)
+# ==============================================================================
+# En este entorno SOLO Caddy publica puertos hacia el host exterior (80, 443, 3001).
+# Parse Server, MongoDB, CorporateSigner y Frontend quedan exclusivamente en la red interna.
+# Despliegue:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# ==============================================================================
+
+services:
+  server:
+    image: opensign/opensignserver:main
+    container_name: OpenSignServer-container
+    restart: always
+    volumes:
+      - opensign-files:/usr/src/app/files
+      - ./apps/OpenSignServer/cloud:/usr/src/app/cloud
+      - ./apps/OpenSignServer/scripts:/usr/src/app/scripts
+      - ./apps/OpenSignServer/index.js:/usr/src/app/index.js
+      - ./apps/OpenSignServer/Utils.js:/usr/src/app/Utils.js
+    expose:
+      - "8080"
+    ports: !override []
+    depends_on:
+      - mongo
+      - corporate-signer
+    env_file: .env.prod
+    environment:
+      - NODE_ENV=production
+      - SERVER_URL=${HOST_URL:-https://brascuba.cu:3001}/api/app
+      - PUBLIC_URL=${HOST_URL:-https://brascuba.cu:3001}
+      - CORPORATE_SIGNER_URL=http://corporate-signer:8090
+      - CORPORATE_SIGNER_TOKEN=${CORPORATE_SIGNER_TOKEN}
+      - PURGE_KEEP_TOMBSTONE=${PURGE_KEEP_TOMBSTONE:-true}
+      - AUTO_PURGE_DAYS=${AUTO_PURGE_DAYS:-0}
+    networks:
+      - app-network
+
+  corporate-signer:
+    build:
+      context: ./apps/CorporateSigner
+      dockerfile: Dockerfile
+    container_name: OpenSignCorporateSigner-container
+    restart: always
+    expose:
+      - "8090"
+    ports: !override []
+    environment:
+      - CORPORATE_SIGNER_TOKEN=${CORPORATE_SIGNER_TOKEN}
+      - CORPORATE_TRUST_ROOTS=/trust/institution-roots.pem
+      - CORPORATE_SIGNER_SESSION_TTL=900
+      - CORPORATE_REVOCATION_MODE=${CORPORATE_REVOCATION_MODE:-soft-fail}
+      - CORPORATE_ALLOW_FETCHING=${CORPORATE_ALLOW_FETCHING:-false}
+      - CORPORATE_SIGNING_TIME_TOLERANCE_SECONDS=${CORPORATE_SIGNING_TIME_TOLERANCE_SECONDS:-86400}
+      - CORPORATE_TSA_URL=${CORPORATE_TSA_URL:-https://rfc3161.ai.moda}
+      - CORPORATE_CERTIFICATES_DIR=/app/certificates
+    volumes:
+      - ./trust-roots.pem:/trust/institution-roots.pem:ro
+      - ./apps/CorporateSigner/service.py:/app/service.py:ro
+      - ./apps/CorporateSigner/brascuba_logo.jpg:/app/brascuba_logo.jpg:ro
+      - ./apps/CorporateSigner/signatures:/app/signatures:ro
+      - ./apps/CorporateSigner/certificates:/app/certificates:ro
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo-container
+    restart: always
+    expose:
+      - "27017"
+    ports: !override []
+    volumes:
+      - data-volume:/data/db
+    networks:
+      - app-network
+
+  client:
+    image: opensign/opensign:main
+    container_name: OpenSign-container
+    restart: always
+    depends_on:
+      - server
+    volumes:
+      - ./apps/OpenSign/build:/usr/src/app/build
+      - ./apps/OpenSign/dist:/usr/src/app/dist
+      - ./apps/OpenSign/src:/usr/src/app/src
+      - ./apps/OpenSign/public:/usr/src/app/public
+    env_file: .env.prod
+    environment:
+      - REACT_APP_SERVERURL=${HOST_URL:-https://brascuba.cu:3001}/api/app
+      - PUBLIC_URL=${HOST_URL:-https://brascuba.cu:3001}
+    expose:
+      - "3000"
+    ports: !override []
+    networks:
+      - app-network
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy-container
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+      - "3001:3001"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app-network
+    environment:
+      - HOST_URL=${HOST_URL:-brascuba.cu:3001}
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  data-volume:
+  web-root:
+  caddy_data:
+  caddy_config:
+  opensign-files:

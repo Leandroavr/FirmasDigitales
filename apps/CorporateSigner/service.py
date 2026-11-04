@@ -7,6 +7,7 @@ import asyncio
 import base64
 import hmac
 import os
+import re
 import secrets
 import time
 from dataclasses import dataclass
@@ -57,6 +58,26 @@ def check_has_previous_signatures(pdf_bytes: bytes) -> bool:
     except Exception:
         return False
 
+SAFE_IDENTIFIER_PATTERN = re.compile(r"^[a-zA-Z0-9.@_\-\s\u00C0-\u017F]+$")
+
+def sanitize_identifier(value: str | None) -> str:
+    if not value:
+        return ""
+    val_str = str(value)
+    if "\0" in val_str or ".." in val_str or "/" in val_str or "\\" in val_str:
+        raise HTTPException(
+            status_code=400,
+            detail="Identificador no válido: contiene secuencias o caracteres de ruta prohibidos ('..', '/', '\\' o nulos).",
+        )
+    s = val_str.strip()
+    if not SAFE_IDENTIFIER_PATTERN.match(s):
+        raise HTTPException(
+            status_code=400,
+            detail="Identificador no válido: solo se permiten letras, números, '.', '@', '-', '_' y espacios.",
+        )
+    return s
+
+
 def normalize_name(s: str) -> str:
     s = unicodedata.normalize("NFKD", s)
     s = "".join(c for c in s if not unicodedata.combining(c))
@@ -75,6 +96,9 @@ def resolve_user_p12(signer_name: str, email: str) -> bytes | None:
     if not files:
         return None
 
+    clean_signer = sanitize_identifier(signer_name)
+    clean_email = sanitize_identifier(email).strip().lower()
+
     file_map: dict[str, Path] = {}
     for f in files:
         if f.suffix.lower() in (".p12", ".pfx"):
@@ -83,7 +107,6 @@ def resolve_user_p12(signer_name: str, email: str) -> bytes | None:
             file_map[f.stem.lower()] = f
 
     candidates: list[str] = []
-    clean_email = email.strip().lower() if email else ""
     if clean_email:
         candidates.append(clean_email)
         user_part = clean_email.split("@")[0]
@@ -92,9 +115,9 @@ def resolve_user_p12(signer_name: str, email: str) -> bytes | None:
         candidates.append(user_part.replace(".", "-"))
         candidates.append(user_part.replace(".", " "))
 
-    if signer_name:
-        candidates.append(signer_name.strip())
-        norm_name = normalize_name(signer_name)
+    if clean_signer:
+        candidates.append(clean_signer)
+        norm_name = normalize_name(clean_signer)
         candidates.append(norm_name)
         candidates.append(norm_name.replace(" ", "_"))
         candidates.append(norm_name.replace(" ", "-"))
@@ -123,61 +146,60 @@ def resolve_user_p12(signer_name: str, email: str) -> bytes | None:
 
 
 def resolve_user_image(signer_name: str, email: str) -> str:
-    if not os.path.isdir(SIGNATURES_DIR):
-        return LOGO_PATH
+    clean_signer = sanitize_identifier(signer_name)
+    clean_email = sanitize_identifier(email).strip().lower()
 
-    try:
-        files = [f for f in Path(SIGNATURES_DIR).iterdir() if f.is_file()]
-    except Exception:
-        return LOGO_PATH
+    if os.path.isdir(SIGNATURES_DIR):
+        try:
+            files = [f for f in Path(SIGNATURES_DIR).iterdir() if f.is_file()]
+        except Exception:
+            files = []
 
-    if not files:
-        return LOGO_PATH
+        if files:
+            file_map: dict[str, str] = {}
+            for f in files:
+                if f.suffix.lower() in (".png", ".jpg", ".jpeg"):
+                    norm_stem = normalize_name(f.stem)
+                    file_map[norm_stem] = str(f)
+                    file_map[f.stem.lower()] = str(f)
 
-    file_map: dict[str, str] = {}
-    for f in files:
-        if f.suffix.lower() in (".png", ".jpg", ".jpeg"):
-            norm_stem = normalize_name(f.stem)
-            file_map[norm_stem] = str(f)
-            file_map[f.stem.lower()] = str(f)
+            candidates: list[str] = []
+            if clean_email:
+                candidates.append(clean_email)
+                user_part = clean_email.split("@")[0]
+                candidates.append(user_part)
+                candidates.append(user_part.replace(".", "_"))
+                candidates.append(user_part.replace(".", "-"))
+                candidates.append(user_part.replace(".", " "))
 
-    candidates: list[str] = []
-    clean_email = email.strip().lower() if email else ""
-    if clean_email:
-        candidates.append(clean_email)
-        user_part = clean_email.split("@")[0]
-        candidates.append(user_part)
-        candidates.append(user_part.replace(".", "_"))
-        candidates.append(user_part.replace(".", "-"))
-        candidates.append(user_part.replace(".", " "))
+            if clean_signer:
+                candidates.append(clean_signer)
+                norm_name = normalize_name(clean_signer)
+                candidates.append(norm_name)
+                candidates.append(norm_name.replace(" ", "_"))
+                candidates.append(norm_name.replace(" ", "-"))
+                candidates.append(norm_name.replace(" ", "."))
+                tokens = norm_name.split()
+                if len(tokens) >= 2:
+                    candidates.append(f"{tokens[0]}_{tokens[1]}")
+                    candidates.append(f"{tokens[0]}.{tokens[1]}")
+                    candidates.append(f"{tokens[0]}_{tokens[-1]}")
+                    candidates.append(f"{tokens[0]}.{tokens[-1]}")
 
-    if signer_name:
-        candidates.append(signer_name.strip())
-        norm_name = normalize_name(signer_name)
-        candidates.append(norm_name)
-        candidates.append(norm_name.replace(" ", "_"))
-        candidates.append(norm_name.replace(" ", "-"))
-        candidates.append(norm_name.replace(" ", "."))
-        tokens = norm_name.split()
-        if len(tokens) >= 2:
-            candidates.append(f"{tokens[0]}_{tokens[1]}")
-            candidates.append(f"{tokens[0]}.{tokens[1]}")
-            candidates.append(f"{tokens[0]}_{tokens[-1]}")
-            candidates.append(f"{tokens[0]}.{tokens[-1]}")
+            for c in candidates:
+                norm_c = normalize_name(c)
+                if norm_c in file_map:
+                    return file_map[norm_c]
+                if c.lower() in file_map:
+                    return file_map[c.lower()]
 
-    for c in candidates:
-        norm_c = normalize_name(c)
-        if norm_c in file_map:
-            return file_map[norm_c]
-        if c.lower() in file_map:
-            return file_map[c.lower()]
-
+    # Fallback: si el usuario no tiene rúbrica escaneada en signatures/, se utiliza el logo corporativo general
     return LOGO_PATH
 
 
 @dataclass(frozen=True)
 class CorporateLogoTextStampStyle(TextStampStyle):
-    logo_path: str = LOGO_PATH
+    image_path: str = LOGO_PATH
     innsep: int = 8
     cuba_time_str: str | None = None
 
@@ -193,53 +215,54 @@ class CorporateLogoTextStampStyle(TextStampStyle):
 class CorporateLogoTextStamp(TextStamp):
     def __init__(self, writer, style: CorporateLogoTextStampStyle, text_params=None, box=None):
         super().__init__(writer, style, text_params=text_params, box=box)
-        self.logo_path = style.logo_path
+        self.image_path = style.image_path
 
     def _inner_layout_natural_size(self):
         text_commands, (text_width, text_height) = super()._inner_layout_natural_size()
 
-        if not os.path.exists(self.logo_path):
+        if not self.image_path or not os.path.exists(self.image_path):
             return text_commands, (text_width, text_height)
 
         try:
-            img = Image.open(self.logo_path)
-            img_aspect = img.width / img.height
+            img = Image.open(self.image_path)
+            aspect = img.width / img.height
+            img_h = text_height
+            img_w = round(img_h * aspect)
 
-            logo_height = text_height
-            logo_width = round(logo_height * img_aspect)
-
-            pdf_image = PdfImage(
+            pdf_img = PdfImage(
                 img,
                 writer=self.writer,
-                box=layout.BoxConstraints(logo_width, logo_height),
+                box=layout.BoxConstraints(img_w, img_h),
             )
-            img_command = pdf_image.render()
-            self.import_resources(pdf_image.resources)
+            img_cmd = pdf_img.render()
+            self.import_resources(pdf_img.resources)
 
             innsep = self.style.innsep
-            total_width = logo_width + innsep + text_width
+            total_width = img_w + innsep + text_width
             total_height = text_height
 
             inner_box = layout.BoxConstraints(total_width, total_height)
 
-            logo_layout_rule = layout.SimpleBoxLayoutRule(
+            # 1. Imagen (Rúbrica del usuario o Logo Brascuba de fallback) a la izquierda
+            img_layout = layout.SimpleBoxLayoutRule(
                 x_align=layout.AxisAlignment.ALIGN_MIN,
                 y_align=layout.AxisAlignment.ALIGN_MID,
-                margins=layout.Margins(left=0, right=innsep, top=0, bottom=0),
+                margins=layout.Margins(left=0, right=0, top=0, bottom=0),
                 inner_content_scaling=layout.InnerScaling.NO_SCALING,
             )
-            logo_pos = logo_layout_rule.fit(inner_box, logo_width, logo_height)
+            img_pos = img_layout.fit(inner_box, img_w, text_height)
 
-            text_layout_rule = layout.SimpleBoxLayoutRule(
+            # 2. Texto legal a la derecha
+            text_layout = layout.SimpleBoxLayoutRule(
                 x_align=layout.AxisAlignment.ALIGN_MIN,
                 y_align=layout.AxisAlignment.ALIGN_MID,
-                margins=layout.Margins(left=logo_width + innsep, right=0, top=0, bottom=0),
+                margins=layout.Margins(left=img_w + innsep, right=0, top=0, bottom=0),
                 inner_content_scaling=layout.InnerScaling.NO_SCALING,
             )
-            text_pos = text_layout_rule.fit(inner_box, text_width, text_height)
+            text_pos = text_layout.fit(inner_box, text_width, text_height)
 
             commands = [
-                b"q", logo_pos.as_cm(), img_command, b"Q",
+                b"q", img_pos.as_cm(), img_cmd, b"Q",
                 b"q", text_pos.as_cm(), *text_commands, b"Q",
             ]
             return commands, (total_width, total_height)
@@ -267,7 +290,7 @@ def build_stamp_style(
     stamp_text = "\n".join(lines)
     has_extra = bool((reason and reason.strip()) or (location and location.strip()))
     return CorporateLogoTextStampStyle(
-        logo_path=image_path,
+        image_path=image_path,
         cuba_time_str=cuba_time_str,
         stamp_text=stamp_text,
         timestamp_format="%d/%m/%Y %H:%M:%S",
@@ -281,7 +304,7 @@ def build_stamp_style(
             x_align=layout.AxisAlignment.ALIGN_MID,
             y_align=layout.AxisAlignment.ALIGN_MID,
             margins=layout.Margins(left=4, right=4, top=3, bottom=3),
-            inner_content_scaling=layout.InnerScaling.STRETCH_TO_FIT,
+            inner_content_scaling=layout.InnerScaling.SHRINK_TO_FIT,
         ),
     )
 
@@ -517,6 +540,11 @@ async def prepare(
     timestamper = HTTPTimeStamper(tsa_url) if tsa_url else None
     _, trusted_time_str = await get_trusted_signing_time(timestamper)
     user_image = resolve_user_image(signer_name, display_email)
+    if not user_image:
+        raise HTTPException(
+            status_code=404,
+            detail="Su certificado digital o su imagen de firma no están configurados. Contacte al administrador.",
+        )
     has_prev_sigs = check_has_previous_signatures(pdf_bytes)
     appearance_params = {
         "signer": signer_name,
@@ -681,7 +709,7 @@ async def sign_direct(
         if not p12_bytes:
             raise HTTPException(
                 status_code=404,
-                detail=f"No se encontró el archivo de certificado digital (.p12/.pfx) para el usuario '{request.email}' en el servidor ({CERTIFICATES_DIR}).",
+                detail="Su certificado digital o su imagen de firma no están configurados. Contacte al administrador.",
             )
 
     try:
@@ -710,7 +738,7 @@ async def sign_direct(
     if signer is None:
         raise HTTPException(
             status_code=400,
-            detail=f"No se pudo abrir el archivo .p12 con la clave provista: {last_err}",
+            detail="Contraseña del certificado digital (.p12) incorrecta o archivo no válido.",
         )
 
     cert = signer.signing_cert
@@ -737,7 +765,7 @@ async def sign_direct(
 
     signature_field_name = f"CorporateSignature_{secrets.token_hex(12)}"
     tsa_url = TSA_URL.strip() if TSA_URL else ""
-    timestamper = HTTPTimeStamper(tsa_url) if tsa_url else None
+    timestamper = HTTPTimeStamper(tsa_url, timeout=5) if tsa_url else None
     _, trusted_time_str = await get_trusted_signing_time(timestamper)
     user_image = resolve_user_image(signer_name, display_email)
     has_prev_sigs = check_has_previous_signatures(pdf_bytes)
@@ -754,6 +782,7 @@ async def sign_direct(
     is_certify = bool(request.lock_document and not has_prev_sigs)
     lock_all_fields = bool(request.lock_document)
 
+    has_tsa = False
     try:
         pdf_signer = PdfSigner(
             PdfSignatureMetadata(
@@ -775,35 +804,16 @@ async def sign_direct(
                 field_mdp_spec=FieldMDPSpec(action=FieldMDPAction.ALL) if lock_all_fields else None,
                 doc_mdp_update_value=MDPPerm.NO_CHANGES if lock_all_fields else None,
             ),
-
-
         )
-
-
         output = await pdf_signer.async_sign_pdf(
-
-
             writer,
-
-
             appearance_text_params=appearance_params,
-
-
         )
-
-
+        has_tsa = bool(timestamper is not None)
     except Exception as tsa_err:
-
-
         if timestamper is not None:
-
-
             writer = IncrementalPdfFileWriter(BytesIO(pdf_bytes))
-
-
             writer.find_page_for_modification(request.page)
-
-
             pdf_signer = PdfSigner(
                 PdfSignatureMetadata(
                     field_name=signature_field_name,
@@ -817,47 +827,26 @@ async def sign_direct(
                 signer=signer,
                 timestamper=None,
                 stamp_style=build_stamp_style(user_image, cuba_time_str=trusted_time_str, reason=request.reason, location=request.location),
-
-
                 new_field_spec=SigFieldSpec(
-
-
                     sig_field_name=signature_field_name,
-
-
                     on_page=request.page,
-
-
                     box=(x1, y1, x2, y2),
-
-
                     field_mdp_spec=FieldMDPSpec(action=FieldMDPAction.ALL) if lock_all_fields else None,
                     doc_mdp_update_value=MDPPerm.NO_CHANGES if lock_all_fields else None,
-
-
                 ),
-
-
             )
-
-
             output = await pdf_signer.async_sign_pdf(
-
-
                 writer,
-
-
                 appearance_text_params=appearance_params,
-
-
             )
-
-
+            has_tsa = False
         else:
-
-
             raise tsa_err
 
     result = output.getvalue()
-    return {"pdf": base64.b64encode(result).decode("ascii")}
+    return {
+        "pdf": base64.b64encode(result).decode("ascii"),
+        "has_tsa": has_tsa,
+        "tsa_type": "RFC 3161" if has_tsa else "ServerTimestamp",
+    }
 

@@ -1,10 +1,18 @@
 export default async function addUser(request) {
-  const { phone, name, password, organization, team, tenantId, timezone, role, jobTitle, department, isLdap } = request.params;
+  const { phone, name, password, organization, team, tenantId, timezone, role, jobTitle, department, isLdap, hierarchyLevel, reportsTo } = request.params;
   const email = request.params?.email?.toLowerCase()?.replace(/\s/g, '');
   if (!request.user) {
     throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token.');
   }
   const currentUser = { __type: 'Pointer', className: '_User', objectId: request.user.id };
+  const trimmedJobTitle = typeof jobTitle === 'string' ? jobTitle.trim() : '';
+  const trimmedDepartment = typeof department === 'string' ? department.trim() : '';
+  if (!trimmedJobTitle) {
+    throw new Parse.Error(Parse.Error.INVALID_QUERY, 'El cargo (JobTitle) es obligatorio y no puede estar vacío.');
+  }
+  if (!trimmedDepartment) {
+    throw new Parse.Error(Parse.Error.INVALID_QUERY, 'El departamento (Department) es obligatorio y no puede estar vacío.');
+  }
   if (name && email && password && organization && team && role && tenantId) {
     try {
       // Verificar que quien crea usuarios sea exclusivamente el Administrador Principal (Superadmin)
@@ -68,11 +76,13 @@ export default async function addUser(request) {
       if (phone) {
         extUser.set('Phone', phone);
       }
-      if (jobTitle) {
-        extUser.set('JobTitle', jobTitle);
+      extUser.set('JobTitle', trimmedJobTitle);
+      extUser.set('Department', trimmedDepartment);
+      if (typeof hierarchyLevel === 'string' && hierarchyLevel.trim()) {
+        extUser.set('HierarchyLevel', hierarchyLevel.trim());
       }
-      if (department) {
-        extUser.set('Department', department);
+      if (typeof reportsTo === 'string' && reportsTo.trim()) {
+        extUser.set('ReportsTo', reportsTo.trim());
       }
       extUser.set('isLdap', isLdap === true);
       extUser.set('Email', email);

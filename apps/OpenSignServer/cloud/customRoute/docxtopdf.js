@@ -116,8 +116,13 @@ export default async function docxtopdf(req, res) {
   const parseAppKey = { 'X-Parse-Application-Id': serverAppId };
   const masterKey = process.env.MASTER_KEY;
 
+  const sessionToken = req.headers['x-parse-session-token'] || req.headers['sessiontoken'];
+  if (!sessionToken) {
+    return res.status(401).json({ error: 'No autorizado. Se requiere sesión activa.' });
+  }
+
   const masterHeader = { ...parseAppKey, 'X-Parse-Master-Key': masterKey };
-  const sessionHeader = { ...parseAppKey, 'X-Parse-Session-Token': req.headers['sessiontoken'] };
+  const sessionHeader = { ...parseAppKey, 'X-Parse-Session-Token': sessionToken };
 
   if (!req.file || !req.file.buffer) {
     return res.status(400).json({ error: 'No file uploaded.' });
@@ -126,6 +131,9 @@ export default async function docxtopdf(req, res) {
   try {
     // ---- Auth: current user ----
     const userRes = await axios.get(`${serverUrl}/users/me`, { headers: sessionHeader });
+    if (!userRes?.data?.objectId) {
+      return res.status(401).json({ error: 'Sesión no válida o expirada.' });
+    }
     const uploadedSizeBytes = req.file.size ?? req.file.buffer.length;
 
     // ---- contracts_Users ----

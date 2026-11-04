@@ -575,6 +575,15 @@ export default function reportJson(id) {
 
 export const usersActions = [
   {
+    btnId: "1911",
+    hoverLabel: "Edit",
+    btnColor: "op-btn-primary",
+    btnIcon: "fa-light fa-pen-to-square",
+    redirectUrl: "",
+    action: "edit",
+    restrictAdmin: true
+  },
+  {
     btnId: "4741",
     hoverLabel: "Delete",
     btnColor: "op-btn-secondary",

@@ -149,7 +149,7 @@ function WidgetComponent(props) {
   };
   const handleSelectRecipient = () => {
     if (props?.roleName === "prefill") {
-      return "Prefill by owner";
+      return t("prefill-by-owner");
     } else if (
       props.signersdata[props.isSelectListId]?.Email ||
       props.signersdata[props.isSelectListId]?.Role

@@ -53,6 +53,9 @@ const DocumentsReport = (props) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [actLoader, setActLoader] = useState({});
   const [isDeleteModal, setIsDeleteModal] = useState({});
+  const [selectedDocIds, setSelectedDocIds] = useState([]);
+  const [isBatchPurgeModal, setIsBatchPurgeModal] = useState(false);
+  const [isBatchPurging, setIsBatchPurging] = useState(false);
   const [isRevoke, setIsRevoke] = useState({});
   const [isShare, setIsShare] = useState({});
   const [shareUrls, setShareUrls] = useState([]);
@@ -413,9 +416,47 @@ const DocumentsReport = (props) => {
       setActLoader({});
     }
   });
+  const checkCanPurge = (doc) => {
+    if (!checkIsOwner(doc)) return false;
+    const isCompleted = Boolean(doc?.IsCompleted);
+    const isDeclined = Boolean(doc?.IsDeclined);
+    const isDraft = Boolean(doc?.IsDraft || doc?.Stage === "draft" || doc?.IsSignyourself);
+    const isRevoked = Boolean(doc?.IsArchived || doc?.IsArchive || doc?.IsRevoked);
+    const isExpired = Boolean(doc?.IsExpired || (doc?.ExpiryDate?.iso && new Date(doc.ExpiryDate.iso) < new Date()));
+    return isCompleted || isDeclined || isDraft || isRevoked || isExpired;
+  };
+
+  const selectableDocs = (currentList || []).filter(checkCanPurge);
+
+
+  const handleBatchPurge = utils.withSessionValidation(async () => {
+    if (selectedDocIds.length === 0) return;
+    setIsBatchPurging(true);
+    try {
+      const res = await Parse.Cloud.run("batchpurgedocuments", {
+        docIds: selectedDocIds,
+      });
+      if (res && res.status === "success") {
+        showAlert("success", res.message || "Documentos depurados exitosamente.");
+        const updatedList = props.List.filter(
+          (x) => !selectedDocIds.includes(x.objectId)
+        );
+        props.setList(updatedList);
+        setSelectedDocIds([]);
+        setIsBatchPurgeModal(false);
+      }
+    } catch (err) {
+      console.error("batch purge error", err);
+      showAlert("danger", err?.message || t("something-went-wrong-mssg"));
+    } finally {
+      setIsBatchPurging(false);
+    }
+  });
+
   const handleClose = () => {
     setIsRevoke({});
     setIsDeleteModal({});
+    setIsBatchPurgeModal(false);
     setReason("");
   };
   const handleShare = (item) => {
@@ -1217,6 +1258,32 @@ const DocumentsReport = (props) => {
             />
           </div>
         )}
+        {/* Batch Purge Toolbar */}
+        {selectedDocIds.length > 0 && (
+          <div className="mx-3 my-2 p-2.5 bg-error/10 border border-error/30 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-error font-medium">
+              <i className="fa-light fa-circle-check"></i>
+              <span>{selectedDocIds.length} documento(s) seleccionado(s) para depurar</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedDocIds([])}
+                className="op-btn op-btn-ghost op-btn-sm text-xs"
+              >
+                Deseleccionar
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsBatchPurgeModal(true)}
+                className="op-btn op-btn-error op-btn-sm text-white flex items-center gap-1.5 shadow"
+              >
+                <i className="fa-light fa-trash-can-slash"></i>
+                <span>Depurar seleccionados</span>
+              </button>
+            </div>
+          </div>
+        )}
         <div
           className={`overflow-auto w-full border-b ${
             props.List?.length > 0
@@ -1231,6 +1298,28 @@ const DocumentsReport = (props) => {
           <table className="op-table border-collapse w-full mb-4">
             <thead className="text-[14px] text-center">
               <tr className="border-y-[1px]">
+                <th className="py-3 px-3 w-[45px] text-center">
+                  <input
+                    type="checkbox"
+                    className="op-checkbox op-checkbox-sm"
+                    title="Seleccionar todos los depurables de esta página"
+                    checked={
+                      selectableDocs.length > 0 &&
+                      selectableDocs.every((d) => selectedDocIds.includes(d.objectId))
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        const allIds = Array.from(
+                          new Set([...selectedDocIds, ...selectableDocs.map((d) => d.objectId)])
+                        );
+                        setSelectedDocIds(allIds);
+                      } else {
+                        const pageIds = new Set(selectableDocs.map((d) => d.objectId));
+                        setSelectedDocIds(selectedDocIds.filter((id) => !pageIds.has(id)));
+                      }
+                    }}
+                  />
+                </th>
                 {props.heading?.map((item, i) => (
                   <th key={i} className="py-3 px-3">
                     {props.columnLabels?.[item] ||
@@ -1256,6 +1345,22 @@ const DocumentsReport = (props) => {
                     } border-y-[1px] `}
                     key={index}
                   >
+                    <td className="py-3 px-3 w-[45px] text-center">
+                      {checkCanPurge(item) ? (
+                        <input
+                          type="checkbox"
+                          className="op-checkbox op-checkbox-sm"
+                          checked={selectedDocIds.includes(item.objectId)}
+                          onChange={() => {
+                            setSelectedDocIds((prev) =>
+                              prev.includes(item.objectId)
+                                ? prev.filter((id) => id !== item.objectId)
+                                : [...prev, item.objectId]
+                            );
+                          }}
+                        />
+                      ) : null}
+                    </td>
                     {props?.heading?.map((col) => (
                       <RenderReportCell
                         key={col}
@@ -1552,30 +1657,82 @@ const DocumentsReport = (props) => {
                       {isDeleteModal[item.objectId] && (
                         <ModalUi
                           isOpen
-                          title={checkIsOwner(item) ? t("delete-document") : "Ocultar documento"}
+                          title={
+                            checkIsOwner(item)
+                              ? "Depuración Definitiva del Documento"
+                              : "Ocultar documento"
+                          }
                           handleClose={handleClose}
                         >
                           <div className="m-[20px]">
-                            <div className="text-lg font-normal text-base-content">
-                              {checkIsOwner(item)
-                                ? t("delete-document-alert")
-                                : "¿Deseas ocultar este documento de tu lista? No se eliminará del servidor ni afectará al propietario ni a los demás participantes."}
-                            </div>
-                            <hr className="bg-[#ccc] mt-4" />
-                            <div className="flex items-center mt-3 gap-2 text-white">
-                              <button
-                                onClick={() => handleDelete(item)}
-                                className="op-btn op-btn-primary"
-                              >
-                                {t("yes")}
-                              </button>
-                              <button
-                                onClick={handleClose}
-                                className="op-btn op-btn-secondary"
-                              >
-                                {t("no")}
-                              </button>
-                            </div>
+                            {checkIsOwner(item) ? (
+                              !checkCanPurge(item) ? (
+                                <div className="space-y-3">
+                                  <div className="p-3 bg-warning/15 border border-warning/30 rounded-lg text-warning-content text-sm flex items-start gap-2">
+                                    <i className="fa-light fa-triangle-exclamation text-lg mt-0.5 text-warning"></i>
+                                    <div>
+                                      <p className="font-semibold">No se puede depurar este documento.</p>
+                                      <p className="mt-1">
+                                        El documento se encuentra <strong>En Proceso</strong>. Para poder depurarlo y eliminar sus archivos físicos, debe cancelarlo o revocarlo primero.
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-end mt-4">
+                                    <button onClick={handleClose} className="op-btn op-btn-secondary">
+                                      Entendido
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="text-base font-normal text-base-content">
+                                    ¿Estás seguro de que deseas depurar permanentemente el documento{" "}
+                                    <strong>"{item?.Name || "sin título"}"</strong>?
+                                  </div>
+                                  <div className="p-3 bg-error/10 border border-error/25 rounded-lg text-error text-xs md:text-sm">
+                                    <i className="fa-light fa-triangle-exclamation mr-1.5 font-bold"></i>
+                                    <strong>Acción IRREVERSIBLE:</strong> Los archivos físicos (PDF original, PDF firmado y certificados) se eliminarán definitivamente del almacenamiento del servidor.
+                                  </div>
+                                  {item?.IsCompleted && (item?.Signers?.length > 1 || item?.Placeholders?.length > 1) && (
+                                    <div className="p-3 bg-warning/10 border border-warning/25 rounded-lg text-warning-content text-xs md:text-sm">
+                                      <i className="fa-light fa-users-slash mr-1.5 font-bold text-warning"></i>
+                                      <strong>Aviso a participantes:</strong> Este documento fue completado con otros firmantes. Al depurarlo, ellos ya no podrán descargar el archivo en la plataforma. Asegúrese de que ya dispongan de su copia firmada.
+                                    </div>
+                                  )}
+                                  <hr className="bg-[#ccc] mt-4" />
+                                  <div className="flex items-center justify-end mt-3 gap-2">
+                                    <button
+                                      onClick={handleClose}
+                                      className="op-btn op-btn-secondary"
+                                    >
+                                      Cancelar
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(item)}
+                                      className="op-btn op-btn-error text-white flex items-center gap-1.5"
+                                    >
+                                      <i className="fa-light fa-trash-can-slash"></i>
+                                      <span>Sí, depurar definitivamente</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              )
+                            ) : (
+                              <div>
+                                <div className="text-lg font-normal text-base-content">
+                                  ¿Deseas ocultar este documento de tu lista? No se eliminará del servidor ni afectará al propietario ni a los demás participantes.
+                                </div>
+                                <hr className="bg-[#ccc] mt-4" />
+                                <div className="flex items-center justify-end mt-3 gap-2">
+                                  <button onClick={handleClose} className="op-btn op-btn-secondary">
+                                    {t("no")}
+                                  </button>
+                                  <button onClick={() => handleDelete(item)} className="op-btn op-btn-primary text-white">
+                                    {t("yes")}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </ModalUi>
                       )}
@@ -2072,6 +2229,54 @@ const DocumentsReport = (props) => {
         >
           <div className="p-[20px]">{objInfoModal.info || "-"}</div>
         </ModalUi>
+        {isBatchPurgeModal && (
+          <ModalUi
+            isOpen
+            title="Depuración Definitiva por Lote"
+            handleClose={() => !isBatchPurging && setIsBatchPurgeModal(false)}
+          >
+            <div className="m-[20px] space-y-3">
+              <div className="text-base font-normal text-base-content">
+                ¿Estás seguro de que deseas depurar permanentemente los{" "}
+                <strong>{selectedDocIds.length}</strong> documentos seleccionados?
+              </div>
+              <div className="p-3 bg-error/10 border border-error/25 rounded-lg text-error text-xs md:text-sm">
+                <i className="fa-light fa-triangle-exclamation mr-1.5 font-bold"></i>
+                <strong>Acción IRREVERSIBLE:</strong> Se eliminarán físicamente del servidor todos los archivos PDF originales, PDFs firmados y certificados de auditoría asociados a estos documentos.
+              </div>
+              <div className="p-3 bg-warning/10 border border-warning/25 rounded-lg text-warning-content text-xs md:text-sm">
+                <i className="fa-light fa-users-slash mr-1.5 font-bold text-warning"></i>
+                <strong>Aviso a participantes:</strong> Los demás firmantes de estos documentos ya no podrán descargarlos de la plataforma. Asegúrese de que ya dispongan de su copia firmada.
+              </div>
+              <hr className="bg-[#ccc] mt-4" />
+              <div className="flex items-center justify-end mt-3 gap-2">
+                <button
+                  type="button"
+                  disabled={isBatchPurging}
+                  onClick={() => setIsBatchPurgeModal(false)}
+                  className="op-btn op-btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isBatchPurging}
+                  onClick={handleBatchPurge}
+                  className="op-btn op-btn-error text-white flex items-center gap-1.5"
+                >
+                  {isBatchPurging ? (
+                    <span>Depurando...</span>
+                  ) : (
+                    <>
+                      <i className="fa-light fa-trash-can-slash"></i>
+                      <span>Sí, depurar {selectedDocIds.length} documentos</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </ModalUi>
+        )}
       </div>
     </div>
   );

@@ -69,9 +69,11 @@ import triggerEvent from './parsefunction/triggerEvent.js';
 import setWidgetPreferences from './parsefunction/setWidgetPreferences.js';
 import createDocumentFromApp from './parsefunction/createDocumentFromApp.js';
 import updateUserRole from './parsefunction/updateUserRole.js';
-import deleteDocumentPermanent from './parsefunction/deleteDocumentPermanent.js';
+import deleteDocumentPermanent, { batchPurgeDocuments, getStorageStats } from './parsefunction/deleteDocumentPermanent.js';
 import hideDocumentForUser from './parsefunction/hideDocumentForUser.js';
 import toggleUserAuthType from './parsefunction/toggleUserAuthType.js';
+import updateUserJobAndDepartment from './parsefunction/updateUserJobAndDepartment.js';
+import { userBeforeSave, contractsUsersBeforeSave } from './parsefunction/UserBeforeSave.js';
 
 // This afterSave function triggers after an object is added or updated in the specified class, allowing for post-processing logic.
 Parse.Cloud.afterSave('contracts_Document', DocumentAftersave);
@@ -82,6 +84,15 @@ Parse.Cloud.afterSave('contracts_Teams', TeamsAftersave);
 // This beforeSave function triggers before an object is added or updated in the specified class, allowing for validation or modification.
 Parse.Cloud.beforeSave('contracts_Document', DocumentBeforesave);
 Parse.Cloud.beforeSave('contracts_Template', TemplateBeforeSave);
+Parse.Cloud.beforeSave(Parse.User, userBeforeSave);
+Parse.Cloud.beforeSave('contracts_Users', contractsUsersBeforeSave);
+
+// Excluir automáticamente documentos depurados de todas las consultas que no usen Master Key
+Parse.Cloud.beforeFind('contracts_Document', async req => {
+  if (!req.master) {
+    req.query.notEqualTo('IsPurged', true);
+  }
+});
 
 // This afterFind function triggers after a query retrieves objects from the specified class, allowing for post-processing of the results.
 Parse.Cloud.afterFind(Parse.User, UserAfterFind);
@@ -151,5 +162,10 @@ Parse.Cloud.define('setwidgetpreferences', setWidgetPreferences);
 Parse.Cloud.define('createdocumentfromapp', createDocumentFromApp);
 Parse.Cloud.define('updateuserrole', updateUserRole);
 Parse.Cloud.define('deleteDocumentPermanent', deleteDocumentPermanent);
+Parse.Cloud.define('purgedocument', deleteDocumentPermanent);
+Parse.Cloud.define('batchpurgedocuments', batchPurgeDocuments);
+Parse.Cloud.define('getstoragestats', getStorageStats);
 Parse.Cloud.define('hideDocumentForUser', hideDocumentForUser);
 Parse.Cloud.define('toggleuserauthtype', toggleUserAuthType);
+Parse.Cloud.define('toggleUserAuthType', toggleUserAuthType);
+Parse.Cloud.define('updateUserJobAndDepartment', updateUserJobAndDepartment);

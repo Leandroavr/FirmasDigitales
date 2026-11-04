@@ -7,11 +7,27 @@ import {
 } from "../constant/Utils";
 import {
   emailRegex,
+  HIERARCHY_LEVELS
 } from "../constant/const";
 import {
   useTranslation
 } from "react-i18next";
 import { withSessionValidation } from "../utils";
+import SuperiorSearchSelect from "../primitives/SuperiorSearchSelect";
+
+function formatDisplayName(raw, email) {
+  if (!raw && email) raw = email.split("@")[0];
+  if (!raw || typeof raw !== "string") return "";
+  const trimmed = raw.trim();
+  if (trimmed.includes(".") && !trimmed.includes(" ")) {
+    return trimmed
+      .split(".")
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
+  }
+  return trimmed;
+}
 
 function generatePassword(length) {
   const characters =
@@ -31,6 +47,8 @@ const AddUser = (props) => {
     name: "",
     jobTitle: "",
     department: "",
+    hierarchyLevel: "Especialista / Base",
+    reportsTo: "",
     phone: "",
     email: "",
     team: "",
@@ -40,6 +58,7 @@ const AddUser = (props) => {
   });
   const [isFormLoader, setIsFormLoader] = useState(false);
   const [teamList, setTeamList] = useState([]);
+  const [superiorsList, setSuperiorsList] = useState([]);
   const roles = [
     { label: "Usuario", value: "User" },
     { label: "Administrador", value: "Admin" }
@@ -51,13 +70,29 @@ const AddUser = (props) => {
 
   const getTeamList = async () => {
     setFormdata((prev) => ({ ...prev, password: generatePassword(12) }));
+    try {
+      const localUser = JSON.parse(localStorage.getItem("Extand_Class"))?.[0];
+      const orgId = localUser?.OrganizationId?.objectId;
+      if (orgId) {
+        const usersRes = await Parse.Cloud.run("getuserlistbyorg", { organizationId: orgId });
+        if (usersRes && usersRes.length > 0) {
+          const filtered = usersRes.filter(
+            (u) => (u.Email || "").toLowerCase().trim() !== "admin@brascuba.cu"
+          );
+          setSuperiorsList(filtered);
+        }
+      }
+    } catch (e) {
+      console.log("Error loading superiors list:", e);
+    }
+
     const teamRes = await Parse.Cloud.run("getteams", { active: true });
     if (teamRes.length > 0) {
       const _teamRes = JSON.parse(JSON.stringify(teamRes));
       setTeamList(_teamRes);
-        const allUserId =
-          _teamRes.find((x) => x.Name === "All Users")?.objectId || "";
-        setFormdata((prev) => ({ ...prev, team: allUserId }));
+      const allUserId =
+        _teamRes.find((x) => x.Name === "All Users")?.objectId || "";
+      setFormdata((prev) => ({ ...prev, team: allUserId }));
     }
   };
   const checkUserExist = async () => {
@@ -78,6 +113,18 @@ const AddUser = (props) => {
   const handleSubmit = withSessionValidation(async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!formdata.name || !formdata.name.trim()) {
+      alert("El nombre es obligatorio.");
+      return;
+    }
+    if (!formdata.jobTitle || !formdata.jobTitle.trim()) {
+      alert("El cargo es obligatorio y no puede estar vacío.");
+      return;
+    }
+    if (!formdata.department || !formdata.department.trim()) {
+      alert("El departamento es obligatorio y no puede estar vacío.");
+      return;
+    }
     if (!emailRegex.test(formdata.email)) {
       alert(t("valid-email-alert"));
     } else {
@@ -95,6 +142,8 @@ const AddUser = (props) => {
               name: formdata.name,
               jobTitle: formdata.jobTitle,
               department: formdata.department,
+              hierarchyLevel: formdata.hierarchyLevel,
+              reportsTo: formdata.reportsTo,
               email: formdata.email,
               phone: formdata.phone,
               password: formdata.password,
@@ -127,6 +176,8 @@ const AddUser = (props) => {
               name: "",
               jobTitle: "",
               department: "",
+              hierarchyLevel: "Especialista / Base",
+              reportsTo: "",
               email: "",
               phone: "",
               team: "",
@@ -213,12 +264,18 @@ const AddUser = (props) => {
                           className="block text-xs font-semibold"
                         >
                           Cargo / Puesto
+                          <span className="text-[red] text-[13px]"> *</span>
                         </label>
                         <input
                           type="text"
                           name="jobTitle"
                           value={formdata.jobTitle}
                           onChange={(e) => handleChange(e)}
+                          required
+                          onInvalid={(e) =>
+                            e.target.setCustomValidity(t("input-required"))
+                          }
+                          onInput={(e) => e.target.setCustomValidity("")}
                           className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
                           placeholder="ej: Especialista de Sistemas"
                         />
@@ -229,14 +286,47 @@ const AddUser = (props) => {
                           className="block text-xs font-semibold"
                         >
                           Departamento
+                          <span className="text-[red] text-[13px]"> *</span>
                         </label>
                         <input
                           type="text"
                           name="department"
                           value={formdata.department}
                           onChange={(e) => handleChange(e)}
+                          required
+                          onInvalid={(e) =>
+                            e.target.setCustomValidity(t("input-required"))
+                          }
+                          onInput={(e) => e.target.setCustomValidity("")}
                           className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
                           placeholder="ej: Recursos Humanos, TI, etc."
+                        />
+                      </div>
+                      <div className="mb-3">
+                        <label className="block text-xs font-semibold">
+                          Nivel Jerárquico en la Empresa
+                          <span className="text-[red] text-[13px]"> *</span>
+                        </label>
+                        <select
+                          name="hierarchyLevel"
+                          value={formdata.hierarchyLevel}
+                          onChange={(e) => handleChange(e)}
+                          className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content w-full text-xs"
+                        >
+                          {HIERARCHY_LEVELS.map((lvl) => (
+                            <option key={lvl.value} value={lvl.value}>
+                              {lvl.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="mb-3">
+                        <SuperiorSearchSelect
+                          value={formdata.reportsTo}
+                          onChange={(val) => setFormdata((prev) => ({ ...prev, reportsTo: val }))}
+                          superiorsList={superiorsList}
+                          disabled={isFormLoader}
+                          hint="Ubicación dentro del organigrama empresarial."
                         />
                       </div>
                       <div className="mb-3">
