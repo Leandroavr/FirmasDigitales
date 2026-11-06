@@ -100,7 +100,8 @@ const RecipientList = (props) => {
   };
   return (
     <>
-      {props?.prefillSigner?.length > 0 &&
+      {/* Recuadro Prefill by owner comentado a solicitud
+{props?.prefillSigner?.length > 0 &&
         props?.prefillSigner?.map((obj, ind) => (
           <div
             key={ind}
@@ -118,6 +119,7 @@ const RecipientList = (props) => {
             <span>{obj.Name}</span>
           </div>
         ))}
+      */}
       {props.signersdata.length > 0 &&
         props.signersdata.map((obj, ind) => {
           return (

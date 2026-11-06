@@ -47,6 +47,9 @@ const Sidebar = () => {
         const isGeneralAdmin = userRole === "contracts_Admin" || userRole === "contracts_OrgAdmin";
         const newSidebarList = sidebarList
           .map((item) => {
+            if (item.title === "Templates") {
+              return null; // Ocultado a solicitud
+            }
             if (item.title === "Other Documents" && !isGeneralAdmin) {
               return null;
             }
@@ -105,6 +108,11 @@ const Sidebar = () => {
             className="w-full h-full object-contain"
             src={image}
             alt="Profile"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = dp;
+              try { localStorage.removeItem("profileImg"); } catch (err) {}
+            }}
           />
         </div>
         <div>

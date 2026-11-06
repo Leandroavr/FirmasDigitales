@@ -37,6 +37,8 @@ const sidebarList = [
     description: "",
     objectId: "8mZzFxbG1z"
   },
+  /* Comentado a solicitud: Plantillas ocultas temporalmente
+
   {
     icon: "fa-light fa-newspaper",
     title: "Templates",
@@ -63,6 +65,7 @@ const sidebarList = [
       }
     ]
   },
+  */
   {
     icon: "fa-light fa-folder",
     title: "Gestor Pdfs",

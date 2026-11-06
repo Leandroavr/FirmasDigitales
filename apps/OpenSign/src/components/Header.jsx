@@ -175,6 +175,11 @@ const Header = ({ isConsole, setIsLoggingOut }) => {
                 className="w-[35px] h-[35px] object-contain"
                 src={image}
                 alt="img"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = dp;
+                  try { localStorage.removeItem("profileImg"); } catch (err) {}
+                }}
               />
             </div>
           )}

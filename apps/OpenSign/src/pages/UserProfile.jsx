@@ -239,6 +239,10 @@ function UserProfile() {
                 <img
                   className="object-cover w-full h-full"
                   src={Image || dp}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = dp;
+                  }}
                   alt="Avatar"
                 />
               </div>
@@ -357,6 +361,10 @@ function UserProfile() {
               <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/40 shadow-sm relative bg-base-200">
                 <img
                   src={editImage || dp}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = dp;
+                  }}
                   alt="Vista previa de perfil"
                   className="w-full h-full object-cover"
                 />
