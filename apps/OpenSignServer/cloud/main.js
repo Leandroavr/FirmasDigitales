@@ -73,6 +73,7 @@ import deleteDocumentPermanent, { batchPurgeDocuments, getStorageStats } from '.
 import hideDocumentForUser from './parsefunction/hideDocumentForUser.js';
 import toggleUserAuthType from './parsefunction/toggleUserAuthType.js';
 import updateUserJobAndDepartment from './parsefunction/updateUserJobAndDepartment.js';
+import checkExpirationsJob, { runExpirationJob } from './parsefunction/expirationNotificationJob.js';
 import { userBeforeSave, contractsUsersBeforeSave } from './parsefunction/UserBeforeSave.js';
 
 // This afterSave function triggers after an object is added or updated in the specified class, allowing for post-processing logic.
@@ -169,3 +170,13 @@ Parse.Cloud.define('hideDocumentForUser', hideDocumentForUser);
 Parse.Cloud.define('toggleuserauthtype', toggleUserAuthType);
 Parse.Cloud.define('toggleUserAuthType', toggleUserAuthType);
 Parse.Cloud.define('updateUserJobAndDepartment', updateUserJobAndDepartment);
+Parse.Cloud.define('checkExpirationsJob', checkExpirationsJob);
+
+// Programar verificación periódica de documentos por expirar y expirados (cada 1 hora y a los 60 seg de iniciar)
+setTimeout(() => {
+  runExpirationJob().catch(e => console.error('[ExpirationJob] Error en corrida inicial:', e));
+}, 60 * 1000);
+
+setInterval(() => {
+  runExpirationJob().catch(e => console.error('[ExpirationJob] Error en corrida periódica:', e));
+}, 60 * 60 * 1000);
