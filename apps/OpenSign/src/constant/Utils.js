@@ -4875,6 +4875,81 @@ export const sendEmailToSigners = async (
         const err = error?.response?.data?.error || error?.message;
         console.error("Error while updating doc: ", err);
       }
+
+      // Enviar acuse de envío y confirmación al propietario/creador del documento
+      if (senderEmail) {
+        try {
+          const hostUrl = window.location.origin;
+          const docId = pdfDetails[0]?.objectId;
+          const encodeBase64 = btoa(`${docId}/${senderEmail}`);
+          const trackDocUrl = `${hostUrl}/login/${encodeBase64}`;
+          const isSendInOrder =
+            pdfDetails?.[0]?.SendinOrder === true ||
+            pdfDetails?.[0]?.SendinOrder === "true";
+
+          let signersRows = "";
+          const signersList = Array.isArray(signersdata) ? signersdata : [];
+          signersList.forEach((s, idx) => {
+            const sName = s?.Name || s?.Role || `Firmante ${idx + 1}`;
+            const sEmail = s?.Email || "-";
+            const sRole = s?.Role || "Firmante";
+            const bg = idx % 2 === 0 ? "#ffffff" : "#f8fafc";
+            signersRows += `<tr style='background-color:${bg};border-bottom:1px solid #e2e8f0;'>` +
+              `<td style='padding:8px 12px;color:#64748b;font-weight:600;'>${idx + 1}</td>` +
+              `<td style='padding:8px 12px;font-weight:600;color:#0f172a;'>${sName}</td>` +
+              `<td style='padding:8px 12px;color:#334155;'>${sEmail}</td>` +
+              `<td style='padding:8px 12px;color:#0b3c6d;font-weight:600;'>${sRole}</td>` +
+              `</tr>`;
+          });
+
+          const ownerSubject = `[Firma Digital] Documento enviado a firmar: "${documentName}"`;
+          const ownerBody =
+            "<html><head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/></head><body style='margin:0;padding:0;background-color:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;'>" +
+            "<div style='background-color:#f4f6f9;padding:25px 15px;'>" +
+            "<div style='background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;margin:0 auto;border:1px solid #e5e7eb;'>" +
+            "<div style='padding:20px 24px;background-color:#0b3c6d;'><h2 style='font-size:18px;margin:0;color:#ffffff;font-weight:600;letter-spacing:0.3px;'>Confirmación de Envío</h2></div>" +
+            "<div style='padding:24px;color:#334155;font-size:14px;line-height:1.6;'>" +
+            `<p style='margin-top:0;margin-bottom:14px;font-size:15px;color:#1e293b;'>Estimado(a) <strong>${senderName}</strong>,</p>` +
+            `<p style='margin-top:0;margin-bottom:18px;'>Le confirmamos que su solicitud de firma para el documento <strong>"${documentName}"</strong> ha sido despachada satisfactoriamente en la plataforma.</p>` +
+            "<div style='background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0b3c6d;border-radius:6px;padding:16px 18px;margin:18px 0;'>" +
+            "<div style='font-size:11px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px;'>Detalles del Documento</div>" +
+            "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>" +
+            `<tr><td style='padding:5px 0;width:125px;font-weight:600;color:#64748b;'>Título:</td><td style='padding:5px 0;font-weight:700;color:#0f172a;'>${documentName}</td></tr>` +
+            (docType ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Tipo de documento:</td><td style='padding:5px 0;font-weight:600;color:#0f172a;'>${docType}</td></tr>` : "") +
+            (docDescription ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Descripción:</td><td style='padding:5px 0;color:#334155;'>${docDescription}</td></tr>` : "") +
+            `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Fecha de expiración:</td><td style='padding:5px 0;color:#dc2626;font-weight:600;'>${localExpireDate}</td></tr>` +
+            `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Flujo de firmas:</td><td style='padding:5px 0;font-weight:600;color:#0b3c6d;'>${isSendInOrder ? "Secuencial (en orden estricto de roles)" : "Simultáneo (cualquier firmante puede firmar)"}</td></tr>` +
+            "</table>" +
+            "</div>" +
+            "<div style='margin:20px 0 10px 0;font-size:12px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.5px;'>Firmantes convocados:</div>" +
+            "<table style='width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;'>" +
+            "<thead><tr style='background-color:#f1f5f9;color:#475569;text-align:left;border-bottom:1px solid #cbd5e1;'>" +
+            "<th style='padding:8px 12px;width:30px;'>#</th>" +
+            "<th style='padding:8px 12px;'>Colaborador</th>" +
+            "<th style='padding:8px 12px;'>Correo</th>" +
+            "<th style='padding:8px 12px;'>Rol</th>" +
+            "</tr></thead>" +
+            `<tbody>${signersRows}</tbody>` +
+            "</table>" +
+            `<div style='margin:28px 0 20px 0;text-align:center;'><a target='_blank' href='${trackDocUrl}' style='display:inline-block;padding:12px 28px;background-color:#0b3c6d;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(11,60,109,0.25);'>Ver Estado en la Plataforma</a></div>` +
+            "<div style='background-color:#fefce8;border:1px solid #fef08a;border-radius:4px;padding:10px 14px;margin-top:20px;'>" +
+            "<p style='font-size:12px;color:#854d0e;margin:0;line-height:1.5;'><strong>Aviso de seguridad:</strong> Cada usuario debe iniciar sesión con sus credenciales institucionales para acceder a la plataforma.</p>" +
+            "</div></div></div>" +
+            "<div><p style='padding:16px;color:#94a3b8;font-size:12px;text-align:center;margin:0;'>Mensaje automático generado por Firma Digital Brascuba.</p></div>" +
+            "</div></body></html>";
+
+          const ownerParams = {
+            extUserId: owner?.objectId,
+            recipient: senderEmail,
+            subject: ownerSubject,
+            from: from,
+            html: ownerBody
+          };
+          await axios.post(url, ownerParams, { headers: headers });
+        } catch (ownerMailErr) {
+          console.error("Error enviando confirmación al propietario:", ownerMailErr);
+        }
+      }
     }
     return { status: "success" };
   } else {
