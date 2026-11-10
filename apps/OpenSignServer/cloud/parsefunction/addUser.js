@@ -24,11 +24,14 @@ export default async function addUser(request) {
         throw new Parse.Error(Parse.Error.OBJECT_NOT_FOUND, 'User not found.');
       }
 
+      const callerEmail = (request.user.get('email') || callerExtUser?.get('Email') || '').toLowerCase().trim();
+      const superAdminEnv = (process.env.SUPERADMIN_EMAIL || 'admin@brascuba.cu').toLowerCase().trim();
+
       const isCallerSuperAdmin =
         request.user.get('isSuperAdmin') === true ||
-        request.user.get('email') === 'admin@brascuba.cu' ||
         callerExtUser?.get('isSuperAdmin') === true ||
-        callerExtUser?.get('Email') === 'admin@brascuba.cu';
+        callerEmail === 'admin@brascuba.cu' ||
+        callerEmail === superAdminEnv;
 
       if (!isCallerSuperAdmin) {
         throw new Parse.Error(
@@ -124,7 +127,7 @@ export default async function addUser(request) {
           _user.set('phone', phone);
         }
 
-        const user = await _user.save();
+        const user = await _user.save(null, { useMasterKey: true });
         if (user) {
           extUser.set('CreatedBy', currentUser);
 
@@ -135,7 +138,7 @@ export default async function addUser(request) {
           acl.setReadAccess(user.id, true);
           acl.setWriteAccess(user.id, true);
           extUser.setACL(acl);
-          const extUserRes = await extUser.save();
+          const extUserRes = await extUser.save(null, { useMasterKey: true });
 
           const parseData = JSON.parse(JSON.stringify(extUserRes));
           return parseData;
@@ -158,7 +161,7 @@ export default async function addUser(request) {
           acl.setWriteAccess(userRes.id, true);
 
           extUser.setACL(acl);
-          const res = await extUser.save();
+          const res = await extUser.save(null, { useMasterKey: true });
 
           const parseData = JSON.parse(JSON.stringify(res));
           return parseData;
