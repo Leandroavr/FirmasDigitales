@@ -25,10 +25,12 @@ export default async function createContactIndex() {
     const collection = database.collection('contracts_Contactbook');
 
     // Create the unique index, but only on documents where IsImported is true
+    // Código compatible con MongoDB 4.4 (sin operador $or)
     const query = {
       IsImported: { $eq: true },
-      $or: [{ IsDeleted: false }, { IsDeleted: { $eq: false } }],
-    }; // Include documents with IsImported: true and IsDeleted not true
+      IsDeleted: { $eq: false },
+    };
+
     await collection.createIndex(
       { _p_CreatedBy: 1, Email: 1, IsImported: 1 },
       { unique: true, partialFilterExpression: query }
