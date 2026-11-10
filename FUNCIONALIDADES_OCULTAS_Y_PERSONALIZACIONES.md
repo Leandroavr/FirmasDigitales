@@ -16,6 +16,7 @@ Su propósito es servir de **guía técnica inmediata** para que cualquier desar
 6. [Módulo "Documentos de otros usuarios" (Other Documents)](#6-módulo-documentos-de-otros-usuarios-other-documents)
 7. [Columna de Acciones y Botón "Ver ficha" en la Tabla de Colaboradores](#7-columna-de-acciones-y-botón-ver-ficha-en-la-tabla-de-colaboradores)
 8. [Protección y Fallback de Fotos de Perfil (Avatar 404)](#8-protección-y-fallback-de-fotos-de-perfil-avatar-404)
+9. [Flujo Integral de Notificaciones por Correo Electrónico](#9-flujo-integral-de-notificaciones-por-correo-electrónico)
 
 ---
 
@@ -127,6 +128,27 @@ Su propósito es servir de **guía técnica inmediata** para que cualquier desar
   - [`apps/OpenSign/src/components/sidebar/Sidebar.jsx`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSign/src/components/sidebar/Sidebar.jsx).
   - [`apps/OpenSign/src/pages/UserProfile.jsx`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSign/src/pages/UserProfile.jsx).
 
+### 9. Flujo Integral de Notificaciones por Correo Electrónico
+
+- **¿Qué es?**  
+  Sistema de notificaciones automáticas vía SMTP corporativo (`Firma Digital Brascuba`) que garantiza que todos los implicados (propietario/creador y firmantes) estén puntualmente informados en cada etapa del ciclo de vida del documento:
+  1. **Envío inicial:** Al despachar un documento, se envía la invitación con enlace seguro a cada firmante y un **acuse de recibo al propietario** con la tabla de colaboradores convocados y fecha límite.
+     - *Archivo:* [`apps/OpenSign/src/constant/Utils.js`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSign/src/constant/Utils.js) (`sendEmailToSigners`).
+  2. **Avance en multifirma:** Cada vez que un firmante firma, se notifica al propietario, al propio firmante (confirmación) y a los demás involucrados.
+     - *Archivo:* [`apps/OpenSignServer/cloud/parsefunction/pdf/PDF.js`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSignServer/cloud/parsefunction/pdf/PDF.js) (`sendNotifyMail`).
+  3. **Completado:** Cuando todos firman, se entrega una copia final en PDF con el certificado digital adjunto a todas las partes.
+     - *Archivo:* [`apps/OpenSignServer/cloud/parsefunction/pdf/PDF.js`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSignServer/cloud/parsefunction/pdf/PDF.js) (`sendCompletedMail`).
+  4. **Rechazo (*Decline*):** Si algún firmante rechaza, se notifica inmediatamente con el motivo del rechazo al propietario, al firmante que rechazó (acuse) y a todos los demás firmantes convocados para que sepan que el proceso quedó cancelado.
+     - *Archivo:* [`apps/OpenSignServer/cloud/parsefunction/declinedocument.js`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSignServer/cloud/parsefunction/declinedocument.js).
+  5. **Recordatorios preventivos de expiración (3d, 2d, 1d):** Un scheduler automático en segundo plano revisa documentos activos y envía recordatorios diarios a los firmantes que aún tienen la firma pendiente:
+     - A falta de 3 días: Recordatorio informativo.
+     - A falta de 2 días: Recordatorio urgente.
+     - A falta de 1 día: Último aviso (vence mañana).
+     - *Archivo:* [`apps/OpenSignServer/cloud/parsefunction/expirationNotificationJob.js`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSignServer/cloud/parsefunction/expirationNotificationJob.js).
+  6. **Documento expirado:** Si vence el plazo sin completarse todas las firmas, el job marca el documento como expirado (`IsExpired: true`) y notifica al propietario y a todos los firmantes convocados detallando a qué firmantes se les venció el plazo.
+     - *Archivo:* [`apps/OpenSignServer/cloud/parsefunction/expirationNotificationJob.js`](file:///c:/Users/leandro.valdes/Desktop/Proyectos/OpenSign/apps/OpenSignServer/cloud/parsefunction/expirationNotificationJob.js).
+
 ---
 
 *Última actualización: Noviembre 2026 — Sistema de Firma Digital Brascuba S.A.*
+
