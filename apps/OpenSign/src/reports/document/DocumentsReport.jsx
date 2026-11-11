@@ -418,11 +418,25 @@ const DocumentsReport = (props) => {
   });
   const checkCanPurge = (doc) => {
     if (!checkIsOwner(doc)) return false;
-    const isCompleted = Boolean(doc?.IsCompleted);
-    const isDeclined = Boolean(doc?.IsDeclined);
+    const reportName = props?.ReportName;
+    const isDeclinedReport =
+      reportName === "Declined Documents" ||
+      reportName === "other_declined" ||
+      reportName === "UPr2Fm5WY3";
+    const isExpiredReport =
+      reportName === "Expired Documents" ||
+      reportName === "other_expired" ||
+      reportName === "zNqBHXHsYH";
+    const isCompletedReport =
+      reportName === "Completed Documents" ||
+      reportName === "other_completed" ||
+      reportName === "kQUoW4hUXz";
+
+    const isCompleted = Boolean(doc?.IsCompleted) || isCompletedReport;
+    const isDeclined = Boolean(doc?.IsDeclined || doc?.DeclineReason) || isDeclinedReport;
     const isDraft = Boolean(doc?.IsDraft || doc?.Stage === "draft" || doc?.IsSignyourself);
     const isRevoked = Boolean(doc?.IsArchived || doc?.IsArchive || doc?.IsRevoked);
-    const isExpired = Boolean(doc?.IsExpired || (doc?.ExpiryDate?.iso && new Date(doc.ExpiryDate.iso) < new Date()));
+    const isExpired = Boolean(doc?.IsExpired || (doc?.ExpiryDate?.iso && new Date(doc.ExpiryDate.iso) < new Date())) || isExpiredReport;
     return isCompleted || isDeclined || isDraft || isRevoked || isExpired;
   };
 
