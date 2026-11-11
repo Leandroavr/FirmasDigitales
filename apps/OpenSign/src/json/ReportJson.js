@@ -138,7 +138,7 @@ export default function reportJson(id) {
               {
                 btnId: "1634",
                 btnLabel: "extend-expiry-date",
-                hoverLabel: "Extend expiry date",
+                hoverLabel: "Fecha de expiración",
                 btnIcon: "fa-light fa-hourglass-end",
                 redirectUrl: "",
                 action: "extendexpiry"
@@ -151,6 +151,7 @@ export default function reportJson(id) {
                 redirectUrl: "",
                 action: "revoke"
               },
+              /*
               {
                 btnId: "0630",
                 btnLabel: "Save as template",
@@ -159,6 +160,7 @@ export default function reportJson(id) {
                 redirectUrl: "",
                 action: "saveastemplate"
               },
+              */
               {
                 btnId: "1488",
                 btnLabel: "Delete",
@@ -206,6 +208,7 @@ export default function reportJson(id) {
             btnIcon: "fa-light fa-ellipsis-vertical fa-lg",
             action: "option",
             subaction: [
+              /*
               {
                 btnId: "0930",
                 btnLabel: "Save as template",
@@ -214,6 +217,7 @@ export default function reportJson(id) {
                 redirectUrl: "",
                 action: "saveastemplate"
               },
+              */
               {
                 btnId: "8440",
                 btnLabel: "Fix & resend",
@@ -259,6 +263,7 @@ export default function reportJson(id) {
             btnIcon: "fa-light fa-ellipsis-vertical fa-lg",
             action: "option",
             subaction: [
+              /*
               {
                 btnId: "0940",
                 btnLabel: "Save as template",
@@ -268,6 +273,7 @@ export default function reportJson(id) {
                 redirectUrl: "",
                 action: "saveastemplate"
               },
+              */
               {
                 btnId: "8440",
                 btnLabel: "Fix & resend",
@@ -316,12 +322,13 @@ export default function reportJson(id) {
               {
                 btnId: "2199",
                 btnLabel: "extend-expiry-date",
-                hoverLabel: "Extend expiry date",
+                hoverLabel: "Fecha de expiración",
                 btnColor: "op-btn-primary",
                 btnIcon: "fa-light fa-hourglass-end",
                 redirectUrl: "",
                 action: "extendexpiry"
-              },
+              }
+              /*
               {
                 btnId: "5530",
                 btnLabel: "Save as template",
@@ -330,6 +337,7 @@ export default function reportJson(id) {
                 redirectUrl: "",
                 action: "saveastemplate"
               }
+              */
             ]
           }
         ],
@@ -390,6 +398,7 @@ export default function reportJson(id) {
                 redirectUrl: "",
                 action: "revoke"
               },
+              /*
               {
                 btnId: "7730",
                 btnLabel: "Save as template",
@@ -398,6 +407,7 @@ export default function reportJson(id) {
                 redirectUrl: "",
                 action: "saveastemplate"
               },
+              */
               {
                 btnId: "2000",
                 btnLabel: "Delete",

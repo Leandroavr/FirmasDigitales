@@ -1418,7 +1418,8 @@ const DocumentsReport = (props) => {
                                       <ul className="absolute -right-1 top-auto z-[70] w-max op-dropdown-content op-menu op-menu-sm shadow-black/20 shadow bg-base-100 text-base-content rounded-box">
                                         {act.subaction?.map(
                                           (subact) =>
-                                            !restrictBtn(item, subact) && (
+                                            !restrictBtn(item, subact) &&
+                                            subact.action !== "saveastemplate" && (
                                               <li
                                                 key={subact.btnId}
                                                 onClick={() =>
