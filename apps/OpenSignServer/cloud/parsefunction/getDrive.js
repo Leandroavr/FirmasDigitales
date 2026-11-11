@@ -39,6 +39,7 @@ export default async function getDrive(request) {
           // Conteo de elementos en la raíz para cada usuario
           const docCountQuery = new Parse.Query('contracts_Document');
           docCountQuery.notEqualTo('IsArchive', true);
+          docCountQuery.notEqualTo('IsPurged', true);
           docCountQuery.doesNotExist('Folder');
           docCountQuery.limit(5000);
           docCountQuery.select('CreatedBy');
@@ -158,6 +159,7 @@ export default async function getDrive(request) {
         query.include('ExtUserPtr.TenantId');
         query.include('Signers');
         query.notEqualTo('IsArchive', true);
+        query.notEqualTo('IsPurged', true);
         query.descending('updatedAt');
         query.skip(skip);
         query.limit(limit);
