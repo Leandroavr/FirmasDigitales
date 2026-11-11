@@ -4670,26 +4670,62 @@ export const sendEmailToSigners = async (
     year: "numeric"
   });
 
+  const localUserStr = localStorage.getItem(
+    `Parse/${localStorage.getItem("parseAppId")}/currentUser`
+  );
+  let localUserEmail = "";
+  let localUserName = "";
+  try {
+    const parsedLocal = JSON.parse(localUserStr);
+    localUserEmail = parsedLocal?.email || "";
+    localUserName = parsedLocal?.name || "";
+  } catch (e) {}
+
   let senderEmail =
-    pdfDetails?.[0]?.SenderMail || pdfDetails?.[0]?.ExtUserPtr?.Email;
+    pdfDetails?.[0]?.SenderMail ||
+    pdfDetails?.[0]?.ExtUserPtr?.Email ||
+    pdfDetails?.[0]?.CreatedBy?.email ||
+    localUserEmail;
   let senderPhone = pdfDetails?.[0]?.ExtUserPtr?.Phone;
+  const useNameAsSender =
+    pdfDetails?.[0]?.ExtUserPtr?.UseNameAsSender === true;
+  const senderName =
+    pdfDetails?.[0]?.SenderName ||
+    pdfDetails?.[0]?.ExtUserPtr?.Name ||
+    pdfDetails?.[0]?.CreatedBy?.name ||
+    localUserName ||
+    senderEmail?.split("@")?.[0] ||
+    "Usuario";
+  const from =
+    pdfDetails?.[0]?.SenderName || useNameAsSender
+      ? pdfDetails?.[0]?.ExtUserPtr?.Name || senderName
+      : senderEmail;
+
+  const documentName = `${pdfDetails?.[0]?.Name || "Documento"}`;
+  const docDescription =
+    pdfDetails?.[0]?.Description ||
+    pdfDetails?.[0]?.TemplateId?.Description ||
+    "";
+  const docNote =
+    pdfDetails?.[0]?.Note ||
+    pdfDetails?.[0]?.TemplateId?.Note ||
+    "";
+  const docType =
+    pdfDetails?.[0]?.DocumentType ||
+    pdfDetails?.[0]?.TemplateId?.DocumentType ||
+    "";
+  const orgName = pdfDetails?.[0]?.ExtUserPtr?.Company || "";
+
+  const url = `${localStorage.getItem("baseUrl")}functions/sendmailv3`;
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Parse-Application-Id": localStorage.getItem("parseAppId"),
+    sessionToken: localStorage.getItem("accesstoken")
+  };
+
   let signerMail = signersdata.slice();
-  // El correo de solicitud de firma debe llegar a todos los firmantes desde el inicio,
-  // independientemente de que exista orden secuencial de firmado (la plataforma restringe el turno al ingresar).
-  // const isSendInOrder =
-  //   pdfDetails?.[0]?.SendinOrder === true ||
-  //   pdfDetails?.[0]?.SendinOrder === "true";
-  // if (isSendInOrder) {
-  //   signerMail = signerMail[0] ? [signerMail[0]] : [];
-  // }
   for (let i = 0; i < signerMail.length; i++) {
     try {
-      let url = `${localStorage.getItem("baseUrl")}functions/sendmailv3`;
-      const headers = {
-        "Content-Type": "application/json",
-        "X-Parse-Application-Id": localStorage.getItem("parseAppId"),
-        sessionToken: localStorage.getItem("accesstoken")
-      };
       const objectId = signerMail[i].objectId;
       const hostUrl = window.location.origin;
       //encode this url value `${pdfDetails?.[0].objectId}/${signerMail[i].Email}/${objectId}` to base64 using `btoa` function
@@ -4697,34 +4733,6 @@ export const sendEmailToSigners = async (
         `${pdfDetails[0]?.objectId}/${signerMail[i].Email}/${objectId}`
       );
       let signPdf = `${hostUrl}/login/${encodeBase64}`;
-      const orgName = pdfDetails[0]?.ExtUserPtr.Company
-        ? pdfDetails[0].ExtUserPtr.Company
-        : "";
-
-      const useNameAsSender =
-        pdfDetails?.[0]?.ExtUserPtr?.UseNameAsSender === true;
-
-      const senderName =
-        pdfDetails?.[0]?.SenderName || pdfDetails?.[0]?.ExtUserPtr?.Name;
-
-      const from =
-        pdfDetails?.[0]?.SenderName || useNameAsSender
-          ? pdfDetails?.[0]?.ExtUserPtr?.Name || ""
-          : senderEmail;
-
-      const documentName = `${pdfDetails?.[0].Name}`;
-      const docDescription =
-        pdfDetails?.[0]?.Description ||
-        pdfDetails?.[0]?.TemplateId?.Description ||
-        "";
-      const docNote =
-        pdfDetails?.[0]?.Note ||
-        pdfDetails?.[0]?.TemplateId?.Note ||
-        "";
-      const docType =
-        pdfDetails?.[0]?.DocumentType ||
-        pdfDetails?.[0]?.TemplateId?.DocumentType ||
-        "";
       let replaceVar;
 
       if (customizeMail && isCustomize) {

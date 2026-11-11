@@ -66,6 +66,26 @@ function CustomModal(props) {
               )}
             </div>
           )}
+          {!props.footerMessage && !isExtendExpiry && (
+            <div className="flex flex-row justify-end p-[15px] pt-2">
+              <button
+                type="button"
+                className="op-btn op-btn-primary px-6"
+                onClick={() => {
+                  if (props.setIsDecline) {
+                    props.setIsDecline({ isDeclined: false });
+                  }
+                  if (window.opener) {
+                    window.close();
+                  } else {
+                    window.location.href = "/";
+                  }
+                }}
+              >
+                {t("close") || "Cerrar"}
+              </button>
+            </div>
+          )}
           {props.footerMessage && (
             <>
               <div className="mx-3 text-base-content">
