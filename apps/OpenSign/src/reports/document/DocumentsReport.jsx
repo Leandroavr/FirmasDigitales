@@ -513,6 +513,7 @@ const DocumentsReport = (props) => {
       docId: item.objectId,
       reason: reason,
       userId: jsonSender?.objectId,
+      isRevoke: true,
     };
     await axios
       .post(`${localStorage.getItem("baseUrl")}functions/declinedoc`, params, {
@@ -1668,17 +1669,17 @@ const DocumentsReport = (props) => {
                             {checkIsOwner(item) ? (
                               !checkCanPurge(item) ? (
                                 <div className="space-y-3">
-                                  <div className="p-3 bg-warning/15 border border-warning/30 rounded-lg text-warning-content text-sm flex items-start gap-2">
-                                    <i className="fa-light fa-triangle-exclamation text-lg mt-0.5 text-warning"></i>
+                                  <div className="p-4 bg-amber-50 border border-amber-300 rounded-lg text-amber-950 text-sm flex items-start gap-3 shadow-sm">
+                                    <i className="fa-light fa-triangle-exclamation text-xl mt-0.5 text-amber-600"></i>
                                     <div>
-                                      <p className="font-semibold">No se puede depurar este documento.</p>
-                                      <p className="mt-1">
-                                        El documento se encuentra <strong>En Proceso</strong>. Para poder depurarlo y eliminar sus archivos físicos, debe cancelarlo o revocarlo primero.
+                                      <p className="font-bold text-amber-950 text-base">No se puede depurar este documento.</p>
+                                      <p className="mt-1 text-amber-900 leading-relaxed font-medium">
+                                        El documento se encuentra <strong className="text-amber-950 font-bold">En Proceso</strong>. Para poder depurarlo y eliminar sus archivos físicos, debe cancelarlo o revocarlo primero.
                                       </p>
                                     </div>
                                   </div>
                                   <div className="flex justify-end mt-4">
-                                    <button onClick={handleClose} className="op-btn op-btn-secondary">
+                                    <button onClick={handleClose} className="op-btn op-btn-primary px-6">
                                       Entendido
                                     </button>
                                   </div>

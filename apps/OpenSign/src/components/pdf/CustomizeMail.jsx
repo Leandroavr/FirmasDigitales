@@ -109,63 +109,35 @@ function CustomizeMail(props) {
           handleClose={() => handleCloseSendmailModal()}
         >
           <div className="max-h-96 overflow-y-scroll scroll-hide p-[20px] text-base-content">
-            {!isCustomize && <span>{t("placeholder-alert-3")}</span>}
-            {
-                isCustomize && (
-                  <>
-                    <EmailBody
-                      requestBody={props?.customizeMail?.body}
-                      requestSubject={props?.customizeMail?.subject}
-                      onChangeBody={onChangeBody}
-                      onChangeSubject={onChangeSubject}
-                      isReset={isReset}
-                      handleSwitch={handleSwitch}
-                      emailEditorType={props.emailEditorType}
-                    />
-                    <div
-                      className="flex justify-end items-center gap-1 mt-2 op-link op-link-primary"
-                      onClick={() => handleReset()}
-                    >
-                      <span>{t("reset-to-default")}</span>
-                    </div>
-                  </>
-                )
-            }
-            <div className="flex flex-row items-center gap-2 md:gap-6 mt-2">
-              <div className="flex flex-row gap-2">
-                <button
-                  onClick={() => handleEmailSendToSigners()}
-                  className="op-btn op-btn-primary font-[500] text-sm shadow"
-                >
-                  {t("send")}
-                </button>
-                {isCustomize && (
-                  <button
-                    onClick={() => setIsCustomize(false)}
-                    className="op-btn op-btn-ghost font-[500] text-sm"
-                  >
-                    {t("close")}
-                  </button>
-                )}
-              </div>
-              {
-                  !isCustomize && (
-                    <span
-                      className="op-link op-link-accent text-sm"
-                      onClick={() => setIsCustomize(true)}
-                    >
-                      {t("customize-email")}
-                    </span>
-                  )
-              }
+            <span>{t("placeholder-alert-3")}</span>
+            <div className="flex flex-row items-center gap-2 mt-4">
+              <button
+                onClick={() => handleEmailSendToSigners()}
+                className="op-btn op-btn-primary font-[500] text-sm shadow px-6"
+              >
+                {t("send")}
+              </button>
             </div>
 
-            <div className="flex justify-center items-center mt-3">
-              <span className="h-[1px] w-[20%] bg-[#ccc]"></span>
-              <span className="ml-[5px] mr-[5px]">{t("or")}</span>
-              <span className="h-[1px] w-[20%] bg-[#ccc]"></span>
+            <div className="mt-5 pt-3 border-t border-base-300">
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                {t("signers") || "Firmantes convocados"}:
+              </div>
+              <div className="space-y-1.5">
+                {props?.signerList?.map((s, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-2 text-sm text-base-content py-1.5 px-3 rounded-lg bg-base-200/70"
+                  >
+                    <i className="fa-light fa-user text-primary text-xs"></i>
+                    <span className="font-medium text-gray-800 dark:text-gray-200">
+                      {s?.Name || s?.Role || `Firmante ${idx + 1}`}
+                    </span>
+                    <span className="text-gray-400 text-xs">({s?.Email})</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="my-3">{props?.handleShareList()}</div>
             <p id="copyUrl" ref={props?.copyUrlRef} className="hidden"></p>
           </div>
         </ModalUi>
