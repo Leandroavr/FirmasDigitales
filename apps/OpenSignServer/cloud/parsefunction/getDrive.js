@@ -20,9 +20,15 @@ export default async function getDrive(request) {
       try {
         const isAdmin = await isUserAdmin(userEmail, userId);
 
+        const callerExt = await new Parse.Query('contracts_Users')
+          .equalTo('UserId', { __type: 'Pointer', className: '_User', objectId: userId })
+          .first({ useMasterKey: true });
+
         // Para administradores en la raíz de Gestor Pdfs: organizar los documentos en carpetas por usuario
         const isCallerSuperAdmin =
-          userEmail === 'admin@brascuba.cu' || userRes.data?.isSuperAdmin === true;
+          userEmail === 'admin@brascuba.cu' ||
+          callerExt?.get('Email') === 'admin@brascuba.cu' ||
+          callerExt?.get('isSuperAdmin') === true;
 
         if (isAdmin && !docId) {
           const extUserQuery = new Parse.Query('contracts_Users');
@@ -46,11 +52,12 @@ export default async function getDrive(request) {
           const userFolders = extUsers
             .filter((u) => {
               if (!u.get('UserId')) return false;
+              const uId = u.get('UserId').id;
               const uEmail = u.get('Email');
               const isSuper =
                 uEmail === 'admin@brascuba.cu' || u.get('isSuperAdmin') === true;
-              // A los administradores normales nunca les sale la carpeta del Superadmin
-              if (isSuper && !isCallerSuperAdmin) {
+              // A los administradores normales nunca les sale la carpeta del Superadmin (pero si es su propia carpeta, siempre se muestra)
+              if (isSuper && !isCallerSuperAdmin && uId !== userId) {
                 return false;
               }
               return true;
@@ -92,8 +99,8 @@ export default async function getDrive(request) {
               // El administrador ingresó a la carpeta de un usuario específico
               const targetUserId = docId.replace('user_', '');
 
-              // Si un admin normal intenta acceder a la carpeta del superadmin por URL, bloquear
-              if (!isCallerSuperAdmin) {
+              // Si un admin normal intenta acceder a la carpeta del superadmin por URL, bloquear (pero nunca bloquear su propia carpeta)
+              if (!isCallerSuperAdmin && targetUserId !== userId) {
                 const targetExt = extUsers?.find
                   ? extUsers.find((eu) => eu.get('UserId')?.id === targetUserId)
                   : await new Parse.Query('contracts_Users')
@@ -109,7 +116,7 @@ export default async function getDrive(request) {
                 className: '_User',
                 objectId: targetUserId,
               });
-              query.doesNotExist('Folder', true);
+              query.doesNotExist('Folder');
             } else {
               // Carpeta normal creada dentro de la jerarquía
               query.equalTo('Folder', {
