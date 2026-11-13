@@ -20,7 +20,7 @@ function ForgotPassword() {
   }, []);
 
   return (
-    <div className="md:p-10 lg:p-16">
+    <div className="min-h-screen flex flex-col justify-center p-4 md:p-10 lg:p-16">
       <div className="md:p-4 lg:p-10 p-4 bg-base-100 text-base-content op-card max-w-4xl mx-auto shadow-lg">
         <div className="flex items-center gap-3 h-[50px] md:h-[60px] overflow-hidden">
           {image && (

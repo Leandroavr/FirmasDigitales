@@ -484,7 +484,7 @@ function Login() {
           <div
             aria-labelledby="loginHeading"
             role="region"
-            className="pb-1 md:pb-4 pt-10 md:px-10 lg:px-16 h-full"
+            className="py-6 md:py-10 px-4 md:px-10 lg:px-16 min-h-screen flex flex-col justify-center"
           >
             <div className="md:p-4 lg:p-10 p-4 bg-base-100 text-base-content op-card">
               <div className="flex items-center gap-3 h-[50px] md:h-[60px] overflow-hidden">
