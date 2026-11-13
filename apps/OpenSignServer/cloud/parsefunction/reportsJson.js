@@ -22,6 +22,11 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
     'ExpiryDate',
     'SenderName',
     'SenderMail',
+    'IsDeclined',
+    'IsCompleted',
+    'IsRevoked',
+    'IsArchive',
+    'CreatedBy',
   ];
   const inProgressKeys = [
     ...commanKeys,

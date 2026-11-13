@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import login_img from "../assets/images/login_img.svg";
+import login_img from "../assets/images/brascuba_login.jpg";
 import { appInfo } from "../constant/appinfo";
 
 function ForgotPassword() {
@@ -20,7 +20,7 @@ function ForgotPassword() {
   }, []);
 
   return (
-    <div className="md:p-10 lg:p-16">
+    <div className="min-h-screen flex flex-col justify-center p-4 md:p-10 lg:p-16">
       <div className="md:p-4 lg:p-10 p-4 bg-base-100 text-base-content op-card max-w-4xl mx-auto shadow-lg">
         <div className="flex items-center gap-3 h-[50px] md:h-[60px] overflow-hidden">
           {image && (
@@ -64,7 +64,11 @@ function ForgotPassword() {
           </div>
           {!isMobile && (
             <div className="self-center flex justify-center">
-              <img src={login_img} alt="Login ilustracion" className="w-[300px] lg:w-[380px]" />
+              <img
+                src={login_img}
+                alt="Firma Digital Brascuba"
+                className="w-[320px] lg:w-[420px] h-auto object-contain rounded-xl"
+              />
             </div>
           )}
         </div>

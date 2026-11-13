@@ -3,7 +3,7 @@ import Parse from "parse";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { NavLink, useNavigate, useLocation } from "react-router";
-import login_img from "../assets/images/login_img.svg";
+import login_img from "../assets/images/brascuba_login.jpg";
 import { useWindowSize } from "../hook/useWindowSize";
 import ModalUi from "../primitives/ModalUi";
 import {
@@ -484,7 +484,7 @@ function Login() {
           <div
             aria-labelledby="loginHeading"
             role="region"
-            className="pb-1 md:pb-4 pt-10 md:px-10 lg:px-16 h-full"
+            className="py-6 md:py-10 px-4 md:px-10 lg:px-16 min-h-screen flex flex-col justify-center"
           >
             <div className="md:p-4 lg:p-10 p-4 bg-base-100 text-base-content op-card">
               <div className="flex items-center gap-3 h-[50px] md:h-[60px] overflow-hidden">
@@ -583,11 +583,11 @@ function Login() {
                 </div>
                 {width >= 768 && (
                   <div className="place-self-center">
-                    <div className="mx-auto md:w-[300px] lg:w-[400px] xl:w-[500px]">
+                    <div className="mx-auto md:w-[320px] lg:w-[420px] xl:w-[480px]">
                       <img
                         src={login_img}
-                        alt="The image illustrates a person from behind, seated at a desk with a four-monitor computer setup, in an environment with a light blue and white color scheme, featuring a potted plant to the right."
-                        width="100%"
+                        alt="Firma Digital Brascuba"
+                        className="w-full h-auto object-contain rounded-xl"
                       />
                     </div>
                   </div>
