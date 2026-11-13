@@ -3,7 +3,7 @@ import Parse from "parse";
 import { useDispatch } from "react-redux";
 import axios from "axios";
 import { NavLink, useNavigate, useLocation } from "react-router";
-import login_img from "../assets/images/login_img.svg";
+import login_img from "../assets/images/brascuba_login.jpg";
 import { useWindowSize } from "../hook/useWindowSize";
 import ModalUi from "../primitives/ModalUi";
 import {
@@ -583,11 +583,11 @@ function Login() {
                 </div>
                 {width >= 768 && (
                   <div className="place-self-center">
-                    <div className="mx-auto md:w-[300px] lg:w-[400px] xl:w-[500px]">
+                    <div className="mx-auto md:w-[320px] lg:w-[420px] xl:w-[480px]">
                       <img
                         src={login_img}
-                        alt="The image illustrates a person from behind, seated at a desk with a four-monitor computer setup, in an environment with a light blue and white color scheme, featuring a potted plant to the right."
-                        width="100%"
+                        alt="Firma Digital Brascuba"
+                        className="w-full h-auto object-contain rounded-xl"
                       />
                     </div>
                   </div>

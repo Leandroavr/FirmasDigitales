@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import login_img from "../assets/images/login_img.svg";
+import login_img from "../assets/images/brascuba_login.jpg";
 import { appInfo } from "../constant/appinfo";
 
 function ForgotPassword() {
@@ -64,7 +64,11 @@ function ForgotPassword() {
           </div>
           {!isMobile && (
             <div className="self-center flex justify-center">
-              <img src={login_img} alt="Login ilustracion" className="w-[300px] lg:w-[380px]" />
+              <img
+                src={login_img}
+                alt="Firma Digital Brascuba"
+                className="w-[320px] lg:w-[420px] h-auto object-contain rounded-xl"
+              />
             </div>
           )}
         </div>
