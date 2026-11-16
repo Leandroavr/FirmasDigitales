@@ -84,8 +84,10 @@ function Login() {
   };
 
   const showToast = (type, msg) => {
-    setState({ ...state, loading: false, alertType: type, alertMsg: msg });
-    setTimeout(() => setState({ ...state, alertMsg: "" }), 2000);
+    setState((prev) => ({ ...prev, loading: false, alertType: type, alertMsg: msg }));
+    if (type !== "danger") {
+      setTimeout(() => setState((prev) => ({ ...prev, alertMsg: "" })), 6000);
+    }
   };
 
   const checkUserExt = async () => {
@@ -107,7 +109,7 @@ function Login() {
     // Validar si la sesión sigue activa (inactividad < 30min y navegador no cerrado)
     const isSessionValid = validateSessionOnStartup();
     if (isSessionValid && localStorage.getItem("accesstoken")) {
-      setState({ ...state, loading: true });
+      setState((prev) => ({ ...prev, loading: true }));
       GetLoginData();
     }
   };
@@ -116,7 +118,7 @@ function Login() {
     if (name === "email") {
       value = value?.toLowerCase()?.replace(/\s/g, "");
     }
-    setState({ ...state, [name]: value });
+    setState((prev) => ({ ...prev, [name]: value, alertMsg: "" }));
   };
 
   const handleLogin = async (
@@ -525,7 +527,7 @@ function Login() {
                     <div
                       role="alert"
                       aria-live="polite"
-                      className={`p-3.5 mb-5 rounded-xl border flex items-center gap-3 text-sm font-medium ${
+                      className={`p-3.5 mb-5 rounded-xl border flex items-center justify-between gap-3 text-sm font-medium ${
                         state.alertType === "danger"
                           ? "bg-red-50 border-red-200 text-red-800"
                           : state.alertType === "info"
@@ -533,16 +535,26 @@ function Login() {
                           : "bg-emerald-50 border-emerald-200 text-emerald-900"
                       }`}
                     >
-                      <i
-                        className={`text-lg flex-shrink-0 ${
-                          state.alertType === "danger"
-                            ? "fa-light fa-circle-exclamation text-red-600"
-                            : state.alertType === "info"
-                            ? "fa-light fa-info-circle text-blue-600"
-                            : "fa-light fa-circle-check text-emerald-600"
-                        }`}
-                      />
-                      <span className="leading-snug">{state.alertMsg}</span>
+                      <div className="flex items-center gap-2.5">
+                        <i
+                          className={`text-lg flex-shrink-0 ${
+                            state.alertType === "danger"
+                              ? "fa-light fa-circle-exclamation text-red-600"
+                              : state.alertType === "info"
+                              ? "fa-light fa-info-circle text-blue-600"
+                              : "fa-light fa-circle-check text-emerald-600"
+                          }`}
+                        />
+                        <span className="leading-snug">{state.alertMsg}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setState((prev) => ({ ...prev, alertMsg: "" }))}
+                        className="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0"
+                        aria-label="Cerrar aviso"
+                      >
+                        <i className="fa-light fa-xmark text-sm" />
+                      </button>
                     </div>
                   )}
 
@@ -606,33 +618,11 @@ function Login() {
                         </div>
                       </div>
 
-                      {/* Recordarme y ¿Olvidaste la contraseña? */}
-                      <div className="flex items-center justify-between pt-1">
-                        <label htmlFor="rememberMe" className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            id="rememberMe"
-                            type="checkbox"
-                            tabIndex={4}
-                            checked={state.rememberMe || false}
-                            onChange={(e) => setState((prev) => ({ ...prev, rememberMe: e.target.checked }))}
-                            className="w-4 h-4 rounded border-slate-300 text-[#002b6b] focus:ring-[#002b6b] focus:ring-2 cursor-pointer"
-                          />
-                          <span className="text-sm font-medium text-[#1f2937]">Recordarme</span>
-                        </label>
-                        <NavLink
-                          to="/forgetpassword"
-                          tabIndex={5}
-                          className="text-sm font-medium text-[#002b6b] hover:underline focus:underline focus:outline-none focus:ring-1 focus:ring-[#002b6b] rounded"
-                        >
-                          {t("forgot-password")}?
-                        </NavLink>
-                      </div>
-
                       {/* Botón Iniciar Sesión (ancho completo dentro del formulario) */}
-                      <div className="pt-2">
+                      <div className="pt-3">
                         <button
                           type="submit"
-                          tabIndex={6}
+                          tabIndex={4}
                           disabled={state.loading}
                           className="w-full h-12 min-h-[48px] px-6 rounded-lg font-semibold text-base text-white bg-[#002b6b] hover:bg-[#001f4d] active:bg-[#001533] focus:outline-none focus:ring-2 focus:ring-[#002b6b] focus:ring-offset-2 transition-all shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
                         >
@@ -649,21 +639,10 @@ function Login() {
                     </div>
                   </form>
 
-                  {/* Confianza y pie de ayuda */}
-                  <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center gap-2 text-xs text-slate-500">
-                    <div className="flex items-center gap-1.5 font-medium text-slate-600">
-                      <i className="fa-light fa-lock-keyhole text-[#002b6b]" />
-                      <span>Conexión segura cifrada SSL / TLS</span>
-                    </div>
-                    <div className="text-center text-slate-500">
-                      ¿Problemas para acceder?{" "}
-                      <NavLink
-                        to="/forgetpassword"
-                        className="text-[#002b6b] font-medium hover:underline focus:underline focus:outline-none"
-                      >
-                        Contacta a soporte
-                      </NavLink>
-                    </div>
+                  {/* Confianza */}
+                  <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-500">
+                    <i className="fa-light fa-lock-keyhole text-[#002b6b]" />
+                    <span>Conexión segura cifrada SSL / TLS</span>
                   </div>
                 </div>
 
