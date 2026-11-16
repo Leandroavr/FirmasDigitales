@@ -47,7 +47,7 @@ services:
       - app-network
 
   mongo:
-    image: mongo:latest
+    image: mongo:4.4
     container_name: mongo-container
     volumes:
       - data-volume:/data/db

@@ -69,7 +69,7 @@ export default function Title() {
     [pathname, state?.title]
   );
   const title = useMemo(
-    () => (prefix ? `${t(prefix)} - ${appName}` : appName),
+    () => (prefix ? `${t(prefix)} | ${appName}` : appName),
     [t, prefix, appName]
   );
   const manifestUrl = useManifestUrl(appName, logo);
