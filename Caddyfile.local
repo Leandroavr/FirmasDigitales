@@ -1,0 +1,19 @@
+# ==============================================================================
+# Caddyfile.local - Configuración de Proxy Inverso para Desarrollo Local (:3000)
+# ==============================================================================
+
+:3000 {
+    # API Parse Server (Backend)
+    handle_path /api/* {
+        reverse_proxy server:8080 {
+            header_up X-Real-IP {remote_host}
+            header_up Host {host}
+        }
+    }
+
+    # Frontend React Web
+    reverse_proxy client:3000 {
+        header_up X-Real-IP {remote_host}
+        header_up Host {host}
+    }
+}

@@ -38,6 +38,10 @@ const LEVEL_CONFIG = {
     badgeClass: "bg-purple-100 text-purple-900 border-purple-300",
     icon: "fa-user-tie",
   },
+  "Subdirección": {
+    badgeClass: "bg-indigo-100 text-indigo-900 border-indigo-300",
+    icon: "fa-id-badge",
+  },
   "Gerencia": {
     badgeClass: "bg-blue-100 text-blue-900 border-blue-300",
     icon: "fa-briefcase",
@@ -49,6 +53,10 @@ const LEVEL_CONFIG = {
   "Especialista / Base": {
     badgeClass: "bg-slate-100 text-slate-800 border-slate-300",
     icon: "fa-user",
+  },
+  "Secretaría": {
+    badgeClass: "bg-rose-100 text-rose-900 border-rose-300",
+    icon: "fa-clipboard-user",
   },
 };
 
@@ -707,9 +715,21 @@ const UserList = () => {
                                 <h4 className="font-bold text-sm text-base-content truncate group-hover:text-primary transition-colors">
                                   {displayName}
                                 </h4>
-                                <p className="text-[11px] text-base-content/60 truncate">
-                                  {item?.Email || "-"}
-                                </p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="text-[11px] text-base-content/60 truncate">
+                                    {item?.Email || "-"}
+                                  </p>
+                                  {item?.UserRole === "contracts_Secretary" && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                      Secretaria
+                                    </span>
+                                  )}
+                                  {item?.UserRole === "contracts_Admin" && (
+                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                                      Admin
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
@@ -887,10 +907,16 @@ const UserList = () => {
                             className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                               detailUser?.UserRole === "contracts_Admin"
                                 ? "bg-blue-100 text-blue-800 border border-blue-200"
+                                : detailUser?.UserRole === "contracts_Secretary"
+                                ? "bg-purple-100 text-purple-800 border border-purple-200"
                                 : "bg-gray-100 text-gray-700"
                             }`}
                           >
-                            {detailUser?.UserRole === "contracts_Admin" ? "Administrador" : "Usuario"}
+                            {detailUser?.UserRole === "contracts_Admin"
+                              ? "Administrador"
+                              : detailUser?.UserRole === "contracts_Secretary"
+                              ? "Secretaria"
+                              : "Usuario"}
                           </span>
                           {handleActiveToggleVisibility(detailUser) ? (
                             <button
@@ -951,18 +977,37 @@ const UserList = () => {
                         <span className="font-bold text-base-content/60 text-[10px] uppercase tracking-wider block">
                           Ubicación en Organigrama
                         </span>
-                        <div>
-                          <span className="text-base-content/60 block text-[11px]">Nivel Jerárquico:</span>
-                          <span className="font-semibold text-base-content">{detailUser?.HierarchyLevel || "Especialista / Base"}</span>
-                        </div>
-                        <div>
-                          <span className="text-base-content/60 block text-[11px]">Superior directo / Reporta a:</span>
-                          <span className="font-semibold text-base-content">
-                            {getSuperiorInfo(detailUser?.ReportsTo) || (
-                              <span className="italic text-base-content/50">Máxima Autoridad / Presidencia</span>
-                            )}
-                          </span>
-                        </div>
+                        {detailUser?.UserRole === "contracts_Secretary" ? (
+                          <>
+                            <div>
+                              <span className="text-base-content/60 block text-[11px]">Condición en Organigrama:</span>
+                              <span className="font-semibold text-rose-800">Secretaría (Fuera de Organigrama)</span>
+                            </div>
+                            <div>
+                              <span className="text-blue-800 block text-[11px] font-semibold">Jefe Inmediato al que asiste:</span>
+                              <span className="font-bold text-blue-950">
+                                {detailUser?.BossPtr?.Name || getSuperiorInfo(detailUser?.ReportsTo) || detailUser?.BossPtr?.Email || (
+                                  <span className="italic text-base-content/50">No asignado</span>
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <span className="text-base-content/60 block text-[11px]">Nivel Jerárquico:</span>
+                              <span className="font-semibold text-base-content">{detailUser?.HierarchyLevel || "Especialista / Base"}</span>
+                            </div>
+                            <div>
+                              <span className="text-base-content/60 block text-[11px]">Superior directo / Reporta a:</span>
+                              <span className="font-semibold text-base-content">
+                                {getSuperiorInfo(detailUser?.ReportsTo) || (
+                                  <span className="italic text-base-content/50">Máxima Autoridad / Presidencia</span>
+                                )}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* 3. Organización */}
@@ -1138,7 +1183,7 @@ const UserList = () => {
                     allUsers={userList}
                     handleClose={handleCloseModal}
                     showAlert={showAlert}
-                    onSuccess={(userId, newJob, newDept, newLvl, newReportsTo) => {
+                    onSuccess={(userId, newJob, newDept, newLvl, newReportsTo, newRole, newBoss) => {
                       setUserList((prev) =>
                         prev.map((u) =>
                           u.objectId === userId
@@ -1148,6 +1193,8 @@ const UserList = () => {
                                 Department: newDept,
                                 HierarchyLevel: newLvl,
                                 ReportsTo: newReportsTo,
+                                ...(newRole ? { UserRole: newRole } : {}),
+                                ...(newBoss ? { BossPtr: newBoss } : newRole !== "contracts_Secretary" ? { BossPtr: null } : {}),
                               }
                             : u
                         )

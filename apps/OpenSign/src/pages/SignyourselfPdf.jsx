@@ -40,7 +40,7 @@ import {
   flattenPdf,
   base64ToArrayBuffer
 } from "../constant/Utils";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import Tour from "../primitives/Tour";
 import Signedby from "../components/pdf/Signedby";
 import Header from "../components/pdf/PdfHeader";
@@ -84,8 +84,20 @@ import {
 import { useScroll } from "../context/ScrollPdfContext";
 //For signYourself inProgress section signer can add sign and complete doc sign.
 function SignYourSelf() {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { docId } = useParams();
+
+  useEffect(() => {
+    try {
+      const extUserRaw = localStorage.getItem("Extand_Class");
+      const extUserObj = extUserRaw ? JSON.parse(extUserRaw)?.[0] : null;
+      if (extUserObj?.UserRole === "contracts_Secretary") {
+        alert("El rol de Secretaria no tiene facultades de firma en la plataforma.");
+        navigate("/dashboard/35KBoSgoAK", { replace: true });
+      }
+    } catch (e) {}
+  }, [navigate]);
   const dispatch = useDispatch();
   const windowSize = useWindowSize();
   const { scrollRef } = useScroll();

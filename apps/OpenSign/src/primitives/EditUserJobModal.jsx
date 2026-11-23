@@ -26,6 +26,8 @@ const EditUserJobModal = ({ isOpen, user, allUsers = [], handleClose, onSuccess,
   const [department, setDepartment] = useState("");
   const [hierarchyLevel, setHierarchyLevel] = useState("Especialista / Base");
   const [reportsTo, setReportsTo] = useState("");
+  const [userRole, setUserRole] = useState("contracts_User");
+  const [bossUserId, setBossUserId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -34,14 +36,19 @@ const EditUserJobModal = ({ isOpen, user, allUsers = [], handleClose, onSuccess,
       setDepartment(user?.Department || "");
       setHierarchyLevel(user?.HierarchyLevel || "Especialista / Base");
       setReportsTo(user?.ReportsTo || "");
+      setUserRole(user?.UserRole || "contracts_User");
+      setBossUserId(
+        user?.BossPtr?.objectId || (typeof user?.BossPtr === "string" ? user.BossPtr : "")
+      );
     }
   }, [user]);
 
-  // Lista de posibles superiores (excluyendo al usuario actual y al admin general)
+  // Lista de posibles superiores (excluyendo al usuario actual, al admin general y a otras secretarias)
   const availableSuperiors = (allUsers || []).filter((u) => {
     const isSelf = u.objectId === user?.objectId || u.Email === user?.Email;
     const isAdmin = (u.Email || "").toLowerCase().trim() === "admin@brascuba.cu";
-    return !isSelf && !isAdmin;
+    const isSecretary = u.UserRole === "contracts_Secretary";
+    return !isSelf && !isAdmin && !isSecretary;
   });
 
   const handleSubmit = async (e) => {
@@ -57,6 +64,13 @@ const EditUserJobModal = ({ isOpen, user, allUsers = [], handleClose, onSuccess,
       alert("El departamento es obligatorio y no puede estar vacío.");
       return;
     }
+    const effectiveBossId = userRole === "contracts_Secretary" ? (reportsTo || bossUserId) : null;
+    if (userRole === "contracts_Secretary" && !effectiveBossId) {
+      alert("Debe seleccionar el Jefe Inmediato al que asiste la secretaria.");
+      return;
+    }
+
+    const effectiveHierarchy = userRole === "contracts_Secretary" ? "Secretaría" : hierarchyLevel;
 
     setIsLoading(true);
     try {
@@ -64,13 +78,16 @@ const EditUserJobModal = ({ isOpen, user, allUsers = [], handleClose, onSuccess,
         extUserId: user.objectId,
         jobTitle: trimmedJob,
         department: trimmedDept,
-        hierarchyLevel: hierarchyLevel,
-        reportsTo: reportsTo,
+        hierarchyLevel: effectiveHierarchy,
+        reportsTo: userRole === "contracts_Secretary" ? effectiveBossId : reportsTo,
+        userRole: userRole,
+        bossUserId: effectiveBossId,
       });
 
       if (res && res.status === "success") {
         if (showAlert) showAlert("success", res.message || "Usuario actualizado exitosamente.");
-        if (onSuccess) onSuccess(user.objectId, trimmedJob, trimmedDept, hierarchyLevel, reportsTo);
+        const selectedBoss = (allUsers || []).find((u) => u.objectId === effectiveBossId);
+        if (onSuccess) onSuccess(user.objectId, trimmedJob, trimmedDept, effectiveHierarchy, reportsTo, userRole, selectedBoss);
         handleClose();
       } else {
         alert(res?.message || t("something-went-wrong-mssg"));
@@ -140,23 +157,52 @@ const EditUserJobModal = ({ isOpen, user, allUsers = [], handleClose, onSuccess,
             />
           </div>
 
-          <div>
+          <div className="pt-2 border-t border-base-200">
             <label className="block text-xs font-semibold mb-1 text-base-content">
-              Nivel Jerárquico en la Empresa <span className="text-red-500">*</span>
+              Rol en la Plataforma <span className="text-red-500">*</span>
             </label>
             <select
               disabled={isLoading}
-              className="op-select op-select-bordered op-select-sm w-full text-xs"
-              value={hierarchyLevel}
-              onChange={(e) => setHierarchyLevel(e.target.value)}
+              className="op-select op-select-bordered op-select-sm w-full text-xs font-medium cursor-pointer"
+              value={userRole}
+              onChange={(e) => {
+                setUserRole(e.target.value);
+              }}
             >
-              {HIERARCHY_LEVELS.map((lvl) => (
-                <option key={lvl.value} value={lvl.value}>
-                  {lvl.label}
-                </option>
-              ))}
+              <option value="contracts_User">Usuario Estándar</option>
+              <option value="contracts_Secretary">Secretaría</option>
+              <option value="contracts_Admin">Administrador</option>
             </select>
           </div>
+
+          {userRole === "contracts_Secretary" ? (
+            <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-lg">
+              <span className="block text-[11px] font-bold text-rose-900 uppercase tracking-wide">
+                Condición en Organigrama
+              </span>
+              <span className="text-xs font-semibold text-rose-800">
+                Secretaría (Asistencia a Dirección / Presidencia - Fuera de Organigrama)
+              </span>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-semibold mb-1 text-base-content">
+                Nivel Jerárquico en la Empresa <span className="text-red-500">*</span>
+              </label>
+              <select
+                disabled={isLoading}
+                className="op-select op-select-bordered op-select-sm w-full text-xs"
+                value={hierarchyLevel}
+                onChange={(e) => setHierarchyLevel(e.target.value)}
+              >
+                {HIERARCHY_LEVELS.map((lvl) => (
+                  <option key={lvl.value} value={lvl.value}>
+                    {lvl.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <SuperiorSearchSelect
@@ -164,7 +210,16 @@ const EditUserJobModal = ({ isOpen, user, allUsers = [], handleClose, onSuccess,
               onChange={(val) => setReportsTo(val)}
               superiorsList={availableSuperiors}
               disabled={isLoading}
-              hint="Selecciona a la persona de la cual depende en el organigrama para estructurar el árbol."
+              label={
+                userRole === "contracts_Secretary"
+                  ? "Jefe Inmediato al que asiste *"
+                  : "Superior directo / Reporta a"
+              }
+              hint={
+                userRole === "contracts_Secretary"
+                  ? "Selecciona al Presidente, Director, Subdirector o Gerente al que asistirá la secretaria."
+                  : "Selecciona a la persona de la cual depende en el organigrama para estructurar el árbol."
+              }
             />
           </div>
 

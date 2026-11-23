@@ -13,11 +13,11 @@ services:
     depends_on:
       - mongo
       - corporate-signer
-    env_file: .env.prod
+    env_file: .env.local_dev
     environment:
-      - NODE_ENV=production
-      - SERVER_URL=${HOST_URL:-https://172.20.19.12:3001}/api/app
-      - PUBLIC_URL=${HOST_URL:-https://172.20.19.12:3001}
+      - NODE_ENV=development
+      - SERVER_URL=${SERVER_URL:-http://localhost:3000/api/app}
+      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:3000}
       - CORPORATE_SIGNER_URL=http://corporate-signer:8090
       - CORPORATE_SIGNER_TOKEN=${CORPORATE_SIGNER_TOKEN}
     networks:
@@ -64,12 +64,12 @@ services:
       - ./apps/OpenSign/dist:/usr/src/app/dist
       - ./apps/OpenSign/src:/usr/src/app/src
       - ./apps/OpenSign/public:/usr/src/app/public
-    env_file: .env.prod
+    env_file: .env.local_dev
     environment:
-      - REACT_APP_SERVERURL=${HOST_URL:-https://172.20.19.12:3001}/api/app
-      - PUBLIC_URL=${HOST_URL:-https://172.20.19.12:3001}
-    ports:
-      - "127.0.0.1:3000:3000"
+      - REACT_APP_SERVERURL=${REACT_APP_SERVERURL:-http://localhost:3000/api/app}
+      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:3000}
+    expose:
+      - "3000"
     networks:
       - app-network
 
@@ -77,18 +77,19 @@ services:
     image: caddy:latest
     container_name: caddy-container
     ports:
+      - "3000:3000"
       - "3001:3001"
       - "80:80"
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile.local:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
     networks:
       - app-network
     environment:
-      - HOST_URL=${HOST_URL:-172.20.19.12:3001}
+      - HOST_URL=${HOST_URL:-localhost:3000}
 
 networks:
   app-network:

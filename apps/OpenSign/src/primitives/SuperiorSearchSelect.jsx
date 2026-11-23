@@ -23,6 +23,10 @@ const LEVEL_CONFIG = {
     badgeClass: "bg-purple-100 text-purple-900 border-purple-300",
     icon: "fa-user-tie",
   },
+  "Subdirección": {
+    badgeClass: "bg-indigo-100 text-indigo-900 border-indigo-300",
+    icon: "fa-id-badge",
+  },
   "Gerencia": {
     badgeClass: "bg-blue-100 text-blue-900 border-blue-300",
     icon: "fa-briefcase",
@@ -34,6 +38,10 @@ const LEVEL_CONFIG = {
   "Especialista / Base": {
     badgeClass: "bg-slate-100 text-slate-800 border-slate-300",
     icon: "fa-user",
+  },
+  "Secretaría": {
+    badgeClass: "bg-rose-100 text-rose-900 border-rose-300",
+    icon: "fa-clipboard-user",
   },
 };
 
@@ -50,10 +58,17 @@ const SuperiorSearchSelect = ({
   const dropdownRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Excluir secretarias de la lista de superiores (las secretarias asisten, no tienen subordinados en el organigrama)
+  const candidateSuperiors = useMemo(() => {
+    return (superiorsList || []).filter(
+      (s) => s.UserRole !== "contracts_Secretary" && (s.Email || "").toLowerCase().trim() !== "admin@brascuba.cu"
+    );
+  }, [superiorsList]);
+
   // Encontrar el objeto del superior actualmente seleccionado
   const selectedSuperior = useMemo(() => {
     if (!value) return null;
-    return superiorsList.find((s) => s.objectId === value) || null;
+    return (superiorsList || []).find((s) => s.objectId === value) || null;
   }, [value, superiorsList]);
 
   // Cerrar al hacer clic fuera
@@ -69,9 +84,9 @@ const SuperiorSearchSelect = ({
 
   // Filtrar lista en tiempo real por búsqueda
   const filteredList = useMemo(() => {
-    if (!searchTerm.trim()) return superiorsList;
+    if (!searchTerm.trim()) return candidateSuperiors;
     const term = searchTerm.trim().toLowerCase();
-    return superiorsList.filter((sup) => {
+    return candidateSuperiors.filter((sup) => {
       const name = formatDisplayName(sup?.Name, sup?.Email).toLowerCase();
       const job = (sup?.JobTitle || "").toLowerCase();
       const dept = (sup?.Department || "").toLowerCase();

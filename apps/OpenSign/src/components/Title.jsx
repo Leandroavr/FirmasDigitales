@@ -22,6 +22,12 @@ const TITLE_MAP = {
   "/report/other_drafts": "Drafts",
   "/report/other_declined": "Declined",
   "/report/other_expired": "Expired",
+  "/report/boss_need_your_sign": "Firmas pendientes del Jefe",
+  "/report/boss_delegated": "Documentos por preparar",
+  "/report/boss_in_progress": "En progreso (Jefe)",
+  "/report/boss_completed": "Completados (Jefe)",
+  "/report/boss_declined": "Rechazados (Jefe)",
+  "/report/boss_expired": "Expirados (Jefe)",
   "/report/contacts": "Contactbook",
   "/drive": "Gestor Pdfs",
   "/managesign": "My Signature",
@@ -69,7 +75,7 @@ export default function Title() {
     [pathname, state?.title]
   );
   const title = useMemo(
-    () => (prefix ? `${t(prefix)} - ${appName}` : appName),
+    () => (prefix ? `${t(prefix)} | ${appName}` : appName),
     [t, prefix, appName]
   );
   const manifestUrl = useManifestUrl(appName, logo);

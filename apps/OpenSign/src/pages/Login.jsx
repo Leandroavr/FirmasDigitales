@@ -38,6 +38,7 @@ function Login() {
     passwordVisible: false,
     loading: false,
     thirdpartyLoader: false,
+    rememberMe: false,
   });
   const [userDetails, setUserDetails] = useState({
     Company: "",
@@ -52,8 +53,11 @@ function Login() {
     const queryParams = new URLSearchParams(window.location.search);
     const emailParam = queryParams.get("email");
     const requiresAuth = queryParams.get("requiresAuth");
+    const remembered = localStorage.getItem("remembered_user");
     if (emailParam) {
       setState((prev) => ({ ...prev, email: emailParam }));
+    } else if (remembered) {
+      setState((prev) => ({ ...prev, email: remembered, rememberMe: true }));
     }
     if (requiresAuth === "true" || sessionStorage.getItem("redirectAfterLogin")) {
       showToast("info", "Por su seguridad, inicie sesión con su cuenta corporativa para acceder al documento.");
@@ -80,8 +84,12 @@ function Login() {
   };
 
   const showToast = (type, msg) => {
-    setState({ ...state, loading: false, alertType: type, alertMsg: msg });
-    setTimeout(() => setState({ ...state, alertMsg: "" }), 2000);
+    setState((prev) => ({ ...prev, loading: false, alertType: type, alertMsg: msg }));
+    if (type !== "danger") {
+      setTimeout(() => {
+        setState((prev) => ({ ...prev, alertMsg: "" }));
+      }, 5000);
+    }
   };
 
   const checkUserExt = async () => {
@@ -103,7 +111,7 @@ function Login() {
     // Validar si la sesión sigue activa (inactividad < 30min y navegador no cerrado)
     const isSessionValid = validateSessionOnStartup();
     if (isSessionValid && localStorage.getItem("accesstoken")) {
-      setState({ ...state, loading: true });
+      setState((prev) => ({ ...prev, loading: true }));
       GetLoginData();
     }
   };
@@ -112,7 +120,7 @@ function Login() {
     if (name === "email") {
       value = value?.toLowerCase()?.replace(/\s/g, "");
     }
-    setState({ ...state, [name]: value });
+    setState((prev) => ({ ...prev, [name]: value, alertMsg: "" }));
   };
 
   const handleLogin = async (
@@ -132,6 +140,11 @@ function Login() {
         setState({ ...state, loading: false });
         return;
       }
+      if (state.rememberMe) {
+        localStorage.setItem("remembered_user", email);
+      } else {
+        localStorage.removeItem("remembered_user");
+      }
       // Get extended user data (including 2FA status) using cloud function
       try {
         await Parse.User.become(_user.sessionToken);
@@ -148,7 +161,7 @@ function Login() {
       } else if (error?.message) {
         showToast("danger", error.message);
       } else {
-        showToast("danger", t("invalid-username-password-region"));
+        showToast("danger", "Usuario o contraseña incorrectos. Por favor, verifique sus credenciales.");
       }
     }
   };
@@ -484,119 +497,163 @@ function Login() {
           <div
             aria-labelledby="loginHeading"
             role="region"
-            className="py-6 md:py-10 px-4 md:px-10 lg:px-16 min-h-screen flex flex-col justify-center"
+            className="min-h-screen w-full flex items-center justify-center p-3 sm:p-6 md:p-8 lg:p-10 bg-base-200"
           >
-            <div className="md:p-4 lg:p-10 p-4 bg-base-100 text-base-content op-card">
-              <div className="flex items-center gap-3 h-[50px] md:h-[60px] overflow-hidden">
-                {image && (
-                  <img
-                    src={image}
-                    className="object-contain h-full"
-                    alt="applogo"
-                  />
-                )}
-                <span className="font-bold text-2xl md:text-3xl text-base-content tracking-tight">
-                  Firma Digital Brascuba
-                </span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-2">
-                <div>
-                  <form onSubmit={handleLoginBtn} aria-label="Login Form">
-                    <h1 className="text-[30px] mt-6">{t("welcome")}</h1>
-                    <fieldset>
-                      <legend className="text-[12px] text-[#878787]">
-                        {t("Login-to-your-account")}
-                      </legend>
-                      <div className="w-full px-6 py-3 my-1 op-card bg-base-100 shadow-md outline outline-1 outline-slate-300/50">
-                        <label className="block text-xs" htmlFor="email">
+            <div className="w-full max-w-[1200px] bg-white text-slate-800 rounded-none sm:rounded-2xl shadow-xl overflow-hidden p-6 sm:p-8 md:p-10 lg:p-12 border border-slate-100">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+                {/* Columna Izquierda: Formulario */}
+                <div className="lg:col-span-6 xl:col-span-6">
+                  {/* Logo e Identidad Corporativa */}
+                  <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                    {image && (
+                      <img
+                        src={image}
+                        className="object-contain h-10 sm:h-12 max-w-[180px]"
+                        alt="Logo Brascuba"
+                      />
+                    )}
+                    <span className="font-bold text-2xl sm:text-3xl text-slate-900 tracking-tight">
+                      Firma Digital <span className="text-[#002b6b]">Brascuba</span>
+                    </span>
+                  </div>
+
+                  <h1 id="loginHeading" className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-tight">
+                    {t("welcome")}
+                  </h1>
+                  <p className="text-[15px] sm:text-base text-[#4b5563] mt-2 mb-6">
+                    {t("Login-to-your-account")}
+                  </p>
+
+                  {/* Mensaje de alerta / error accesible con role="alert" */}
+                  {state.alertMsg && (
+                    <div
+                      role="alert"
+                      aria-live="polite"
+                      className={`p-3.5 mb-5 rounded-xl border flex items-center justify-between gap-3 text-sm font-medium ${
+                        state.alertType === "danger"
+                          ? "bg-red-50 border-red-200 text-red-800"
+                          : state.alertType === "info"
+                          ? "bg-blue-50 border-blue-200 text-blue-900"
+                          : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <i
+                          className={`text-lg flex-shrink-0 ${
+                            state.alertType === "danger"
+                              ? "fa-light fa-circle-exclamation text-red-600"
+                              : state.alertType === "info"
+                              ? "fa-light fa-info-circle text-blue-600"
+                              : "fa-light fa-circle-check text-emerald-600"
+                          }`}
+                        />
+                        <span className="leading-snug">{state.alertMsg}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setState((prev) => ({ ...prev, alertMsg: "" }))}
+                        className="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0"
+                        aria-label="Cerrar aviso"
+                      >
+                        <i className="fa-light fa-xmark text-sm" />
+                      </button>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleLoginBtn} aria-label="Formulario de inicio de sesión" noValidate={false}>
+                    <div className="space-y-5">
+                      {/* Campo Usuario o Correo */}
+                      <div>
+                        <label htmlFor="email" className="block text-[14px] sm:text-[15px] font-semibold text-[#1f2937] mb-2">
                           Usuario o Correo
                         </label>
                         <input
                           id="email"
                           type="text"
-                          className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
+                          tabIndex={1}
+                          autoFocus
+                          autoComplete="username"
+                          className="w-full h-12 min-h-[48px] px-4 text-sm sm:text-base text-[#1f2937] bg-white rounded-lg border border-slate-300 placeholder:text-[#6b7280] focus:ring-2 focus:ring-[#002b6b] focus:border-[#002b6b] outline-none transition-all"
                           name="email"
                           placeholder="ej: usuario o usuario@brascuba.cu"
-                          autoComplete="username"
                           value={state.email}
                           onChange={handleChange}
                           required
                           onInvalid={(e) =>
-                            e.target.setCustomValidity(t("input-required"))
+                            e.target.setCustomValidity("Por favor ingrese su usuario o correo institucional.")
                           }
                           onInput={(e) => e.target.setCustomValidity("")}
                         />
-                        <hr className="my-1 border-none" />
-                            <label className="block text-xs" htmlFor="password">
-                              {t("password")}
-                            </label>
-                            <div className="relative">
-                              <input
-                                id="password"
-                                type={
-                                  state.passwordVisible ? "text" : "password"
-                                }
-                                className="op-input op-input-bordered op-input-sm focus:outline-none hover:border-base-content w-full text-xs"
-                                name="password"
-                                value={state.password}
-                                autoComplete="current-password"
-                                onChange={handleChange}
-                                onInvalid={(e) =>
-                                  e.target.setCustomValidity(
-                                    t("input-required")
-                                  )
-                                }
-                                onInput={(e) => e.target.setCustomValidity("")}
-                                required
-                              />
-                              <span
-                                className="absolute cursor-pointer top-[50%] right-[10px] -translate-y-[50%] text-base-content"
-                                onClick={togglePasswordVisibility}
-                              >
-                                {state.passwordVisible ? (
-                                  <i className="fa-light fa-eye-slash text-xs pb-1" /> // Close eye icon
-                                ) : (
-                                  <i className="fa-light fa-eye text-xs pb-1 " /> // Open eye icon
-                                )}
-                              </span>
-                            </div>
-                          <div className="relative mt-1">
-                            <NavLink
-                              to="/forgetpassword"
-                              className="text-[13px] op-link op-link-primary underline-offset-1 focus:outline-none ml-1"
-                            >
-                              {t("forgot-password")}?
-                            </NavLink>
-                          </div>
                       </div>
-                    </fieldset>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-center text-xs font-bold mt-2">
-                      <button
-                        type="submit"
-                        className="op-btn op-btn-primary"
-                        disabled={state.loading}
-                      >
-                        {state.loading ? t("loading") : t("login")}
-                      </button>
+
+                      {/* Campo Contraseña */}
+                      <div>
+                        <label htmlFor="password" className="block text-[14px] sm:text-[15px] font-semibold text-[#1f2937] mb-2">
+                          {t("password")}
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="password"
+                            type={state.passwordVisible ? "text" : "password"}
+                            tabIndex={2}
+                            autoComplete="current-password"
+                            className="w-full h-12 min-h-[48px] pl-4 pr-12 text-sm sm:text-base text-[#1f2937] bg-white rounded-lg border border-slate-300 placeholder:text-[#6b7280] focus:ring-2 focus:ring-[#002b6b] focus:border-[#002b6b] outline-none transition-all"
+                            name="password"
+                            placeholder="••••••••"
+                            value={state.password}
+                            onChange={handleChange}
+                            required
+                            onInvalid={(e) =>
+                              e.target.setCustomValidity("Por favor ingrese su contraseña.")
+                            }
+                            onInput={(e) => e.target.setCustomValidity("")}
+                          />
+                          <button
+                            type="button"
+                            tabIndex={3}
+                            aria-label={state.passwordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                            className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-800 focus:outline-none focus:text-[#002b6b]"
+                            onClick={togglePasswordVisibility}
+                          >
+                            <i className={`fa-light ${state.passwordVisible ? "fa-eye-slash" : "fa-eye"} text-base`} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Botón Iniciar Sesión (ancho completo dentro del formulario) */}
+                      <div className="pt-3">
+                        <button
+                          type="submit"
+                          tabIndex={4}
+                          disabled={state.loading}
+                          className="w-full h-12 min-h-[48px] px-6 rounded-lg font-semibold text-base text-white bg-[#002b6b] hover:bg-[#001f4d] active:bg-[#001533] focus:outline-none focus:ring-2 focus:ring-[#002b6b] focus:ring-offset-2 transition-all shadow-md hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
+                        >
+                          {state.loading ? (
+                            <>
+                              <i className="fa-light fa-spinner-third fa-spin text-lg" />
+                              <span>Iniciando sesión…</span>
+                            </>
+                          ) : (
+                            <span>{t("login")}</span>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>
-                {width >= 768 && (
-                  <div className="place-self-center">
-                    <div className="mx-auto md:w-[320px] lg:w-[420px] xl:w-[480px]">
-                      <img
-                        src={login_img}
-                        alt="Firma Digital Brascuba"
-                        className="w-full h-auto object-contain rounded-xl"
-                      />
-                    </div>
+
+                {/* Columna Derecha: Ilustración Brascuba */}
+                <div className="hidden lg:flex lg:col-span-6 xl:col-span-6 justify-center items-center p-2 sm:p-4">
+                  <div className="w-full max-w-[500px]">
+                    <img
+                      src={login_img}
+                      alt="Firma Digital Brascuba"
+                      className="w-full h-auto object-contain rounded-xl"
+                    />
                   </div>
-                )}
+                </div>
               </div>
             </div>
-            {state.alertMsg && (
-              <Alert type={state.alertType}>{state.alertMsg}</Alert>
-            )}
           </div>
           <ModalUi
             isOpen={isModal}

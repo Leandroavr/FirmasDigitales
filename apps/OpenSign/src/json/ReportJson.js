@@ -88,9 +88,58 @@ export default function reportJson(id) {
         helpMsg:
           "This is a list of documents that are waiting for your signature"
       };
+    case "boss_need_your_sign":
+      return {
+        reportName: "Firmas pendientes del Jefe",
+        heading: otherIphead,
+        actions: [
+          {
+            btnId: "8902",
+            hoverLabel: "Share",
+            btnColor: "op-btn-primary",
+            btnIcon: "fa-light fa-copy",
+            redirectUrl: "",
+            action: "share"
+          },
+          {
+            btnId: "1589",
+            hoverLabel: "View",
+            btnColor: "op-btn-secondary",
+            btnIcon: "fa-light fa-eye",
+            redirectUrl: "draftDocument",
+            action: "redirect"
+          }
+        ],
+        helpMsg: "Documentos donde su jefe inmediato tiene una firma pendiente."
+      };
+    case "boss_delegated":
+      return {
+        reportName: "Documentos por preparar",
+        heading: otherIphead,
+        actions: [
+          {
+            btnId: "1231",
+            hoverLabel: "Preparar",
+            btnColor: "op-btn-primary",
+            btnIcon: "fa-light fa-file-signature",
+            redirectUrl: "placeHolderSign",
+            action: "redirect"
+          },
+          {
+            btnId: "2142",
+            hoverLabel: "Delete",
+            btnColor: "op-btn-secondary",
+            btnIcon: "fa-light fa-trash",
+            redirectUrl: "",
+            action: "delete"
+          }
+        ],
+        helpMsg: "Documentos delegados por su jefe que están pendientes de organizar cuadros de firma y enviar."
+      };
     // In progess report
     case "1MwEuxLEkF":
     case "other_in_progress":
+    case "boss_in_progress":
       return {
         reportName: "In-progress documents",
         heading: id === "other_in_progress" ? otherIphead : iphead,
@@ -178,6 +227,7 @@ export default function reportJson(id) {
     // completed documents report
     case "kQUoW4hUXz":
     case "other_completed":
+    case "boss_completed":
       return {
         reportName: "Completed Documents",
         heading: head,
@@ -235,6 +285,7 @@ export default function reportJson(id) {
     //  declined documents report
     case "UPr2Fm5WY3":
     case "other_declined":
+    case "boss_declined":
       return {
         reportName: "Declined Documents",
         heading: declineHead,
@@ -291,6 +342,7 @@ export default function reportJson(id) {
     //  Expired Documents report
     case "zNqBHXHsYH":
     case "other_expired":
+    case "boss_expired":
       return {
         reportName: "Expired Documents",
         heading: head,

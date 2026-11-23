@@ -74,6 +74,7 @@ import hideDocumentForUser from './parsefunction/hideDocumentForUser.js';
 import toggleUserAuthType from './parsefunction/toggleUserAuthType.js';
 import updateUserJobAndDepartment from './parsefunction/updateUserJobAndDepartment.js';
 import checkExpirationsJob, { runExpirationJob } from './parsefunction/expirationNotificationJob.js';
+import delegateDocumentToSecretary from './parsefunction/delegateDocumentToSecretary.js';
 import { userBeforeSave, contractsUsersBeforeSave } from './parsefunction/UserBeforeSave.js';
 
 // This afterSave function triggers after an object is added or updated in the specified class, allowing for post-processing logic.
@@ -171,6 +172,7 @@ Parse.Cloud.define('toggleuserauthtype', toggleUserAuthType);
 Parse.Cloud.define('toggleUserAuthType', toggleUserAuthType);
 Parse.Cloud.define('updateUserJobAndDepartment', updateUserJobAndDepartment);
 Parse.Cloud.define('checkExpirationsJob', checkExpirationsJob);
+Parse.Cloud.define('delegateDocumentToSecretary', delegateDocumentToSecretary);
 
 // Programar verificación periódica de documentos por expirar y expirados (cada 1 hora y a los 60 seg de iniciar)
 setTimeout(() => {

@@ -1,4 +1,4 @@
-export default function reportJson(id, currentUserId, isAdmin = false) {
+export default function reportJson(id, currentUserId, isAdmin = false, bossUserId = null) {
   const commanKeys = [
     'IsSignyourself',
     'URL',
@@ -61,7 +61,108 @@ export default function reportJson(id, currentUserId, isAdmin = false) {
       },
     },
   ];
+  const effectiveBossId = bossUserId || currentUserId;
+  const bossOrSigner = [
+    { CreatedBy: { __type: 'Pointer', className: '_User', objectId: effectiveBossId } },
+    {
+      Signers: {
+        $inQuery: {
+          where: { UserId: { __type: 'Pointer', className: '_User', objectId: effectiveBossId } },
+          className: 'contracts_Contactbook',
+        },
+      },
+    },
+  ];
   switch (id) {
+    // Reportes del Jefe Inmediato (Supervisión y Gestión para Secretaria)
+    case 'boss_need_your_sign':
+      return {
+        reportName: 'Firmas pendientes del Jefe',
+        params: {
+          Type: { $ne: 'Folder' },
+          IsCompleted: { $ne: true },
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          SignedUrl: { $ne: null },
+          ExpiryDate: { $gt: { __type: 'Date', iso: new Date().toISOString() } },
+          Placeholders: { $ne: null },
+          Signers: {
+            $inQuery: {
+              where: { UserId: { __type: 'Pointer', className: '_User', objectId: effectiveBossId } },
+              className: 'contracts_Contactbook',
+            },
+          },
+        },
+        keys: [...needYourSignKeys, ...filterKeys],
+      };
+    case 'boss_delegated':
+      return {
+        reportName: 'Documentos por preparar',
+        params: {
+          Type: { $ne: 'Folder' },
+          IsCompleted: { $ne: true },
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          $or: [
+            { DelegationStatus: 'PENDING_PREPARATION' },
+            { Status: 'Delegated' },
+            { CreatedBy: { __type: 'Pointer', className: '_User', objectId: effectiveBossId }, SignedUrl: { $exists: false } },
+          ],
+        },
+        keys: [...commanKeys, ...filterKeys, 'DelegationStatus', 'Status'],
+      };
+    case 'boss_in_progress':
+      return {
+        reportName: 'In-progress documents (Jefe)',
+        params: {
+          Type: { $ne: 'Folder' },
+          SignedUrl: { $ne: null },
+          Placeholders: { $ne: null },
+          IsCompleted: { $ne: true },
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          $or: bossOrSigner,
+          ExpiryDate: { $gt: { __type: 'Date', iso: new Date().toISOString() } },
+        },
+        keys: [...inProgressKeys, ...filterKeys],
+      };
+    case 'boss_completed':
+      return {
+        reportName: 'Completed Documents (Jefe)',
+        params: {
+          Type: { $ne: 'Folder' },
+          IsCompleted: true,
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          $or: bossOrSigner,
+        },
+        keys: [...commanKeys, ...filterKeys, 'IsCompleted'],
+      };
+    case 'boss_declined':
+      return {
+        reportName: 'Declined Documents (Jefe)',
+        params: {
+          Type: null,
+          IsArchive: { $ne: true },
+          IsDeclined: true,
+          $or: bossOrSigner,
+        },
+        keys: [...commanKeys, 'DeclineReason'],
+      };
+    case 'boss_expired':
+      return {
+        reportName: 'Expired Documents (Jefe)',
+        params: {
+          IsCompleted: { $ne: true },
+          IsDeclined: { $ne: true },
+          IsArchive: { $ne: true },
+          Type: { $ne: 'Folder' },
+          SignedUrl: { $ne: null },
+          ExpiryDate: { $lt: { __type: 'Date', iso: new Date().toISOString() } },
+          $or: bossOrSigner,
+        },
+        keys: [...commanKeys, ...filterKeys],
+      };
     // draft documents report
     case 'ByHuevtCFY':
       return {

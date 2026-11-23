@@ -67,7 +67,7 @@ const Report = () => {
       if (saved[id].visible?.includes("Note") || (Array.isArray(saved[id]) && saved[id].includes("Note"))) {
         migrated = true;
       }
-      if (id === "1MwEuxLEkF" || id === "other_in_progress") {
+      if (id === "1MwEuxLEkF" || id === "other_in_progress" || id === "boss_in_progress") {
         if (savedVisible.includes("File")) {
           savedVisible = savedVisible.filter((c) => c !== "File");
           migrated = true;
@@ -238,7 +238,7 @@ const Report = () => {
         if (savedCols[id]?.visible?.includes("Note") || (Array.isArray(savedCols[id]) && savedCols[id].includes("Note"))) {
           migrated = true;
         }
-        if (id === "1MwEuxLEkF" || id === "other_in_progress") {
+        if (id === "1MwEuxLEkF" || id === "other_in_progress" || id === "boss_in_progress") {
           if (visible.includes("File")) {
             visible = visible.filter((c) => c !== "File");
             migrated = true;

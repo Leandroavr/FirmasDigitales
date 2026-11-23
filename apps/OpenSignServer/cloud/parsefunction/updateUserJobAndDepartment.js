@@ -3,7 +3,7 @@ export default async function updateUserJobAndDepartment(request) {
     throw new Parse.Error(Parse.Error.INVALID_SESSION_TOKEN, 'Invalid session token.');
   }
 
-  const { extUserId, jobTitle, department, hierarchyLevel, reportsTo } = request.params;
+  const { extUserId, jobTitle, department, hierarchyLevel, reportsTo, userRole, bossUserId } = request.params;
   const trimmedJobTitle = typeof jobTitle === 'string' ? jobTitle.trim() : '';
   const trimmedDepartment = typeof department === 'string' ? department.trim() : '';
   const trimmedHierarchyLevel = typeof hierarchyLevel === 'string' ? hierarchyLevel.trim() : '';
@@ -47,8 +47,27 @@ export default async function updateUserJobAndDepartment(request) {
 
   targetUser.set('JobTitle', trimmedJobTitle);
   targetUser.set('Department', trimmedDepartment);
-  targetUser.set('HierarchyLevel', trimmedHierarchyLevel);
-  targetUser.set('ReportsTo', trimmedReportsTo);
+  if (userRole) {
+    targetUser.set('UserRole', userRole);
+    const effectiveBossId = bossUserId || (userRole === 'contracts_Secretary' ? trimmedReportsTo : null);
+    if (userRole === 'contracts_Secretary' && effectiveBossId) {
+      targetUser.set('BossPtr', {
+        __type: 'Pointer',
+        className: 'contracts_Users',
+        objectId: effectiveBossId,
+      });
+      targetUser.set('ReportsTo', effectiveBossId);
+      targetUser.set('HierarchyLevel', 'Secretaría');
+    } else {
+      targetUser.unset('BossPtr');
+      targetUser.set('HierarchyLevel', trimmedHierarchyLevel);
+      targetUser.set('ReportsTo', trimmedReportsTo);
+    }
+  } else {
+    targetUser.set('HierarchyLevel', trimmedHierarchyLevel);
+    targetUser.set('ReportsTo', trimmedReportsTo);
+  }
+
   await targetUser.save(null, { useMasterKey: true });
 
   // Sincronizar en contracts_Contactbook si existe para el mismo correo

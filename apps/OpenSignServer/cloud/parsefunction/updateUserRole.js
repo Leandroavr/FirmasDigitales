@@ -1,5 +1,5 @@
 export default async function updateUserRole(request) {
-  const { targetUserId, newRole } = request.params;
+  const { targetUserId, newRole, bossUserId } = request.params;
 
   if (!request.user) {
     throw new Parse.Error(Parse.Error.SESSION_MISSING, 'Debe iniciar sesión para realizar esta acción.');
@@ -24,7 +24,7 @@ export default async function updateUserRole(request) {
   }
 
   // 2. Validar rol solicitado
-  const validRoles = ['contracts_Admin', 'contracts_User'];
+  const validRoles = ['contracts_Admin', 'contracts_User', 'contracts_Secretary'];
   if (!validRoles.includes(newRole)) {
     throw new Parse.Error(Parse.Error.INVALID_QUERY, 'Rol no válido.');
   }
@@ -58,6 +58,15 @@ export default async function updateUserRole(request) {
   }
 
   targetExtUser.set('UserRole', newRole);
+  if (newRole === 'contracts_Secretary' && bossUserId) {
+    targetExtUser.set('BossPtr', {
+      __type: 'Pointer',
+      className: 'contracts_Users',
+      objectId: bossUserId,
+    });
+  } else if (newRole !== 'contracts_Secretary') {
+    targetExtUser.unset('BossPtr');
+  }
   await targetExtUser.save(null, { useMasterKey: true });
 
   console.log(

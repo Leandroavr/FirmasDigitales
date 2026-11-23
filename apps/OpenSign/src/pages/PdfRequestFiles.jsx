@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router";
 import { PDFDocument } from "pdf-lib";
 import "../styles/signature.css";
 import Parse from "parse";
@@ -94,6 +95,7 @@ const arrayBufferToBase64 = (value) => {
 
 function PdfRequestFiles(
 ) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const windowSize = useWindowSize();
@@ -220,6 +222,18 @@ function PdfRequestFiles(
     contactBookId = (routeId?.[3] && routeId[3] !== "undefined") ? routeId[3] : "";
   }
   let getDocumentId = getDocId || documentId;
+
+  useEffect(() => {
+    try {
+      const extUserRaw = localStorage.getItem("Extand_Class");
+      const extUserObj = extUserRaw ? JSON.parse(extUserRaw)?.[0] : null;
+      if (extUserObj?.UserRole === "contracts_Secretary") {
+        alert("El rol de Secretaria no tiene facultades de firma en la plataforma.");
+        navigate("/dashboard/35KBoSgoAK", { replace: true });
+      }
+    } catch (e) {}
+  }, [navigate]);
+
   useEffect(() => {
     dispatch(resetWidgetState([]));
     if (getDocumentId) {
