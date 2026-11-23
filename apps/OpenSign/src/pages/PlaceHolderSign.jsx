@@ -1098,6 +1098,9 @@ function PlaceHolderSign() {
       let updateExpiryDate = new Date();
       updateExpiryDate.setDate(updateExpiryDate.getDate() + addExtraDays);
       try {
+        const extUserRaw = localStorage.getItem("Extand_Class");
+        const extUserObj = extUserRaw ? JSON.parse(extUserRaw)?.[0] : null;
+
         const data = {
           Name: docTitle || pdfDetails?.[0]?.Name,
           Placeholders: signerPos,
@@ -1106,7 +1109,15 @@ function PlaceHolderSign() {
           Signers: signers,
           SentToOthers: true,
           SignatureType: pdfDetails?.[0]?.SignatureType,
-          ExpiryDate: { iso: updateExpiryDate, __type: "Date" }
+          ExpiryDate: { iso: updateExpiryDate, __type: "Date" },
+          ...(extUserObj?.UserRole === "contracts_Secretary" && {
+            PreparedBy: {
+              __type: "Pointer",
+              className: "contracts_Users",
+              objectId: extUserObj.objectId
+            },
+            DelegationStatus: "PREPARED_AND_SENT"
+          })
         };
         await axios.put(
           `${localStorage.getItem("baseUrl")}classes/contracts_Document/${documentId}`,

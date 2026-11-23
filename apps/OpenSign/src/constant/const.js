@@ -18,9 +18,10 @@ export const maxDescriptionLength = 500; // 500 characters
 export const maxFileSize = 80; // for cloud 10MB / 80MB for self-hosted
 
 export const HIERARCHY_LEVELS = [
-  { value: "Presidencia", label: "1. Presidencia (Presidente / Secretaria)" },
+  { value: "Presidencia", label: "1. Presidencia (Presidente)" },
   { value: "Dirección", label: "2. Dirección (Directores)" },
-  { value: "Gerencia", label: "3. Gerencia (Gerentes)" },
-  { value: "Jefatura de Grupo", label: "4. Jefatura de Grupo (Jefes de Grupo)" },
-  { value: "Especialista / Base", label: "5. Especialista / Base (Especialistas, etc.)" },
+  { value: "Subdirección", label: "3. Subdirección (Subdirectores)" },
+  { value: "Gerencia", label: "4. Gerencia (Gerentes)" },
+  { value: "Jefatura de Grupo", label: "5. Jefatura de Grupo (Jefes de Grupo)" },
+  { value: "Especialista / Base", label: "6. Especialista / Base (Especialistas, etc.)" },
 ];

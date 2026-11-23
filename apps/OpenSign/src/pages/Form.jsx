@@ -103,15 +103,23 @@ const Forms = (props) => {
     localStorage.getItem("Extand_Class") &&
     JSON.parse(localStorage.getItem("Extand_Class"))?.[0];
   const sendinorder =
-    extUserData?.SendinOrder !== undefined && extUserData?.SendinOrder === false
-      ? "false"
-      : "true";
+    extUserData?.SendinOrder === true ? "true" : "false";
   const istourenabled =
     extUserData?.IsTourEnabled !== undefined &&
     extUserData?.IsTourEnabled === false
       ? "false"
       : "true";
   const fileSize = maxFileSize;
+  const secretaryUser = extUserData?.SecretaryUser;
+  const hasSecretary = Boolean(secretaryUser?.objectId);
+  const secretaryName = secretaryUser?.Name || "Secretaría";
+
+  useEffect(() => {
+    if (extUserData?.UserRole === "contracts_Secretary" && props.title === "Sign Yourself") {
+      navigate("/form/8mZzFxbG1z", { replace: true });
+    }
+  }, [props.title]);
+
   useEffect(() => {
     handleReset();
     return () => abortController.abort();
@@ -385,7 +393,7 @@ const Forms = (props) => {
       return false;
     }
   }
-  const handleSubmit = withSessionValidation(async (e) => {
+  const handleSubmit = withSessionValidation(async (e, isDelegate = false) => {
     e.preventDefault();
     e.stopPropagation();
     if (fileupload) {
@@ -524,8 +532,35 @@ const Forms = (props) => {
             object.set("SenderMail", senderMail);
           }
         }
+        if (isDelegate && secretaryUser?.objectId) {
+          object.set("DelegatedTo", {
+            __type: "Pointer",
+            className: "contracts_Users",
+            objectId: secretaryUser.objectId
+          });
+          object.set("DelegationStatus", "PENDING_PREPARATION");
+          object.set("Status", "Delegated");
+        }
         const res = await object.save();
         if (res) {
+          if (isDelegate) {
+            try {
+              await Parse.Cloud.run("delegateDocumentToSecretary", {
+                docId: res.id,
+                secretaryUserId: secretaryUser.objectId
+              });
+              setIsAlert({
+                type: "success",
+                message: `Documento delegado exitosamente a ${secretaryName}.`
+              });
+            } catch (delErr) {
+              console.error("Error delegando a secretaría:", delErr);
+            }
+            setTimeout(() => {
+              navigate("/report/1MwEuxLEkF");
+            }, 1200);
+            return;
+          }
           setSigners([]);
           setBcc([]);
           setCc([]);
@@ -1048,7 +1083,8 @@ const Forms = (props) => {
                             <div className="text-center">{t("no")}</div>
                           </div>
                         </div>
-                        {formData.SendinOrder === "true" && (
+                        {/* Forzar orden comentado a solicitud: SendInOrder ya asegura el flujo secuencial */}
+                        {/* {formData.SendinOrder === "true" && (
                           <div className="flex items-center gap-2 ml-2 mt-1 mb-1">
                             <input
                               type="checkbox"
@@ -1068,7 +1104,7 @@ const Forms = (props) => {
                               {t("strict-order")}
                             </span>
                           </div>
-                        )}
+                        )} */}
                       </div>
                     </>
                   )}
@@ -1169,7 +1205,8 @@ const Forms = (props) => {
                             <div className="text-center">{t("no")}</div>
                           </div>
                         </div>
-                        {formData.SendinOrder === "true" && (
+                        {/* Forzar orden comentado a solicitud */}
+                        {/* {formData.SendinOrder === "true" && (
                           <div className="flex items-center gap-2 ml-2 mt-1 mb-1">
                             <input
                               type="checkbox"
@@ -1191,7 +1228,7 @@ const Forms = (props) => {
                               {t("strict-order")}
                             </span>
                           </div>
-                        )}
+                        )} */}
                       </div>
                     </>
                   )}
@@ -1359,7 +1396,7 @@ const Forms = (props) => {
                 </span>
               )
             )} */}
-            <div className="flex items-center mt-3 gap-2">
+            <div className="flex flex-wrap items-center mt-3 gap-2">
               <button
                 className={`${
                   isSubmit || !fileupload ? "cursor-progress" : ""
@@ -1369,6 +1406,17 @@ const Forms = (props) => {
               >
                 {t("next")}
               </button>
+              {hasSecretary && props.title === "Request Signatures" && (
+                <button
+                  type="button"
+                  className="op-btn bg-[#002b6b] hover:bg-[#001f4d] text-white gap-2 shadow-sm font-medium"
+                  disabled={isSubmit || !fileupload}
+                  onClick={(e) => handleSubmit(e, true)}
+                >
+                  <i className="fa-light fa-paper-plane-top"></i>
+                  <span>Delegar a Secretaría ({secretaryName})</span>
+                </button>
+              )}
               <div
                 className="op-btn op-btn-ghost text-base-content"
                 onClick={() => handleCancel()}

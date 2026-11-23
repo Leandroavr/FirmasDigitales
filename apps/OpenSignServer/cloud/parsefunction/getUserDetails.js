@@ -13,6 +13,7 @@ async function getUserDetails(request) {
       userQuery.include('TenantId');
       userQuery.include('UserId');
       userQuery.include('CreatedBy');
+      userQuery.include('BossPtr');
       userQuery.exclude('CreatedBy.authData');
       userQuery.exclude('TenantId.FileAdapters');
       userQuery.exclude('google_refresh_token');
@@ -25,6 +26,22 @@ async function getUserDetails(request) {
         if (reqEmail) {
           return { objectId: res.id };
         } else {
+          // Comprobar si este usuario tiene una secretaria asignada (es un Jefe)
+          try {
+            const secQuery = new Parse.Query('contracts_Users');
+            secQuery.equalTo('BossPtr', { __type: 'Pointer', className: 'contracts_Users', objectId: res.id });
+            secQuery.notEqualTo('IsDisabled', true);
+            const secRes = await secQuery.first({ useMasterKey: true });
+            if (secRes) {
+              res.set('SecretaryUser', {
+                objectId: secRes.id,
+                Name: secRes.get('Name') || '',
+                Email: secRes.get('Email') || '',
+              });
+            }
+          } catch (secErr) {
+            console.log('Error buscando secretaria asignada:', secErr);
+          }
           return res;
         }
       } else {

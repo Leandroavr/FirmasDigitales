@@ -36,7 +36,28 @@ export default async function getReport(request) {
       return { error: 'Invalid session token' };
     }
     const isAdmin = await isUserAdmin(userEmail, userId);
-    const json = reportId && reportJson(reportId, userId, isAdmin);
+
+    let bossUserId = null;
+    if (reportId && reportId.startsWith('boss_')) {
+      try {
+        const secQuery = new Parse.Query('contracts_Users');
+        secQuery.equalTo('Email', userEmail);
+        secQuery.include('BossPtr');
+        const secUser = await secQuery.first({ useMasterKey: true });
+        const bossExt = secUser?.get('BossPtr');
+        if (bossExt) {
+          const bossExtId = bossExt.id || bossExt.objectId;
+          const bUserQuery = new Parse.Query('contracts_Users');
+          bUserQuery.include('UserId');
+          const bUser = await bUserQuery.get(bossExtId, { useMasterKey: true });
+          bossUserId = bUser?.get('UserId')?.id;
+        }
+      } catch (bossErr) {
+        console.error('Error obteniendo UserId del Jefe para reporte:', bossErr);
+      }
+    }
+
+    const json = reportId && reportJson(reportId, userId, isAdmin, bossUserId);
     if (json) {
       let paramsObj = { ...(json.params || {}) };
       if (reportId == '6TeaPr321t') {

@@ -46,6 +46,7 @@ export default async function getUserListByOrg(req) {
       extUser.equalTo('OrganizationId', orgPtr);
       extUser.include('TeamIds');
       extUser.include('UserId');
+      extUser.include('BossPtr');
       extUser.descending('createdAt');
       const userRes = await extUser.find({ useMasterKey: true });
       if (userRes.length > 0) {

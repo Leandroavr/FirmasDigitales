@@ -55,12 +55,25 @@ export default async function getSigners(request) {
     corporateUsersQuery.notEqualTo('IsDisabled', true);
     corporateUsersQuery.limit(500);
     const rawCorporateUsers = await corporateUsersQuery.find({ useMasterKey: true });
-    const corporateUsers = rawCorporateUsers.filter(cu => !isGeneralAdmin(cu.get('Email'), cu));
+    const isExcludedUser = (email, u) => {
+      if (isGeneralAdmin(email, u)) return true;
+      if (u?.get('UserRole') === 'contracts_Secretary') return true;
+      return false;
+    };
+
+    const corporateUsers = rawCorporateUsers.filter(cu => !isExcludedUser(cu.get('Email'), cu));
+
+    const secretaryEmails = new Set(
+      rawCorporateUsers
+        .filter(cu => cu.get('UserRole') === 'contracts_Secretary')
+        .map(cu => (cu.get('Email') || '').toLowerCase().trim())
+        .filter(Boolean)
+    );
 
     const corpUsersByEmail = new Map();
     for (const cu of corporateUsers) {
       const email = cu.get('Email')?.toLowerCase()?.trim();
-      if (email && !isGeneralAdmin(email, cu)) {
+      if (email && !isExcludedUser(email, cu)) {
         corpUsersByEmail.set(email, cu);
       }
     }
@@ -82,13 +95,16 @@ export default async function getSigners(request) {
     contactsQuery.notEqualTo('IsDeleted', true);
     contactsQuery.limit(500);
     const rawContacts = await contactsQuery.find({ useMasterKey: true });
-    const contacts = rawContacts.filter(c => !isGeneralAdmin(c.get('Email'), c));
+    const contacts = rawContacts.filter(c => {
+      const cEmail = (c.get('Email') || '').toLowerCase().trim();
+      return !isExcludedUser(cEmail, c) && !secretaryEmails.has(cEmail);
+    });
 
     // Indexar contactos por correo en minúsculas
     const contactsByEmail = new Map();
     for (const c of contacts) {
       const email = c.get('Email')?.toLowerCase()?.trim();
-      if (email && !isGeneralAdmin(email, c) && !contactsByEmail.has(email)) {
+      if (email && !isExcludedUser(email, c) && !secretaryEmails.has(email) && !contactsByEmail.has(email)) {
         contactsByEmail.set(email, c);
       }
     }

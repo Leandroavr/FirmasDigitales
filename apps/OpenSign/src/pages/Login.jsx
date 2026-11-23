@@ -86,7 +86,9 @@ function Login() {
   const showToast = (type, msg) => {
     setState((prev) => ({ ...prev, loading: false, alertType: type, alertMsg: msg }));
     if (type !== "danger") {
-      setTimeout(() => setState((prev) => ({ ...prev, alertMsg: "" })), 6000);
+      setTimeout(() => {
+        setState((prev) => ({ ...prev, alertMsg: "" }));
+      }, 5000);
     }
   };
 
@@ -638,12 +640,6 @@ function Login() {
                       </div>
                     </div>
                   </form>
-
-                  {/* Confianza */}
-                  <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center gap-1.5 text-xs font-medium text-slate-500">
-                    <i className="fa-light fa-lock-keyhole text-[#002b6b]" />
-                    <span>Conexión segura cifrada SSL / TLS</span>
-                  </div>
                 </div>
 
                 {/* Columna Derecha: Ilustración Brascuba */}

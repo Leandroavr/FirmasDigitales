@@ -60,7 +60,8 @@ const AddUser = (props) => {
   const [teamList, setTeamList] = useState([]);
   const [superiorsList, setSuperiorsList] = useState([]);
   const roles = [
-    { label: "Usuario", value: "User" },
+    { label: "Usuario Estándar", value: "User" },
+    { label: "Secretaría", value: "Secretary" },
     { label: "Administrador", value: "Admin" }
   ];
   useEffect(() => {
@@ -77,7 +78,9 @@ const AddUser = (props) => {
         const usersRes = await Parse.Cloud.run("getuserlistbyorg", { organizationId: orgId });
         if (usersRes && usersRes.length > 0) {
           const filtered = usersRes.filter(
-            (u) => (u.Email || "").toLowerCase().trim() !== "admin@brascuba.cu"
+            (u) =>
+              (u.Email || "").toLowerCase().trim() !== "admin@brascuba.cu" &&
+              u.UserRole !== "contracts_Secretary"
           );
           setSuperiorsList(filtered);
         }
@@ -125,6 +128,10 @@ const AddUser = (props) => {
       alert("El departamento es obligatorio y no puede estar vacío.");
       return;
     }
+    if (formdata.role === "Secretary" && !formdata.reportsTo) {
+      alert("Debe seleccionar el Jefe Inmediato al que asistirá la secretaria.");
+      return;
+    }
     if (!emailRegex.test(formdata.email)) {
       alert(t("valid-email-alert"));
     } else {
@@ -142,7 +149,7 @@ const AddUser = (props) => {
               name: formdata.name,
               jobTitle: formdata.jobTitle,
               department: formdata.department,
-              hierarchyLevel: formdata.hierarchyLevel,
+              hierarchyLevel: formdata.role === "Secretary" ? "Secretaría" : formdata.hierarchyLevel,
               reportsTo: formdata.reportsTo,
               email: formdata.email,
               phone: formdata.phone,
@@ -302,31 +309,51 @@ const AddUser = (props) => {
                           placeholder="ej: Recursos Humanos, TI, etc."
                         />
                       </div>
-                      <div className="mb-3">
-                        <label className="block text-xs font-semibold">
-                          Nivel Jerárquico en la Empresa
-                          <span className="text-[red] text-[13px]"> *</span>
-                        </label>
-                        <select
-                          name="hierarchyLevel"
-                          value={formdata.hierarchyLevel}
-                          onChange={(e) => handleChange(e)}
-                          className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content w-full text-xs"
-                        >
-                          {HIERARCHY_LEVELS.map((lvl) => (
-                            <option key={lvl.value} value={lvl.value}>
-                              {lvl.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      {formdata.role === "Secretary" ? (
+                        <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 rounded-lg">
+                          <span className="block text-[11px] font-bold text-rose-900 uppercase tracking-wide">
+                            Condición en Organigrama
+                          </span>
+                          <span className="text-xs font-semibold text-rose-800">
+                            Secretaría (Asistencia a Dirección / Presidencia - Fuera de Organigrama)
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="mb-3">
+                          <label className="block text-xs font-semibold">
+                            Nivel Jerárquico en la Empresa
+                            <span className="text-[red] text-[13px]"> *</span>
+                          </label>
+                          <select
+                            name="hierarchyLevel"
+                            value={formdata.hierarchyLevel}
+                            onChange={(e) => handleChange(e)}
+                            className="op-select op-select-bordered op-select-sm focus:outline-none hover:border-base-content w-full text-xs"
+                          >
+                            {HIERARCHY_LEVELS.map((lvl) => (
+                              <option key={lvl.value} value={lvl.value}>
+                                {lvl.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <div className="mb-3">
                         <SuperiorSearchSelect
                           value={formdata.reportsTo}
                           onChange={(val) => setFormdata((prev) => ({ ...prev, reportsTo: val }))}
                           superiorsList={superiorsList}
                           disabled={isFormLoader}
-                          hint="Ubicación dentro del organigrama empresarial."
+                          label={
+                            formdata.role === "Secretary"
+                              ? "Jefe Inmediato al que asiste *"
+                              : "Superior directo / Reporta a"
+                          }
+                          hint={
+                            formdata.role === "Secretary"
+                              ? "Selecciona al Presidente, Director, Subdirector o Gerente al que asistirá la secretaria."
+                              : "Ubicación dentro del organigrama empresarial."
+                          }
                         />
                       </div>
                       <div className="mb-3">

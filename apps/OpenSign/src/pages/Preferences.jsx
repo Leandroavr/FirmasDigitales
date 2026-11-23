@@ -45,7 +45,7 @@ const Preferences = () => {
     icon: "fa-light fa-gears"
   };
   const [tab, setTab] = useState([generaltab]);
-  const [sendinOrder, setSendinOrder] = useState(true);
+  const [sendinOrder, setSendinOrder] = useState(false);
   const [isTourEnabled, setIsTourEnabled] = useState(false);
   const [dateFormat, setDateFormat] = useState("MM/DD/YYYY");
   const [is12HourTime, setIs12HourTime] = useState(false);
@@ -122,7 +122,7 @@ const Preferences = () => {
         setSignatureType(_getUser?.SignatureType || signatureTypes);
       }
       setSendinOrder(
-        _getUser?.SendinOrder !== undefined ? _getUser?.SendinOrder : true
+        _getUser?.SendinOrder !== undefined ? _getUser?.SendinOrder : false
       );
       setIsTourEnabled(
         _getUser?.IsTourEnabled !== undefined ? _getUser?.IsTourEnabled : true

@@ -47,7 +47,7 @@ export default async function addUser(request) {
         throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Unauthorized.');
       }
 
-      const allowedRoles = ['Admin', 'OrgAdmin', 'Editor', 'User'];
+      const allowedRoles = ['Admin', 'OrgAdmin', 'Editor', 'User', 'Secretary', 'contracts_Secretary', 'contracts_Admin', 'contracts_User'];
       if (!allowedRoles.includes(role)) {
         throw new Parse.Error(Parse.Error.OPERATION_FORBIDDEN, 'Invalid role.');
       }
@@ -81,16 +81,36 @@ export default async function addUser(request) {
       }
       extUser.set('JobTitle', trimmedJobTitle);
       extUser.set('Department', trimmedDepartment);
-      if (typeof hierarchyLevel === 'string' && hierarchyLevel.trim()) {
-        extUser.set('HierarchyLevel', hierarchyLevel.trim());
+      let finalRole = 'contracts_User';
+      if (role === 'Admin' || role === 'OrgAdmin' || role === 'contracts_Admin') {
+        finalRole = 'contracts_Admin';
+      } else if (role === 'Secretary' || role === 'contracts_Secretary') {
+        finalRole = 'contracts_Secretary';
+      } else if (role === 'Editor' || role === 'contracts_Editor') {
+        finalRole = 'contracts_Editor';
       }
-      if (typeof reportsTo === 'string' && reportsTo.trim()) {
-        extUser.set('ReportsTo', reportsTo.trim());
+      extUser.set('UserRole', finalRole);
+
+      if (finalRole === 'contracts_Secretary') {
+        extUser.set('HierarchyLevel', 'Secretaría');
+        if (typeof reportsTo === 'string' && reportsTo.trim()) {
+          extUser.set('BossPtr', {
+            __type: 'Pointer',
+            className: 'contracts_Users',
+            objectId: reportsTo.trim(),
+          });
+          extUser.set('ReportsTo', reportsTo.trim());
+        }
+      } else {
+        if (typeof hierarchyLevel === 'string' && hierarchyLevel.trim()) {
+          extUser.set('HierarchyLevel', hierarchyLevel.trim());
+        }
+        if (typeof reportsTo === 'string' && reportsTo.trim()) {
+          extUser.set('ReportsTo', reportsTo.trim());
+        }
       }
       extUser.set('isLdap', isLdap === true);
       extUser.set('Email', email);
-      const finalRole = role === 'Admin' || role === 'OrgAdmin' ? 'contracts_Admin' : 'contracts_User';
-      extUser.set('UserRole', finalRole);
       extUser.set('TeamIds', [
         {
           __type: 'Pointer',

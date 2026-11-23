@@ -4305,6 +4305,43 @@ export const mailTemplate = (param) => {
   return { subject, body };
 };
 
+export const mailTemplateWaitingTurn = (param, activeSignerName) => {
+  const TenantAppName = "Firma Digital Brascuba";
+  const subject = `[Firma Digital] Documento en flujo secuencial: "${param.title}"`;
+  const body =
+    "<html><head><meta http-equiv='Content-Type' content='text/html;charset=UTF-8' /></head><body style='margin:0;padding:0;background-color:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;'>" +
+    "<div style='background-color:#f4f6f9;padding:25px 15px;'>" +
+    "<div style='background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;margin:0 auto;border:1px solid #e5e7eb;'>" +
+    "<div style='padding:20px 24px;background-color:#0b3c6d;'>" +
+    "<h2 style='font-size:18px;margin:0;color:#ffffff;font-weight:600;letter-spacing:0.3px;'>Notificación de Documento en Proceso</h2>" +
+    "</div>" +
+    "<div style='padding:24px;color:#334155;font-size:14px;line-height:1.6;'>" +
+    "<p style='margin-top:0;margin-bottom:14px;font-size:15px;color:#1e293b;'>Estimado(a) usuario(a),</p>" +
+    `<p style='margin-top:0;margin-bottom:18px;'>Le informamos que ha sido incluido(a) en el trámite de firma digital del siguiente documento solicitado por <strong>${param.senderName}</strong>${param.senderMail ? ` (${param.senderMail})` : ""}:</p>` +
+    "<div style='background-color:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:6px;padding:14px 16px;margin:16px 0;'>" +
+    `<p style='margin:0;font-size:13px;color:#1e40af;line-height:1.5;'><strong>Aviso de orden secuencial:</strong> Este documento requiere firmas en un orden estricto establecido. Actualmente se encuentra en espera de la firma de <strong>${activeSignerName || "el firmante anterior"}</strong>. Tan pronto sea su turno, recibirá una notificación con el enlace directo para estampar su firma digital. No requiere realizar ninguna acción por el momento.</p>` +
+    "</div>" +
+    "<div style='background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0b3c6d;border-radius:6px;padding:16px 18px;margin:20px 0;'>" +
+    "<div style='font-size:11px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;border-bottom:1px solid #e2e8f0;padding-bottom:6px;'>Información del Documento</div>" +
+    "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>" +
+    `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Título:</td><td style='padding:6px 0;font-weight:700;color:#0f172a;'>${param.title || "Documento sin título"}</td></tr>` +
+    (param.documentType ? `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Tipo de documento:</td><td style='padding:6px 0;font-weight:600;color:#0f172a;'>${param.documentType}</td></tr>` : "") +
+    (param.description ? `<tr><td style='padding:6px 0;width:110px;font-weight:600;color:#64748b;vertical-align:top;'>Descripción:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.description}</td></tr>` : "") +
+    (param.note ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Notas:</td><td style='padding:6px 0;color:#334155;white-space:pre-wrap;'>${param.note}</td></tr>` : "") +
+    `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Remitente:</td><td style='padding:6px 0;color:#334155;'>${param.senderName}${param.senderMail ? ` (${param.senderMail})` : ""}</td></tr>` +
+    `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Estado de turno:</td><td style='padding:6px 0;font-weight:700;color:#d97706;'>En espera (Turno actual: ${activeSignerName || "1er firmante"})</td></tr>` +
+    (param.localExpireDate ? `<tr><td style='padding:6px 0;font-weight:600;color:#64748b;vertical-align:top;'>Fecha límite:</td><td style='padding:6px 0;color:#334155;'>${param.localExpireDate}</td></tr>` : "") +
+    "</table>" +
+    "</div>" +
+    "<div style='background-color:#fefce8;border:1px solid #fef08a;border-radius:4px;padding:10px 14px;margin-top:20px;'>" +
+    "<p style='font-size:12px;color:#854d0e;margin:0;line-height:1.5;'><strong>Aviso de seguridad:</strong> Cada firmante debe iniciar sesión obligatoriamente con sus credenciales institucionales para acceder a la plataforma.</p>" +
+    "</div>" +
+    "</div></div>" +
+    `<div><p style='padding:16px;color:#94a3b8;font-size:12px;text-align:center;margin:0;'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
+    "</div></body></html>";
+  return { subject, body };
+};
+
 export function formatDateTime(date, dateFormat, timeZone, is12Hour) {
   const zonedDate = toZonedTime(date, timeZone); // Convert date to the given timezone
   const timeFormat = is12Hour ? "hh:mm:ss a" : "HH:mm:ss";
@@ -4724,6 +4761,11 @@ export const sendEmailToSigners = async (
   };
 
   let signerMail = signersdata.slice();
+  const isSendInOrder =
+    pdfDetails?.[0]?.SendinOrder === true ||
+    pdfDetails?.[0]?.SendinOrder === "true";
+  const firstSignerName =
+    signerMail?.[0]?.Name || signerMail?.[0]?.Email || "1er firmante";
   for (let i = 0; i < signerMail.length; i++) {
     try {
       const objectId = signerMail[i].objectId;
@@ -4835,15 +4877,24 @@ export const sendEmailToSigners = async (
       };
       // Pick a role-appropriate default template (viewers get a "view"
       // template instead of the "sign" template).
-      const defaultTemplate = mailTemplate(mailparam);
+      const isWaitingTurn = isSendInOrder && i > 0;
+      const defaultTemplate = isWaitingTurn
+        ? mailTemplateWaitingTurn(mailparam, firstSignerName)
+        : mailTemplate(mailparam);
       let params = {
         extUserId: owner?.objectId,
         recipient: signerMail[i].Email,
-        subject: replaceVar?.subject
+        subject: isWaitingTurn
+          ? defaultTemplate.subject
+          : replaceVar?.subject
           ? replaceVar?.subject
           : defaultTemplate.subject,
         from: from,
-        html: replaceVar?.body ? replaceVar?.body : defaultTemplate.body
+        html: isWaitingTurn
+          ? defaultTemplate.body
+          : replaceVar?.body
+          ? replaceVar?.body
+          : defaultTemplate.body
       };
 
       sendMail = await axios.post(url, params, { headers: headers });

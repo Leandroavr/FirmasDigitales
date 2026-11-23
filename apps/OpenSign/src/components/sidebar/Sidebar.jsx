@@ -45,13 +45,30 @@ const Sidebar = () => {
         const userRole = extClass?.[0]?.UserRole || "contracts_User";
         // El apartado Ajustes y Documentos de otros usuarios sólo están permitidos para el admin (contracts_Admin o contracts_OrgAdmin)
         const isGeneralAdmin = userRole === "contracts_Admin" || userRole === "contracts_OrgAdmin";
-        const newSidebarList = sidebarList
+        const isSecretary = userRole === "contracts_Secretary";
+        const bossName = extClass?.[0]?.BossPtr?.Name || "mi Jefe";
+
+        let newSidebarList = sidebarList
           .map((item) => {
             if (item.title === "Templates") {
               return null; // Ocultado a solicitud
             }
             if (item.title === "Other Documents" && !isGeneralAdmin) {
               return null;
+            }
+            // Si es secretaria: ocultar "Firmar usted mismo" (la secretaria nunca firma)
+            if (isSecretary && (item.title === "Sign yourself" || item.objectId === "sHAnZphf69")) {
+              return null;
+            }
+            // Si es secretaria: en sus documentos propios se oculta "Need your sign"
+            if (isSecretary && item.title === "Documents" && item.children) {
+              return {
+                ...item,
+                title: "Mis Documentos",
+                children: item.children.filter(
+                  (c) => c.title !== "Need your sign" && c.objectId !== "4Hhwbp482K"
+                )
+              };
             }
             if (item.title !== "Settings") return item;
             if (isGeneralAdmin) {
@@ -73,6 +90,76 @@ const Sidebar = () => {
             return null;
           })
           .filter(Boolean);
+
+        // Si es secretaria: inyectar el bloque de supervisión y gestión del Jefe
+        if (isSecretary) {
+          const bossDocumentsBlock = {
+            icon: "fa-light fa-briefcase",
+            title: `Docs de ${bossName}`,
+            target: "_self",
+            pageType: null,
+            description: "",
+            objectId: null,
+            children: [
+              {
+                icon: "fa-light fa-signature",
+                title: "Necesitan su firma",
+                target: "_self",
+                pageType: "report",
+                description: "",
+                objectId: "boss_need_your_sign"
+              },
+              {
+                icon: "fa-light fa-file-pen",
+                title: "Por preparar",
+                target: "_self",
+                pageType: "report",
+                description: "",
+                objectId: "boss_delegated"
+              },
+              {
+                icon: "fa-light fa-tasks",
+                title: "En progreso",
+                target: "_self",
+                pageType: "report",
+                description: "",
+                objectId: "boss_in_progress"
+              },
+              {
+                icon: "fa-light fa-check-circle",
+                title: "Completados",
+                target: "_self",
+                pageType: "report",
+                description: "",
+                objectId: "boss_completed"
+              },
+              {
+                icon: "fa-light fa-times-circle",
+                title: "Rechazados",
+                target: "_self",
+                pageType: "report",
+                description: "",
+                objectId: "boss_declined"
+              },
+              {
+                icon: "fa-light fa-hourglass-end",
+                title: "Expirados",
+                target: "_self",
+                pageType: "report",
+                description: "",
+                objectId: "boss_expired"
+              }
+            ]
+          };
+          const docIndex = newSidebarList.findIndex(
+            (it) => it.title === "Mis Documentos" || it.title === "Documents"
+          );
+          if (docIndex !== -1) {
+            newSidebarList.splice(docIndex + 1, 0, bossDocumentsBlock);
+          } else {
+            newSidebarList.push(bossDocumentsBlock);
+          }
+        }
         setmenuList(newSidebarList);
       }
     } catch (e) {

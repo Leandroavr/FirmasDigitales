@@ -261,11 +261,105 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
       }
     }
 
+    // Copia informativa a secretarias vinculadas si el remitente o el firmante es un Jefe
+    try {
+      const bossExtIds = [sender?.objectId, signUser?.objectId].filter(Boolean);
+      for (const bId of bossExtIds) {
+        const secQuery = new Parse.Query('contracts_Users');
+        secQuery.equalTo('BossPtr', { __type: 'Pointer', className: 'contracts_Users', objectId: bId });
+        secQuery.notEqualTo('IsDisabled', true);
+        const secretaries = await secQuery.find({ useMasterKey: true });
+        for (const sec of secretaries) {
+          const secEmail = (sec.get('Email') || '').toLowerCase().trim();
+          if (secEmail) {
+            recipientSet.add(secEmail);
+          }
+        }
+      }
+    } catch (secMirrorErr) {
+      console.warn('[sendNotifyMail] Error buscando secretaria espejo:', secMirrorErr);
+    }
+
+    // Si es flujo secuencial (isSendInOrder), localizar al siguiente firmante pendiente
+    let nextPendingSigner = null;
+    let nextPendingSignerEmail = '';
+    let nextPendingSignerName = '';
+
+    if (isSendInOrder && Array.isArray(doc?.Signers)) {
+      for (const s of doc.Signers) {
+        const sId = (s?.objectId || '').toString();
+        let sMail = (s?.Email || s?.email || '').toLowerCase().trim();
+        if (!sMail && sId) {
+          try {
+            const cbQuery = new Parse.Query('contracts_Contactbook');
+            const contact = await cbQuery.get(sId, { useMasterKey: true });
+            sMail = (contact?.get('Email') || '').toLowerCase().trim();
+          } catch (e) {}
+        }
+        if (!completedSignerIds.has(sId) && sMail) {
+          nextPendingSigner = s;
+          nextPendingSignerEmail = sMail;
+          nextPendingSignerName = s?.Name || s?.name || sMail;
+          break;
+        }
+      }
+    }
+
+    // Si hay un siguiente firmante pendiente en flujo secuencial, enviarle su correo de turno prioritario
+    const basePublicUrl = process.env.PUBLIC_URL || publicUrl || 'https://localhost:3001';
+    if (nextPendingSignerEmail) {
+      recipientSet.delete(nextPendingSignerEmail); // Omitir del aviso genérico para no duplicar
+
+      const turnEncodeBase64 = Buffer.from(`${doc.objectId}/${nextPendingSignerEmail}`).toString('base64');
+      const turnViewDocUrl = `${basePublicUrl}/login/${turnEncodeBase64}`;
+      const turnSubject = `[Firma Digital Brascuba] ¡Es su turno de firmar!: "${pdfName}"`;
+      const turnBody =
+        "<html><head><meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/></head><body style='margin:0;padding:0;background-color:#f4f6f9;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Helvetica,Arial,sans-serif;'>" +
+        "<div style='background-color:#f4f6f9;padding:25px 15px;'>" +
+        "<div style='background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);max-width:600px;margin:0 auto;border:1px solid #e5e7eb;'>" +
+        "<div style='padding:20px 24px;background-color:#0b3c6d;'><h2 style='font-size:18px;margin:0;color:#ffffff;font-weight:600;letter-spacing:0.3px;'>Turno de Firma Digital Disponible</h2></div>" +
+        "<div style='padding:24px;color:#334155;font-size:14px;line-height:1.6;'>" +
+        `<p style='margin-top:0;margin-bottom:14px;font-size:15px;color:#1e293b;'>Estimado(a) <strong>${nextPendingSignerName}</strong>,</p>` +
+        `<p style='margin-top:0;margin-bottom:18px;'>Le informamos que el firmante <strong>${signerName}</strong> (${signerEmail}) ha completado su firma en el documento <strong>"${pdfName}"</strong>.</p>` +
+        "<div style='background-color:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:6px;padding:14px 16px;margin:16px 0;'>" +
+        `<p style='margin:0;font-size:13px;color:#1e40af;line-height:1.5;'><strong>¡Es su turno de firmar!</strong> Ya puede ingresar a la plataforma para revisar y estampar su firma digital en el documento.</p>` +
+        "</div>" +
+        "<div style='background-color:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #0b3c6d;border-radius:6px;padding:16px 18px;margin:18px 0;'>" +
+        "<div style='font-size:11px;font-weight:700;color:#0b3c6d;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;border-bottom:1px solid #e2e8f0;padding-bottom:5px;'>Información del Documento</div>" +
+        "<table style='width:100%;border-collapse:collapse;font-size:13px;color:#334155;'>" +
+        `<tr><td style='padding:5px 0;width:110px;font-weight:600;color:#64748b;'>Título:</td><td style='padding:5px 0;font-weight:700;color:#0f172a;'>${pdfName}</td></tr>` +
+        (doc?.DocumentType ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Tipo de documento:</td><td style='padding:5px 0;font-weight:600;color:#0f172a;'>${doc.DocumentType}</td></tr>` : '') +
+        (doc?.Description ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Descripción:</td><td style='padding:5px 0;color:#334155;'>${doc.Description}</td></tr>` : '') +
+        (doc?.Note ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Notas:</td><td style='padding:5px 0;color:#334155;'>${doc.Note}</td></tr>` : '') +
+        `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Estado:</td><td style='padding:5px 0;font-weight:700;color:#0b3c6d;'>${auditTrailCount} de ${signersCount} firmas completadas (Turno activo: ${nextPendingSignerName})</td></tr>` +
+        "</table></div>" +
+        `<div style='margin:28px 0 20px 0;text-align:center;'><a target='_blank' href='${turnViewDocUrl}' style='display:inline-block;padding:12px 28px;background-color:#0b3c6d;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(11,60,109,0.25);'>Ingresar a Firmar Documento</a></div>` +
+        "<div style='background-color:#fefce8;border:1px solid #fef08a;border-radius:4px;padding:10px 14px;margin-top:20px;'>" +
+        "<p style='font-size:12px;color:#854d0e;margin:0;line-height:1.5;'><strong>Aviso de seguridad:</strong> Cada usuario debe iniciar sesión obligatoriamente con sus credenciales institucionales para acceder a la plataforma.</p>" +
+        "</div></div></div>" +
+        `<div><p style='padding:16px;color:#94a3b8;font-size:12px;text-align:center;margin:0;'>Mensaje automático generado por ${TenantAppName}.</p></div>` +
+        "</div></body></html>";
+
+      try {
+        await sendSystemMail({
+          params: {
+            extUserId: sender?.objectId,
+            from: TenantAppName,
+            recipient: nextPendingSignerEmail,
+            subject: turnSubject,
+            pdfName: pdfName,
+            html: turnBody,
+            mailProvider: mailProvider,
+          },
+        });
+      } catch (turnErr) {
+        console.error(`[sendNotifyMail] Error enviando correo de turno a ${nextPendingSignerEmail}:`, turnErr);
+      }
+    }
+
     const recipients = Array.from(recipientSet);
     console.log(`[sendNotifyMail] Doc: "${pdfName}", Signer: ${signerName} (${signerEmail}), Avance: ${auditTrailCount} de ${signersCount}, Destinatarios: [${recipients.join(', ')}]`);
     if (recipients.length === 0) return;
-
-    const basePublicUrl = process.env.PUBLIC_URL || publicUrl || 'https://localhost:3001';
 
     for (const recipientEmail of recipients) {
       const encodeBase64 = Buffer.from(`${doc.objectId}/${recipientEmail}`).toString('base64');
@@ -292,7 +386,7 @@ async function sendNotifyMail(doc, signUser, mailProvider, publicUrl) {
         (doc?.DocumentType ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Tipo de documento:</td><td style='padding:5px 0;font-weight:600;color:#0f172a;'>${doc.DocumentType}</td></tr>` : '') +
         (doc?.Description ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Descripción:</td><td style='padding:5px 0;color:#334155;'>${doc.Description}</td></tr>` : '') +
         (doc?.Note ? `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Notas:</td><td style='padding:5px 0;color:#334155;'>${doc.Note}</td></tr>` : '') +
-        `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Estado:</td><td style='padding:5px 0;font-weight:700;color:#0b3c6d;'>${auditTrailCount} de ${signersCount} firmas completadas</td></tr>` +
+        `<tr><td style='padding:5px 0;font-weight:600;color:#64748b;'>Estado:</td><td style='padding:5px 0;font-weight:700;color:#0b3c6d;'>${auditTrailCount} de ${signersCount} firmas completadas${nextPendingSignerName ? ` • Próximo turno: ${nextPendingSignerName}` : ''}</td></tr>` +
         `</table></div>` +
         `<div style='margin:28px 0 20px 0;text-align:center;'><a target='_blank' href='${viewDocUrl}' style='display:inline-block;padding:12px 28px;background-color:#0b3c6d;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(11,60,109,0.25);'>Ingresar a la Plataforma</a></div>` +
         `<div style='background-color:#fefce8;border:1px solid #fef08a;border-radius:4px;padding:10px 14px;margin-top:20px;'>` +
@@ -340,7 +434,23 @@ async function sendCompletedMail(obj) {
   } else {
     signersMail = sender?.Email;
   }
-  const recipient = signersMail;
+  let recipient = signersMail;
+  try {
+    if (sender?.objectId) {
+      const secQuery = new Parse.Query('contracts_Users');
+      secQuery.equalTo('BossPtr', { __type: 'Pointer', className: 'contracts_Users', objectId: sender.objectId });
+      secQuery.notEqualTo('IsDisabled', true);
+      const secretaries = await secQuery.find({ useMasterKey: true });
+      for (const sec of secretaries) {
+        const secEmail = (sec.get('Email') || '').toLowerCase().trim();
+        if (secEmail && !recipient.toLowerCase().includes(secEmail)) {
+          recipient = `${recipient},${secEmail}`;
+        }
+      }
+    }
+  } catch (secCompErr) {
+    console.warn('[sendCompletedMail] Error agregando secretaria a destinatarios completados:', secCompErr);
+  }
   const publicUrl = process.env.PUBLIC_URL || obj.publicUrl || 'https://localhost:3001';
   const firstSigner = doc?.Signers?.[0];
   const encodeBase64 = Buffer.from(
